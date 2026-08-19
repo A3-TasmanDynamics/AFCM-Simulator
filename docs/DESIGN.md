@@ -120,19 +120,25 @@ PBO silently fails to load (logged, not fatal) while the rest of the mod works f
 AFCM-Simulator uses the same pattern instead of a single `afcm_sim_compat` addon gated by internal
 logic:
 
-- **`afcm_sim_ui`, `afcm_sim_scenario`, `afcm_sim_spawner`** — `requiredAddons = {"cba_main"}`
-  only. No mention of AFCM, ACE3, KAT, or ACM anywhere in these PBOs' configs. They call a small
-  internal **backend interface** (a fixed set of function names, e.g. `afcm_sim_fnc_backend_applyInjury`)
-  rather than calling AFCM or ACE3 directly — they have no idea which backend is actually active.
-- **`afcm_sim_backend_afcm`** (new addon) — `requiredAddons = {"cba_main", "afcm_main"}`. Only
+- **`afcm_sim_main`** — `requiredAddons = {"cba_main"}` only. Owns the **backend interface itself**
+  (a fixed set of function names, e.g. `afcm_sim_fnc_backend_applyInjury`) and the registration/
+  selection machinery (§6). No mention of AFCM, ACE3, KAT, or ACM anywhere in its config — it
+  doesn't know or care which backend ends up active, only how candidates register and how one gets
+  picked.
+- **`afcm_sim_ui`** — `requiredAddons = {"cba_main"}` only (doesn't touch the backend interface
+  directly; dialogs publish onto the UI event bus instead, §3). **`afcm_sim_scenario` /
+  `afcm_sim_spawner`** — `requiredAddons` includes `afcm_sim_main` (to call the backend interface)
+  and, for spawner, `afcm_sim_scenario` too. None of the three mention AFCM, ACE3, KAT, or ACM —
+  they call `afcm_sim_fnc_backend_*` and have no idea which backend is actually active.
+- **`afcm_sim_backend_afcm`** — `requiredAddons = {"cba_main", "afcm_main", "afcm_sim_main"}`. Only
   loads if AFCM is present. Implements the backend interface against AFCM's `PatientState` API and
   registers itself as an available backend on `postInit`.
 - **`afcm_sim_backend_ace`** (replaces the old single `afcm_sim_compat`) — `requiredAddons =
-  {"cba_main", "ace_medical_engine"}`. Only loads if ACE3 is present. Implements the backend
-  interface against `ace_medical_engine` hitpoints, and internally detects KAT/ACM at `postInit`
-  (via `isClass (configFile >> "CfgPatches" >> "kat_medical")`-style checks, not separate PBOs,
-  since they're enhancements to this same backend rather than alternate backends) to use their
-  extended wound/treatment calls when present.
+  {"cba_main", "ace_medical_engine", "afcm_sim_main"}`. Only loads if ACE3 is present. Implements
+  the backend interface against `ace_medical_engine` hitpoints, and internally detects KAT/ACM at
+  `postInit` (via `isClass (configFile >> "CfgPatches" >> "kat_medical")`-style checks, not
+  separate PBOs, since they're enhancements to this same backend rather than alternate backends)
+  to use their extended wound/treatment calls when present.
 - **Selection priority** at `postInit`: if `afcm_sim_backend_afcm` registered, use it (native path
   preferred). Else if `afcm_sim_backend_ace` registered, use it (compat path). Else — no medical
   mod is present at all — `afcm_sim_scenario`'s injury-application actions disable themselves with
@@ -157,20 +163,26 @@ AFCM-Simulator (standalone addon, no Tasman-Dynamics-Core dependency)
    └─ soft, either/both ─→ ACE3 [+KAT / +ACM] (activates afcm_sim_backend_ace)
 ```
 
-Everything this tool needs beyond a chosen backend — dialog framework, event bus, scenario/domain
-logic — lives inside AFCM-Simulator's own addons (§7), backend-agnostic by construction (§2.5).
-The internal split:
+Everything this tool needs beyond a chosen backend — the backend interface, dialog framework,
+event bus, scenario/domain logic — lives inside AFCM-Simulator's own addons (§7), backend-agnostic
+by construction (§2.5). The internal split:
 
+- **`afcm_sim_main`** owns the **backend interface + detection mechanism itself**
+  (`afcm_sim_fnc_backend_registerBackend`/`selectBackend`/`applyInjury`/`removeInjury`/`getActive`,
+  §2.5/§6) — foundational infra every other addon sits on top of, not scenario-specific domain
+  logic, which is why it lives here rather than in `afcm_sim_scenario`. Every other addon in this
+  repo `requiredAddon`s `afcm_sim_main`.
 - **`afcm_sim_ui`** owns the **dialog framework** (native-dialog component kit: buttons, sliders,
   limb-diagram hit-areas, dropdowns, list boxes — styled once, reused across every screen) and the
   **event bus** used to decouple "UI raised an intent" from "domain logic executed it," so a
   Phase-2 overlay could later publish/subscribe to the same bus without a rewrite.
 - **`afcm_sim_scenario` / `afcm_sim_spawner`** own: injury presets, randomization profiles, patient
-  spawner, stretcher placement, the map tool — and call the **backend interface** (§2.5), never
-  AFCM or ACE3 directly.
+  spawner, stretcher placement, the map tool — and call the **backend interface** (owned by
+  `afcm_sim_main`), never AFCM or ACE3 directly.
 - **`afcm_sim_backend_afcm`** / **`afcm_sim_backend_ace`** (§2.5) — the two interchangeable backend
   implementations. Each is isolated precisely so either can be deleted without touching anything
-  else if it's ever not worth maintaining.
+  else if it's ever not worth maintaining. Both `requiredAddon` `afcm_sim_main` (for the interface
+  they register against), not `afcm_sim_scenario`.
 
 ---
 
@@ -310,17 +322,19 @@ desync, validation on an authority machine):
 ```
 AFCM-Simulator/
   addons/
+    main/              # afcm_sim_main — backend interface + detection mechanism (§2.5/§6)
+                        # requiredAddons = {cba_main} — everything else requiredAddons this
     ui/                # afcm_sim_ui — native dialogs + component kit + event bus, self-contained
                         # requiredAddons = {cba_main}
     scenario/          # afcm_sim_scenario — injury model, preset library, randomization profiles
-                        # requiredAddons = {cba_main} — calls the backend interface only
+                        # requiredAddons = {cba_main, afcm_sim_main} — calls the backend interface only
     spawner/           # afcm_sim_spawner — patient spawner, stretcher placement, map tool
-                        # requiredAddons = {cba_main} — calls the backend interface only
+                        # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario}
     backend_afcm/      # afcm_sim_backend_afcm — implements the interface against AFCM's PatientState API
-                        # requiredAddons = {cba_main, afcm_main} — only loads if AFCM present
+                        # requiredAddons = {cba_main, afcm_main, afcm_sim_main} — only loads if AFCM present
     backend_ace/       # afcm_sim_backend_ace — implements the interface against ace_medical_engine,
                         # with KAT/ACM-specific enhancements detected internally at postInit
-                        # requiredAddons = {cba_main, ace_medical_engine} — only loads if ACE3 present
+                        # requiredAddons = {cba_main, ace_medical_engine, afcm_sim_main} — only loads if ACE3 present
   docs/
     DESIGN.md          # this file
     PRESET_FORMAT.md   # (future) user preset export/import spec

@@ -5,7 +5,7 @@ class CfgPatches
         units[] = {};
         weapons[] = {};
         requiredVersion = 2.14;
-        requiredAddons[] = {"cba_main", "afcm_main", "afcm_sim_scenario"};
+        requiredAddons[] = {"cba_main", "afcm_main", "afcm_sim_main"};
         author = "Tasman Dynamics";
         authors[] = {"Tasman Dynamics"};
         version = "0.1.0";

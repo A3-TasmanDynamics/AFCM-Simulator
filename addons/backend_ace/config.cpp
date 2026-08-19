@@ -5,7 +5,7 @@ class CfgPatches
         units[] = {};
         weapons[] = {};
         requiredVersion = 2.14;
-        requiredAddons[] = {"cba_main", "ace_medical_engine", "afcm_sim_scenario"};
+        requiredAddons[] = {"cba_main", "ace_medical_engine", "afcm_sim_main"};
         author = "Tasman Dynamics";
         authors[] = {"Tasman Dynamics"};
         version = "0.1.0";
@@ -13,9 +13,9 @@ class CfgPatches
 };
 
 // Only loads if ACE3 (ace_medical_engine) is present — this is what makes AFCM a soft dependency
-// rather than a hard one (DESIGN.md §2.5). requiredAddons also includes afcm_sim_scenario so this
-// PBO is guaranteed to load after it, meaning afcm_sim_fnc_backend_registerBackend already exists
-// by the time this addon's own preInit calls it.
+// rather than a hard one (DESIGN.md §2.5). requiredAddons also includes afcm_sim_main so this PBO
+// is guaranteed to load after it, meaning afcm_sim_fnc_backend_registerBackend already exists by
+// the time this addon's own preInit calls it.
 class CfgFunctions
 {
     class afcm_sim_ace

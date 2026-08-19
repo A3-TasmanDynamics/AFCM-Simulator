@@ -5,29 +5,13 @@ class CfgPatches
         units[] = {};
         weapons[] = {};
         requiredVersion = 2.14;
-        requiredAddons[] = {"cba_main"};
+        requiredAddons[] = {"cba_main", "afcm_sim_main"};
         author = "Tasman Dynamics";
         authors[] = {"Tasman Dynamics"};
         version = "0.1.0";
     };
 };
 
-// Backend-agnostic interface (DESIGN.md §2.5): afcm_sim_ui/afcm_sim_spawner and both backend
-// addons only ever call afcm_sim_fnc_backend_* — never AFCM or ACE3 directly.
-class CfgFunctions
-{
-    class afcm_sim
-    {
-        tag = "afcm_sim";
-        class Backend
-        {
-            file = "scenario\functions";
-            class backend_registerBackend {};
-            class backend_selectBackend {};
-            class backend_applyInjury {};
-            class backend_removeInjury {};
-            class backend_getActive {};
-            class scenario_preInit { preInit = 1; };
-        };
-    };
-};
+// Domain logic: injury model, preset library, randomization profiles (DESIGN.md §3/§4) — not yet
+// implemented. Calls the backend interface (afcm_sim_fnc_backend_*, owned by afcm_sim_main) once
+// built; never AFCM or ACE3 directly.
