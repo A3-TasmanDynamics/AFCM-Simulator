@@ -1,8 +1,11 @@
 # AFCM Medical Simulator — Design Doc
 
-Status: **Draft v0.1** — pre-implementation. Nothing in this doc is committed to code yet.
+Status: **Draft v0.2** — pre-implementation. Nothing in this doc is committed to code yet.
 Owner: Tasman Dynamics
-Depends on: ACE3, KAT - Advanced Medical, CBA_A3, Tasman-Dynamics-Core (`tasdyn_core`)
+Depends on: ACE3, KAT - Advanced Medical, CBA_A3
+
+AFCM-Simulator is **standalone** — it does not depend on Tasman-Dynamics-Core. It owns its own UI
+component kit rather than sharing one. See §2.4 and §3 for the reasoning.
 
 ---
 
@@ -63,38 +66,46 @@ This is a real, buildable option — but it's a genuine second application, not 
 
 ### 2.4 Decision
 - **v1 ships with native SQF dialogs** (`RscDisplay`/`RscControls`), built as a reusable
-  component set inside `tasdyn_core` (see §4) so it doesn't have to be redone in a modern visual
-  style per-mod. This is guaranteed to work for every player, in SP/MP/dedicated, with zero
-  install friction, and it's exactly how ACE3's own interaction menu and KAT's UI already work —
-  so it composes cleanly with both.
-- **The overlay-window approach is not discarded** — it's logged as a **Phase-2 research spike**
-  for `tasdyn_core`, scoped and time-boxed on its own, evaluated for real before any AFCM screen
-  depends on it. AFCM's data model and SQF↔UI event contract (§5–§6) should be designed so a
-  future overlay frontend can be swapped in as a second renderer without touching the underlying
-  injury/patient logic — i.e., keep "what the UI can do" (a small, serializable command/event set)
-  decoupled from "how it's drawn."
+  component set owned entirely inside AFCM-Simulator (`addons/afcm_ui`, see §3) so it doesn't have
+  to be redone in a modern visual style per-screen. This is guaranteed to work for every player, in
+  SP/MP/dedicated, with zero install friction, and it's exactly how ACE3's own interaction menu and
+  KAT's UI already work — so it composes cleanly with both.
+- **AFCM is standalone**: it does not depend on Tasman-Dynamics-Core. The dialog/component kit
+  lives inside `afcm_ui` and is not shared infrastructure — no second Workshop subscription, no
+  Core/AFCM version-compat surface to manage. The tradeoff (documented for the record): if a future
+  TasDyn mod also needs a native-dialog UI kit, it either forks this one or a shared kit gets
+  extracted later once there's a second real consumer — not speculatively now.
+- **The overlay-window approach is not discarded** — it's logged as a **Phase-2 research spike**,
+  scoped and time-boxed on its own, evaluated for real before any AFCM screen depends on it. AFCM's
+  data model and SQF↔UI event contract (§5–§6) should be designed so a future overlay frontend can
+  be swapped in as a second renderer without touching the underlying injury/patient logic — i.e.,
+  keep "what the UI can do" (a small, serializable command/event set) decoupled from "how it's
+  drawn." If this spike is ever pursued, it can still live in AFCM-Simulator directly; nothing here
+  requires Core.
 
 ---
 
 ## 3. System Layering
 
 ```
-AFCM-Simulator (addon)                    ← patient/injury domain logic, presets, spawner tools
-   ├─ depends on ─→ Tasman-Dynamics-Core   ← tasdyn_core: shared UI component kit, event bus,
-   │                  (tasdyn_core,          MP sync primitives, diagnostics
-   │                   tasdyn_systems)
+AFCM-Simulator (standalone addon)
    ├─ depends on ─→ ACE3 (ace_medical, ace_medical_engine, ace_interaction menu)
-   └─ depends on ─→ KAT - Advanced Medical (extended wound/treatment layer over ACE3 medical)
+   ├─ depends on ─→ KAT - Advanced Medical (extended wound/treatment layer over ACE3 medical)
+   └─ depends on ─→ CBA_A3
 ```
 
-`tasdyn_core`'s job for this project: own the **dialog framework** (native-dialog component kit:
-buttons, sliders, limb-diagram hit-areas, dropdowns, list boxes — styled once, reused by AFCM and
-future TasDyn UIs) and the **event bus** used to decouple "UI raised an intent" from "domain logic
-executed it," so the Phase-2 overlay can later publish/subscribe to the same bus.
+No Tasman-Dynamics-Core dependency. Everything AFCM needs — dialog framework, event bus, domain
+logic — lives inside AFCM-Simulator's own addons (§7). The internal split still matters for
+maintainability even without a separate repo:
 
-`AFCM-Simulator` owns: the body/injury data model, injury presets, randomization profiles, patient
-spawner, stretcher placement, and the map tool — plus the ACE3/KAT adapter that translates AFCM's
-internal injury representation into actual `ace_medical_engine` hitpoint damage / KAT wound calls.
+- **`afcm_ui`** owns the **dialog framework** (native-dialog component kit: buttons, sliders,
+  limb-diagram hit-areas, dropdowns, list boxes — styled once, reused across every AFCM screen) and
+  the **event bus** used to decouple "UI raised an intent" from "domain logic executed it," so a
+  Phase-2 overlay could later publish/subscribe to the same bus without a rewrite.
+- **`afcm_medical` / `afcm_spawner` / `afcm_ace_kat_bridge`** own: the body/injury data model,
+  injury presets, randomization profiles, patient spawner, stretcher placement, the map tool, and
+  the ACE3/KAT adapter that translates AFCM's internal injury representation into actual
+  `ace_medical_engine` hitpoint damage / KAT wound calls.
 
 ---
 
@@ -214,17 +225,15 @@ desync, validation on an authority machine):
 AFCM-Simulator/
   addons/
     afcm_medical/            # domain logic: injury model, preset library, randomization profiles
-    afcm_ui/                 # native dialogs built on tasdyn_core's component kit
+    afcm_ui/                 # native dialogs + component kit + event bus, self-contained
     afcm_spawner/             # patient spawner, stretcher placement, map tool
     afcm_ace_kat_bridge/      # translates AFCM injuries → ace_medical_engine / KAT calls
   docs/
     DESIGN.md                 # this file
     PRESET_FORMAT.md          # (future) user preset export/import spec
-
-Tasman-Dynamics-Core/
-  addons/
-    tasdyn_core/               # + new: UI component kit, event bus (this project's dependency)
 ```
+
+No changes required to Tasman-Dynamics-Core for this project.
 
 ---
 
@@ -252,5 +261,5 @@ Tasman-Dynamics-Core/
 - **v2** — injury presets (built-in + user save/load); randomization levels; Random Patient;
   stretcher placement.
 - **v3** — map spawn tool, MASCAL batch placement, preset import/export/sharing.
-- **Phase-2 spike (parallel, `tasdyn_core`)** — overlay-window proof of concept, evaluated
+- **Phase-2 spike (parallel, inside AFCM-Simulator)** — overlay-window proof of concept, evaluated
   independently; only promoted to "supported" if the hard problems in §2.3 are actually solved.
