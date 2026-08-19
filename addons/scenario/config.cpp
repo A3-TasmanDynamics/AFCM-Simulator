@@ -21,7 +21,7 @@ class CfgFunctions
         tag = "afcm_sim";
         class Backend
         {
-            file = "afcm_sim_scenario\functions";
+            file = "scenario\functions";
             class backend_registerBackend {};
             class backend_selectBackend {};
             class backend_applyInjury {};

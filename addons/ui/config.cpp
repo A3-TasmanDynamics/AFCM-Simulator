@@ -23,13 +23,13 @@ class CfgFunctions
         tag = "afcm_sim_ui";
         class EventBus
         {
-            file = "afcm_sim_ui\functions";
+            file = "ui\functions";
             class publish {};
             class subscribe {};
         };
         class LimbSelect
         {
-            file = "afcm_sim_ui\functions";
+            file = "ui\functions";
             class limbSelect_open {};
             class limbSelect_onLimbClick {};
         };

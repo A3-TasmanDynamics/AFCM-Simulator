@@ -310,21 +310,26 @@ desync, validation on an authority machine):
 ```
 AFCM-Simulator/
   addons/
-    afcm_sim_ui/                # native dialogs + component kit + event bus, self-contained
-                                 # requiredAddons = {cba_main}
-    afcm_sim_scenario/          # domain logic: injury model, preset library, randomization profiles
-                                 # requiredAddons = {cba_main} — calls the backend interface only
-    afcm_sim_spawner/           # patient spawner, stretcher placement, map tool
-                                 # requiredAddons = {cba_main} — calls the backend interface only
-    afcm_sim_backend_afcm/      # backend: implements the interface against AFCM's PatientState API
-                                 # requiredAddons = {cba_main, afcm_main} — only loads if AFCM present
-    afcm_sim_backend_ace/       # backend: implements the interface against ace_medical_engine,
-                                 # with KAT/ACM-specific enhancements detected internally at postInit
-                                 # requiredAddons = {cba_main, ace_medical_engine} — only loads if ACE3 present
+    ui/                # afcm_sim_ui — native dialogs + component kit + event bus, self-contained
+                        # requiredAddons = {cba_main}
+    scenario/          # afcm_sim_scenario — injury model, preset library, randomization profiles
+                        # requiredAddons = {cba_main} — calls the backend interface only
+    spawner/           # afcm_sim_spawner — patient spawner, stretcher placement, map tool
+                        # requiredAddons = {cba_main} — calls the backend interface only
+    backend_afcm/      # afcm_sim_backend_afcm — implements the interface against AFCM's PatientState API
+                        # requiredAddons = {cba_main, afcm_main} — only loads if AFCM present
+    backend_ace/       # afcm_sim_backend_ace — implements the interface against ace_medical_engine,
+                        # with KAT/ACM-specific enhancements detected internally at postInit
+                        # requiredAddons = {cba_main, ace_medical_engine} — only loads if ACE3 present
   docs/
-    DESIGN.md                   # this file
-    PRESET_FORMAT.md            # (future) user preset export/import spec
+    DESIGN.md          # this file
+    PRESET_FORMAT.md   # (future) user preset export/import spec
 ```
+
+Folder names on disk are bare (`ui`, `scenario`, ...) per standard HEMTT/ACE3-style convention —
+HEMTT prepends the project prefix (`afcm_sim`) automatically to produce each PBO. The full
+`afcm_sim_*` name is still each addon's `CfgPatches` class name and the name used everywhere else
+in this doc (`requiredAddons`, prose) — only the physical folder differs from that name.
 
 No changes required to Tasman-Dynamics-Core for this project. Neither backend addon requires the
 other — see §2.5 for why that split makes AFCM (and ACE3/KAT/ACM) genuinely optional rather than

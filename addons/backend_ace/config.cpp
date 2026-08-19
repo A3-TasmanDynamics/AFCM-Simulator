@@ -23,7 +23,7 @@ class CfgFunctions
         tag = "afcm_sim_ace";
         class Functions
         {
-            file = "afcm_sim_backend_ace\functions";
+            file = "backend_ace\functions";
             class applyInjury {};
             class removeInjury {};
             class preInit { preInit = 1; };
