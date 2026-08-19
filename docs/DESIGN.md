@@ -8,25 +8,27 @@
 
 # AFCM Medical Simulator — Design Doc
 
-Status: **Draft v0.3** — pre-implementation. Nothing in this doc is committed to code yet.
+Status: **v1.0** — architecture settled, pre-implementation. Nothing in this doc is committed to
+code yet; see §9 for the build order.
 Owner: Tasman Dynamics
-Depends on: [AFCM](https://github.com/A3-TasmanDynamics/AFCM), CBA_A3
-Optional compat (secondary, not required): ACE3, KAT - Advanced Medical, ACM
+Depends on: [AFCM](https://github.com/A3-TasmanDynamics/AFCM), [CBA_A3](https://github.com/CBATeam/CBA_A3)
+Optional compat (secondary, not required): [ACE3](https://github.com/acemod/ACE3),
+[KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806),
+[ACM](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358)
 Terminology: [AFCM/docs/TERMINOLOGY.md](https://github.com/A3-TasmanDynamics/AFCM/blob/main/docs/TERMINOLOGY.md)
 — canonical glossary, shared with AFCM. Use it instead of redefining terms here.
 
-AFCM-Simulator is **standalone** from Tasman-Dynamics-Core — it does not depend on Core, and owns
-its own UI component kit rather than sharing one. See §2.4 and §3 for that reasoning.
+AFCM-Simulator is a scenario-authoring and training tool: instructors and mission makers build a
+casualty (by limb, injury type, severity, preset, or full randomization) and spawn it into the
+world, individually or as a MASCAL batch. It targets [AFCM](https://github.com/A3-TasmanDynamics/AFCM)
+(the physiology-based medical overhaul) as its native engine — every injury this tool authors is
+applied through AFCM's own `PatientState` API. ACE3, KAT - Advanced Medical, and ACM are supported
+only as an isolated, optional compat bridge (`afcm_sim_compat`, §3) for servers not running AFCM
+at all; that compat path is lower priority than the AFCM-native path and must not shape this tool's
+core data model (§4).
 
-**Relationship to AFCM changed as of this revision.** AFCM (the physiology-based medical overhaul
-— Lethal Triad Engine, ADF pharmacology, GCS/airway/stress — see that repo's own DESIGN.md) now
-exists as its own standalone project, CBA_A3-only, with no ACE3/KAT/ACM dependency. AFCM-Simulator
-is the scenario-authoring/UI tool that sits on top of it. Consequently: **AFCM's own state API is
-now the primary target for every injury-application path in this doc**, not ACE3/KAT hitpoints.
-ACE3/KAT/ACM support (the reason the original README lists them) is retained only as an **optional
-secondary bridge** for servers not running AFCM at all — lower priority, and it must not shape
-AFCM-Simulator's core data model (§4). Sections below are updated accordingly; anything still
-describing an ACE3/KAT-hitpoint-first design is a holdover being corrected in this pass.
+AFCM-Simulator is also **standalone from Tasman-Dynamics-Core** — it does not depend on Core, and
+owns its own UI component kit rather than sharing one. See §2.4 and §3 for that reasoning.
 
 ---
 

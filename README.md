@@ -41,9 +41,10 @@ presets and the randomizer produce exactly what a medic could also build by hand
 
 AFCM-Simulator is **standalone** — it doesn't depend on Tasman-Dynamics-Core, and owns its own
 native-dialog UI kit rather than sharing one. It **does** depend on AFCM: every injury this tool
-authors is applied through AFCM's own `PatientState` API as the primary path. ACE3 / KAT -
-Advanced Medical / ACM support exists only as an isolated, optional compat bridge
-(`afcm_sim_compat`) for servers not running AFCM at all — see
+authors is applied through AFCM's own `PatientState` API as the primary path. [ACE3](https://github.com/acemod/ACE3),
+[KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806), and
+[ACM](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358) support exists only as an
+isolated, optional compat bridge (`afcm_sim_compat`) for servers not running AFCM at all — see
 [DESIGN.md](docs/DESIGN.md) for the full reasoning.
 
 ## 🧾 Requirements
@@ -51,8 +52,10 @@ Advanced Medical / ACM support exists only as an isolated, optional compat bridg
 | Dependency | Status |
 |---|---|
 | [AFCM](https://github.com/A3-TasmanDynamics/AFCM) | Required |
-| Community Base Addons (CBA_A3) | Required |
-| ACE3 / KAT - Advanced Medical / ACM | Optional — compat-mode only |
+| [Community Base Addons (CBA_A3)](https://github.com/CBATeam/CBA_A3) | Required |
+| [ACE3](https://github.com/acemod/ACE3) | Optional — `afcm_sim_compat` bridge only |
+| [KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806) | Optional — `afcm_sim_compat` bridge only |
+| [ACM (Advanced Combat Medicine)](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358) | Optional — `afcm_sim_compat` bridge only |
 
 ## 📚 Documentation
 
