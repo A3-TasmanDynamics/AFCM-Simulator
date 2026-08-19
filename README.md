@@ -4,7 +4,7 @@
 
 [![License: APL-SA](https://img.shields.io/badge/license-APL--SA-b5563b)](https://www.bohemia.net/community/licenses/arma-public-license-share-alike)
 [![Platform: Arma 3](https://img.shields.io/badge/platform-Arma%203-4b5d3a)](https://arma3.com/)
-[![Requires AFCM](https://img.shields.io/badge/requires-AFCM-4b5d3a)](https://github.com/A3-TasmanDynamics/AFCM)
+[![Backend: AFCM or ACE3/KAT/ACM](https://img.shields.io/badge/backend-AFCM%20or%20ACE3%2FKAT%2FACM-4b5d3a)](https://github.com/A3-TasmanDynamics/AFCM)
 [![Status: Design Phase](https://img.shields.io/badge/status-design%20phase-8a7a3a)](docs/DESIGN.md)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/Wt4ahmxVrs)
 
@@ -40,22 +40,30 @@ presets and the randomizer produce exactly what a medic could also build by hand
 ## 🔗 How It Relates to AFCM
 
 AFCM-Simulator is **standalone** — it doesn't depend on Tasman-Dynamics-Core, and owns its own
-native-dialog UI kit rather than sharing one. It **does** depend on AFCM: every injury this tool
-authors is applied through AFCM's own `PatientState` API as the primary path. [ACE3](https://github.com/acemod/ACE3),
-[KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806), and
-[ACM](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358) support exists only as an
-isolated, optional compat bridge (`afcm_sim_compat`) for servers not running AFCM at all — see
-[DESIGN.md](docs/DESIGN.md) for the full reasoning.
+native-dialog UI kit rather than sharing one. AFCM itself is a **soft dependency**: if it's
+loaded, AFCM-Simulator uses its native `PatientState` API. If it's not, and
+[ACE3](https://github.com/acemod/ACE3) (optionally with
+[KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806) or
+[ACM](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358)) is loaded instead,
+AFCM-Simulator runs against that. Both are genuinely optional Workshop dependencies — pick either,
+or run both and AFCM wins. See [DESIGN.md §2.5](docs/DESIGN.md#25-soft-dependencies--runtime-backend-detection)
+for how the detection actually works.
 
 ## 🧾 Requirements
 
 | Dependency | Status |
 |---|---|
-| [AFCM](https://github.com/A3-TasmanDynamics/AFCM) | Required |
 | [Community Base Addons (CBA_A3)](https://github.com/CBATeam/CBA_A3) | Required |
-| [ACE3](https://github.com/acemod/ACE3) | Optional — `afcm_sim_compat` bridge only |
-| [KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806) | Optional — `afcm_sim_compat` bridge only |
-| [ACM (Advanced Combat Medicine)](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358) | Optional — `afcm_sim_compat` bridge only |
+| [AFCM](https://github.com/A3-TasmanDynamics/AFCM) | Soft — enables the native physiology backend |
+| [ACE3](https://github.com/acemod/ACE3) | Soft — required for the compat backend |
+| [KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806) | Soft — enhances the compat backend if present alongside ACE3 |
+| [ACM (Advanced Combat Medicine)](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358) | Soft — alternative compat-backend enhancement alongside ACE3 |
+
+> **At least one medical backend must be present** — AFCM, or ACE3 (optionally with KAT/ACM) — or
+> AFCM-Simulator has nothing to apply injuries to. Run with just ACE3 + KAT and skip AFCM entirely
+> if that's all you want; AFCM-Simulator detects what's actually loaded at mission start and picks
+> the best available backend automatically (AFCM native path preferred when present). See
+> [DESIGN.md §2.5](docs/DESIGN.md#25-soft-dependencies--runtime-backend-detection) for how.
 
 ## 📚 Documentation
 
