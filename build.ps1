@@ -66,6 +66,12 @@ if (Test-Path $modFolder) {
 }
 Copy-Item $releaseSource $modFolder -Recurse
 
+# HEMTT only auto-bundles mod.cpp/meta.cpp — icon.paa (mod.cpp's `picture=`) needs copying by hand.
+$icon = Join-Path $root "icon.paa"
+if (Test-Path $icon) {
+    Copy-Item $icon $modFolder -Force
+}
+
 Write-Output ""
 Write-Output "Mod folder ready: $modFolder"
 if (-not $Sign) {

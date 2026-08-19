@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#16261a"/>
+      <stop offset="55%" stop-color="#1c2e20"/>
+      <stop offset="100%" stop-color="#241814"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="50%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="140" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="140" fill="url(#vignette)"/>
+
+  <circle cx="512" cy="440" r="300" fill="none" stroke="#3a4a3c" stroke-width="6" opacity="0.55"/>
+
+  <!-- Randomized "casualty spawn" pips on a scan line, matches the repo's banner motif -->
+  <line x1="152" y1="440" x2="872" y2="440" stroke="#c98a2b" stroke-width="4" stroke-dasharray="4 18" opacity="0.7"/>
+  <circle cx="300" cy="440" r="12" fill="#c98a2b"/>
+  <circle cx="420" cy="440" r="12" fill="#c98a2b" opacity="0.6"/>
+  <circle cx="604" cy="440" r="12" fill="#c98a2b" opacity="0.6"/>
+  <circle cx="724" cy="440" r="12" fill="#c98a2b"/>
+
+  <!-- Crosshair / patient-marker emblem -->
+  <g transform="translate(512,440)">
+    <circle r="120" fill="none" stroke="#c98a2b" stroke-width="20"/>
+    <line x1="-168" y1="0" x2="-70" y2="0" stroke="#c98a2b" stroke-width="20"/>
+    <line x1="70" y1="0" x2="168" y2="0" stroke="#c98a2b" stroke-width="20"/>
+    <line x1="0" y1="-168" x2="0" y2="-70" stroke="#c98a2b" stroke-width="20"/>
+    <line x1="0" y1="70" x2="0" y2="168" stroke="#c98a2b" stroke-width="20"/>
+    <circle r="18" fill="#c98a2b"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="512" y="838" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="92"
+        font-weight="800" letter-spacing="3" fill="#f2efe6">AFCM-SIMULATOR</text>
+  <text x="512" y="900" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34"
+        letter-spacing="3" fill="#9fae9f">TASMAN DYNAMICS</text>
+</svg>
