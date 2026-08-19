@@ -49,5 +49,17 @@ class CfgFunctions
             // — CBA's own postInit is the same per-addon postInit=1 mechanism as this one.)
             class main_postInit { file = "\afcm_sim\addons\main\functions\fnc_main_postInit.sqf"; postInit = 1; };
         };
+        class Settings
+        {
+            file = "\afcm_sim\addons\main\functions";
+            // CBA Addon Options (DESIGN.md — user-configurable settings, "Configure > Addon
+            // Options > AFCM Medical Simulator" in-game). preInit per CBA's own recommendation, so
+            // settings are available in the Eden Editor too, not just in-game.
+            class settings_preInit { file = "\afcm_sim\addons\main\functions\fnc_settings_preInit.sqf"; preInit = 1; };
+            // Not yet wired into backend_registerBackend/backend_selectBackend — those are already
+            // verified working in-game and left untouched to avoid reintroducing risk; available
+            // for new call sites (zeus/eden/spawner) going forward.
+            class debugLog { file = "\afcm_sim\addons\main\functions\fnc_debugLog.sqf"; };
+        };
     };
 };

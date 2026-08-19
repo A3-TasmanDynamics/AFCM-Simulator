@@ -2,7 +2,7 @@ class CfgPatches
 {
     class afcm_sim_eden
     {
-        units[] = {"AFCM_SIM_ModulePatientPlacement"};
+        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleMascalZone"};
         weapons[] = {};
         requiredVersion = 2.14;
         requiredAddons[] = {"cba_main", "afcm_sim_main", "afcm_sim_scenario", "afcm_sim_spawner"};
@@ -29,6 +29,7 @@ class CfgFunctions
             // Explicit `file=`, full absolute virtual path — see afcm_sim_main/config.cpp for why
             // both the fnc_ filename AND the absolute-path form are required.
             class module_patientPlacement { file = "\afcm_sim\addons\eden\functions\fnc_module_patientPlacement.sqf"; };
+            class module_mascalZone { file = "\afcm_sim\addons\eden\functions\fnc_module_mascalZone.sqf"; };
         };
     };
 };
@@ -62,6 +63,61 @@ class CfgVehicles
         // `_logic getVariable ["AFCM_SIM_injuryLevel", 0]` in the module function once it's real.
         class Attributes
         {
+            class AFCM_SIM_InjuryLevel
+            {
+                displayName = "Injury Level";
+                property = "AFCM_SIM_injuryLevel";
+                control = "combo";
+                defaultValue = "0";
+                class Values
+                {
+                    class Easy { name = "Easy"; value = 0; default = 1; };
+                    class Medium { name = "Medium"; value = 1; };
+                    class Hard { name = "Hard"; value = 2; };
+                    class Extreme { name = "Extreme"; value = 3; };
+                    class Fucked { name = "F*CKED!"; value = 4; };
+                };
+            };
+        };
+    };
+
+    // Design-time counterpart to "Map to Spawn Patients... MASCAL scenarios" (DESIGN.md §5) — a
+    // placed area where multiple patients spawn on mission start, rather than one at a time.
+    // Distinct from AFCM_SIM_ModulePatientPlacement (single patient) above.
+    class AFCM_SIM_ModuleMascalZone: Module_F
+    {
+        scope = 2;
+        displayName = "AFCM MASCAL Zone";
+        icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
+        category = "AFCM_SIM_Eden";
+        function = "afcm_sim_eden_fnc_module_mascalZone";
+        functionPriority = 1;
+        isGlobal = 1;
+        isTriggerActivated = 0;
+        curatorCanAttach = 0;
+
+        // Patient count and injury level. Values read back via
+        // `_logic getVariable ["AFCM_SIM_patientCount"/"AFCM_SIM_injuryLevel", default]` in the
+        // module function once spawner logic exists to actually place patients (DESIGN.md §8 open
+        // question #4 — realistic max simultaneous patients still needs a real number; the option
+        // list below is a starting guess, not a validated limit).
+        class Attributes
+        {
+            class AFCM_SIM_PatientCount
+            {
+                displayName = "Patient Count";
+                property = "AFCM_SIM_patientCount";
+                control = "combo";
+                defaultValue = "4";
+                class Values
+                {
+                    class Two { name = "2"; value = 2; };
+                    class Four { name = "4"; value = 4; default = 1; };
+                    class Six { name = "6"; value = 6; };
+                    class Eight { name = "8"; value = 8; };
+                    class Ten { name = "10"; value = 10; };
+                };
+            };
             class AFCM_SIM_InjuryLevel
             {
                 displayName = "Injury Level";
