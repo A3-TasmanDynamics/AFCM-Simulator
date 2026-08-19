@@ -4,6 +4,8 @@ docs/arma/
 
 # HEMTT build output and signing keys — generated, not source.
 .hemttout/
+releases/
+@AFCM-Simulator/
 *.biprivatekey
 *.hemttprivatekey
 *.bikey
