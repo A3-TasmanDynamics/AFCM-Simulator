@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" width="1200" height="280">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0e1a12"/>
+      <stop offset="55%" stop-color="#152318"/>
+      <stop offset="100%" stop-color="#1c1210"/>
+    </linearGradient>
+    <linearGradient id="pulse-fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c98a2b" stop-opacity="0"/>
+      <stop offset="12%" stop-color="#c98a2b" stop-opacity="1"/>
+      <stop offset="88%" stop-color="#c98a2b" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#c98a2b" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#2a3a2e" stroke-width="1" opacity="0.35"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="280" fill="url(#bg)"/>
+  <rect width="1200" height="280" fill="url(#grid)"/>
+
+  <!-- Randomized "casualty spawn" pips + connecting scan line, distinguishes from AFCM's ECG motif -->
+  <path d="M0,190 L1200,190" fill="none" stroke="url(#pulse-fade)" stroke-width="2" stroke-dasharray="2 10"/>
+  <circle cx="300" cy="190" r="6" fill="#c98a2b"/>
+  <circle cx="420" cy="190" r="6" fill="#c98a2b" opacity="0.6"/>
+  <circle cx="820" cy="190" r="6" fill="#c98a2b" opacity="0.6"/>
+  <circle cx="920" cy="190" r="6" fill="#c98a2b"/>
+
+  <!-- Crosshair / patient-marker emblem -->
+  <g transform="translate(96,140)">
+    <circle r="30" fill="none" stroke="#c98a2b" stroke-width="5"/>
+    <line x1="-42" y1="0" x2="-18" y2="0" stroke="#c98a2b" stroke-width="5"/>
+    <line x1="18" y1="0" x2="42" y2="0" stroke="#c98a2b" stroke-width="5"/>
+    <line x1="0" y1="-42" x2="0" y2="-18" stroke="#c98a2b" stroke-width="5"/>
+    <line x1="0" y1="18" x2="0" y2="42" stroke="#c98a2b" stroke-width="5"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="180" y="120" font-family="Segoe UI, Arial, sans-serif" font-size="58" font-weight="700"
+        letter-spacing="4" fill="#f2efe6">AFCM-SIMULATOR</text>
+  <text x="182" y="158" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="400"
+        letter-spacing="1.5" fill="#c9c2ad">Scenario Authoring &amp; Training Companion</text>
+
+  <!-- Divider -->
+  <rect x="182" y="178" width="640" height="2" fill="#3a4a3c"/>
+
+  <text x="182" y="206" font-family="Segoe UI, Arial, sans-serif" font-size="17" letter-spacing="0.5" fill="#8a9a8c">
+    Patient spawning, injury presets, and MASCAL placement — built on AFCM
+  </text>
+
+  <!-- Studio mark -->
+  <text x="1180" y="256" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="15"
+        letter-spacing="3" fill="#6f7d70">TASMAN DYNAMICS</text>
+</svg>

@@ -1,3 +1,11 @@
+<div align="center">
+
+<img src="assets/doc-header.svg" alt="AFCM-Simulator Documentation" width="100%"/>
+
+[README](../README.md) · **Design** · [AFCM/Terminology](https://github.com/A3-TasmanDynamics/AFCM/blob/main/docs/TERMINOLOGY.md)
+
+</div>
+
 # AFCM Medical Simulator — Design Doc
 
 Status: **Draft v0.3** — pre-implementation. Nothing in this doc is committed to code yet.
@@ -311,3 +319,12 @@ No changes required to Tasman-Dynamics-Core for this project. Depends on AFCM's 
 - **v3** — map spawn tool, MASCAL batch placement, preset import/export/sharing.
 - **Phase-2 spike (parallel, inside AFCM-Simulator)** — overlay-window proof of concept, evaluated
   independently; only promoted to "supported" if the hard problems in §2.3 are actually solved.
+
+---
+
+<div align="center">
+
+**Tasman Dynamics** — Engineering high-fidelity systems for the future of multi-domain simulation.
+[Discord](https://discord.gg/Wt4ahmxVrs) · [AFCM](https://github.com/A3-TasmanDynamics/AFCM)
+
+</div>

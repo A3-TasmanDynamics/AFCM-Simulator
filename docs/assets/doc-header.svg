@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 100" width="1200" height="100">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0e1a12"/>
+      <stop offset="100%" stop-color="#1c1210"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="100" fill="url(#bg)"/>
+  <rect x="0" y="96" width="1200" height="4" fill="#c98a2b"/>
+
+  <g transform="translate(40,50)">
+    <circle r="16" fill="none" stroke="#c98a2b" stroke-width="4"/>
+    <line x1="-24" y1="0" x2="-10" y2="0" stroke="#c98a2b" stroke-width="4"/>
+    <line x1="10" y1="0" x2="24" y2="0" stroke="#c98a2b" stroke-width="4"/>
+    <line x1="0" y1="-24" x2="0" y2="-10" stroke="#c98a2b" stroke-width="4"/>
+    <line x1="0" y1="10" x2="0" y2="24" stroke="#c98a2b" stroke-width="4"/>
+  </g>
+
+  <text x="76" y="46" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700"
+        letter-spacing="2" fill="#f2efe6">AFCM-SIMULATOR</text>
+  <text x="78" y="70" font-family="Segoe UI, Arial, sans-serif" font-size="15" letter-spacing="0.5"
+        fill="#8a9a8c">Scenario Authoring &amp; Training Companion — Documentation</text>
+
+  <text x="1160" y="56" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14"
+        letter-spacing="2" fill="#6f7d70">TASMAN DYNAMICS</text>
+</svg>
