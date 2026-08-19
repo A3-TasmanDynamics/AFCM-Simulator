@@ -1,8 +1,9 @@
 /*
  * Author: Tasman Dynamics
- * Registers a medical backend as available on this machine. Called by a backend addon's own
- * preInit (afcm_sim_backend_ace, afcm_sim_backend_afcm) — never call this from outside a backend
- * addon. Runs identically on server and every client that has the corresponding backend PBO
+ * Registers a medical backend as available on this machine. Called by a compat addon's own
+ * preInit (afcm_sim_ace_compat, afcm_sim_afcm_compat, and eventually kat_compat/acm_compat) —
+ * never call this from outside a compat addon. Runs identically on server and every client that
+ * has the corresponding compat PBO
  * loaded; registration itself is purely local, only *selection* (fnc_backend_selectBackend.sqf)
  * needs to be server-authoritative and broadcast. See DESIGN.md §2.5/§6.
  *

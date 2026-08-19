@@ -1,6 +1,6 @@
 class CfgPatches
 {
-    class afcm_sim_backend_afcm
+    class afcm_sim_afcm_compat
     {
         units[] = {};
         weapons[] = {};
@@ -16,4 +16,5 @@ class CfgPatches
 // question #2) is stable enough to build against. No functions implemented yet; this PBO exists
 // only so the repo layout matches DESIGN.md §7 and requiredAddons is already correctly gated on
 // afcm_main for the moment it's needed. Only loads if AFCM is present — same soft-dependency
-// mechanism as afcm_sim_backend_ace (DESIGN.md §2.5).
+// mechanism as afcm_sim_ace_compat (DESIGN.md §2.5). Will register at a higher priority than
+// ace_compat/kat_compat/acm_compat once implemented — native AFCM wins whenever it's present.
