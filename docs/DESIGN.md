@@ -132,7 +132,7 @@ logic:
   they call `afcm_sim_fnc_backend_*` and have no idea which backend is actually active.
 - **`afcm_sim_afcm_compat`** — `requiredAddons = {"cba_main", "afcm_main", "afcm_sim_main"}`. Only
   loads if AFCM is present. Will implement the backend interface against AFCM's `PatientState` API
-  and register itself as an available backend on `postInit` once AFCM's API is stable — deferred,
+  and register itself as an available backend on `preInit` once AFCM's API is stable — deferred,
   config-only stub for now (§9).
 - **`afcm_sim_ace_compat`** — `requiredAddons = {"cba_main", "ace_medical_engine", "afcm_sim_main"}`.
   Only loads if ACE3 is present. Implements the backend interface against vanilla
@@ -147,11 +147,18 @@ logic:
   alternative overhauls of ACE3 medical and aren't expected to run together in practice; if both
   were somehow present and both fully implemented, priority selection between them is still an
   open question.
-- **Selection priority** at `postInit`: highest-priority registered backend wins — `afcm_compat`
-  (once implemented) outranks `kat_compat`/`acm_compat` (once implemented) outranks `ace_compat`.
-  If nothing registers at all — no medical mod is present — `afcm_sim_scenario`'s injury-
-  application actions disable themselves with a clear "no medical backend detected" message rather
-  than silently no-op-ing or erroring.
+- **Registration happens on `preInit`, selection happens on `postInit`** — both are native
+  `CfgFunctions` phases (`preInit = 1;` / `postInit = 1;`), not a CBA event. The engine guarantees
+  every addon's `preInit` finishes, across the whole config, before any addon's `postInit` starts —
+  that ordering guarantee is what makes registration-then-selection safe regardless of which
+  compat addons happen to be present or their load order relative to each other. (An earlier
+  attempt tried subscribing to a `"CBA_addons_postInit"` event via `CBA_fnc_addEventHandler` —
+  confirmed via an actual in-game launch that this event doesn't exist as a subscribable global
+  broadcast; CBA's own postInit is the same per-addon `postInit=1` mechanism, not something else to
+  hook into.) Highest-priority registered backend wins: `afcm_compat` (once implemented) outranks
+  `kat_compat`/`acm_compat` (once implemented) outranks `ace_compat`. If nothing registers at all —
+  no medical mod is present — `afcm_sim_scenario`'s injury-application actions disable themselves
+  with a clear "no medical backend detected" message rather than silently no-op-ing or erroring.
 - **MP consistency**: backend selection happens server-side (or the logical host) and is
   broadcast via `publicVariable` at mission init (§6), so every client agrees on which backend is
   active even if individual clients' local mod lists differ slightly — avoids a client whose

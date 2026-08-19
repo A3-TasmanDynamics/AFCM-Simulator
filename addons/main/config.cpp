@@ -19,6 +19,15 @@ class CfgPatches
 // afcm_sim_scenario because it's foundational infra every other addon sits on top of — not
 // scenario-specific domain logic. afcm_sim_scenario, afcm_sim_spawner, and both backend addons
 // all requiredAddon afcm_sim_main to reach it.
+//
+// NOTE: every leaf class below sets an explicit `file=` pointing at its real fnc_*.sqf filename,
+// as a full absolute virtual path (\afcm_sim\addons\main\..., matching $PBOPREFIX$) rather than a
+// path relative to the addon folder — a path like "main\functions\fnc_x.sqf" looks plausible but
+// does NOT resolve (confirmed by an actual in-game launch: "Script ... not found" even with the
+// right filename). The engine's CfgFunctions default (with no override) derives fn_<ClassName>.sqf
+// — NOT fnc_ — so without these overrides every function here silently fails to load at runtime
+// despite compiling fine at build time; neither `hemtt build` nor `hemtt check` catch either of
+// these two mistakes.
 class CfgFunctions
 {
     class afcm_sim
@@ -26,13 +35,19 @@ class CfgFunctions
         tag = "afcm_sim";
         class Backend
         {
-            file = "main\functions";
-            class backend_registerBackend {};
-            class backend_selectBackend {};
-            class backend_applyInjury {};
-            class backend_removeInjury {};
-            class backend_getActive {};
-            class main_preInit { preInit = 1; };
+            file = "\afcm_sim\addons\main\functions";
+            class backend_registerBackend { file = "\afcm_sim\addons\main\functions\fnc_backend_registerBackend.sqf"; };
+            class backend_selectBackend { file = "\afcm_sim\addons\main\functions\fnc_backend_selectBackend.sqf"; };
+            class backend_applyInjury { file = "\afcm_sim\addons\main\functions\fnc_backend_applyInjury.sqf"; };
+            class backend_removeInjury { file = "\afcm_sim\addons\main\functions\fnc_backend_removeInjury.sqf"; };
+            class backend_getActive { file = "\afcm_sim\addons\main\functions\fnc_backend_getActive.sqf"; };
+            // postInit, not preInit: the engine guarantees every addon's preInit (where backend
+            // registration happens, see fnc_backend_registerBackend.sqf) finishes before ANY
+            // addon's postInit runs — a native two-phase guarantee that doesn't need CBA's event
+            // system at all. (Earlier attempt subscribed to a "CBA_addons_postInit" event via
+            // CBA_fnc_addEventHandler; that event doesn't exist as a subscribable global broadcast
+            // — CBA's own postInit is the same per-addon postInit=1 mechanism as this one.)
+            class main_postInit { file = "\afcm_sim\addons\main\functions\fnc_main_postInit.sqf"; postInit = 1; };
         };
     };
 };

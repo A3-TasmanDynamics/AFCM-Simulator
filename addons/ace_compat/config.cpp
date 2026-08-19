@@ -19,6 +19,10 @@ class CfgPatches
 // it. Registers at priority 10 — lowest of the compat/native backends, since afcm_compat (native
 // AFCM) and, once real KAT/ACM detection lands, kat_compat/acm_compat should all outrank plain
 // vanilla-ACE3 behaviour when their target mod is actually present (DESIGN.md §2.5).
+// NOTE: explicit `file=` per leaf class, as a full absolute virtual path (matching $PBOPREFIX$) —
+// see afcm_sim_main/config.cpp for why both the fnc_ filename AND the absolute-path form are
+// required (neither `hemtt build` nor `hemtt check` catch either mistake; only an actual in-game
+// launch does).
 class CfgFunctions
 {
     class afcm_sim_ace
@@ -26,10 +30,10 @@ class CfgFunctions
         tag = "afcm_sim_ace";
         class Functions
         {
-            file = "ace_compat\functions";
-            class applyInjury {};
-            class removeInjury {};
-            class preInit { preInit = 1; };
+            file = "\afcm_sim\addons\ace_compat\functions";
+            class applyInjury { file = "\afcm_sim\addons\ace_compat\functions\fnc_applyInjury.sqf"; };
+            class removeInjury { file = "\afcm_sim\addons\ace_compat\functions\fnc_removeInjury.sqf"; };
+            class preInit { file = "\afcm_sim\addons\ace_compat\functions\fnc_preInit.sqf"; preInit = 1; };
         };
     };
 };

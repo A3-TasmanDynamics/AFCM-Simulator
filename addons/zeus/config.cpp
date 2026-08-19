@@ -26,8 +26,10 @@ class CfgFunctions
         tag = "afcm_sim_zeus";
         class Modules
         {
-            file = "zeus\functions";
-            class module_spawnRandomPatient {};
+            file = "\afcm_sim\addons\zeus\functions";
+            // Explicit `file=`, full absolute virtual path — see afcm_sim_main/config.cpp for why
+            // both the fnc_ filename AND the absolute-path form are required.
+            class module_spawnRandomPatient { file = "\afcm_sim\addons\zeus\functions\fnc_module_spawnRandomPatient.sqf"; };
         };
     };
 };

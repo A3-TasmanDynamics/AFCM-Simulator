@@ -16,6 +16,11 @@ class CfgPatches
 // (fnc_publish) rather than calling afcm_sim_scenario directly, and domain logic subscribes
 // (fnc_subscribe) rather than dialogs calling it directly — so a future Phase-2 overlay frontend
 // (DESIGN.md §2.3) could publish onto the same bus without this side changing at all.
+//
+// NOTE: explicit `file=` per leaf class, as a full absolute virtual path (matching $PBOPREFIX$) —
+// see afcm_sim_main/config.cpp for why both the fnc_ filename AND the absolute-path form are
+// required (neither `hemtt build` nor `hemtt check` catch either mistake; only an actual in-game
+// launch does).
 class CfgFunctions
 {
     class afcm_sim_ui
@@ -23,15 +28,15 @@ class CfgFunctions
         tag = "afcm_sim_ui";
         class EventBus
         {
-            file = "ui\functions";
-            class publish {};
-            class subscribe {};
+            file = "\afcm_sim\addons\ui\functions";
+            class publish { file = "\afcm_sim\addons\ui\functions\fnc_publish.sqf"; };
+            class subscribe { file = "\afcm_sim\addons\ui\functions\fnc_subscribe.sqf"; };
         };
         class LimbSelect
         {
-            file = "ui\functions";
-            class limbSelect_open {};
-            class limbSelect_onLimbClick {};
+            file = "\afcm_sim\addons\ui\functions";
+            class limbSelect_open { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_open.sqf"; };
+            class limbSelect_onLimbClick { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_onLimbClick.sqf"; };
         };
     };
 };

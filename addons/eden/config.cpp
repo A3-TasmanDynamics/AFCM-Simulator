@@ -25,8 +25,10 @@ class CfgFunctions
         tag = "afcm_sim_eden";
         class Modules
         {
-            file = "eden\functions";
-            class module_patientPlacement {};
+            file = "\afcm_sim\addons\eden\functions";
+            // Explicit `file=`, full absolute virtual path — see afcm_sim_main/config.cpp for why
+            // both the fnc_ filename AND the absolute-path form are required.
+            class module_patientPlacement { file = "\afcm_sim\addons\eden\functions\fnc_module_patientPlacement.sqf"; };
         };
     };
 };
