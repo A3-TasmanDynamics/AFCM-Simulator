@@ -9,3 +9,7 @@ releases/
 *.biprivatekey
 *.hemttprivatekey
 *.bikey
+
+# Regenerated icon intermediates — only the .svg sources are tracked
+docs/assets/icon-src/*.png
+docs/assets/icon-src/*.paa
