@@ -1,0 +1,20 @@
+name = "AFCM Medical Simulator"
+prefix = "afcm_sim"
+author = "Tasman Dynamics"
+description = "Scenario authoring and training companion for AFCM."
+
+main_prefix = ""
+
+[version]
+major = 0
+minor = 1
+patch = 0
+
+[key]
+name = "afcm_sim"
+
+[binarize]
+models = true
+configs = true
+materials = true
+textures = true
