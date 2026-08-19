@@ -4,6 +4,8 @@ Status: **Draft v0.3** — pre-implementation. Nothing in this doc is committed 
 Owner: Tasman Dynamics
 Depends on: [AFCM](https://github.com/A3-TasmanDynamics/AFCM), CBA_A3
 Optional compat (secondary, not required): ACE3, KAT - Advanced Medical, ACM
+Terminology: [AFCM/docs/TERMINOLOGY.md](https://github.com/A3-TasmanDynamics/AFCM/blob/main/docs/TERMINOLOGY.md)
+— canonical glossary, shared with AFCM. Use it instead of redefining terms here.
 
 AFCM-Simulator is **standalone** from Tasman-Dynamics-Core — it does not depend on Core, and owns
 its own UI component kit rather than sharing one. See §2.4 and §3 for that reasoning.
@@ -203,6 +205,12 @@ These ranges are a starting proposal, not tuned values — needs a pass against 
 physiology thresholds (coagulopathy/blood-volume curves, per AFCM DESIGN.md §2.1/§3) so "Hard"
 reliably feels harder inside the Lethal Triad engine, not just as raw numbers. A secondary pass
 against KAT's severity/treatment thresholds is needed only for `afcm_sim_compat`.
+
+> **Naming note** (TERMINOLOGY.md §2/§9): these five names are a gameplay-authoring difficulty
+> scale, not the real T1–T4 military triage categories. Keep them visually/verbally distinct in UI
+> copy — a scenario labelled "Hard" should never appear next to, or be confusable with, a patient
+> labelled "T2." If a MASCAL sorting/triage exercise feature is ever built, it should use T1–T4
+> directly rather than repurposing these labels.
 
 ---
 
