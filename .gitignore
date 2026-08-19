@@ -1,3 +1,9 @@
 # Local Arma 3 command-reference tool (BIS wiki export + SQLite index) —
 # personal dev aid, not project documentation. Large binary/XML, don't commit.
 docs/arma/
+
+# HEMTT build output and signing keys — generated, not source.
+.hemttout/
+*.biprivatekey
+*.hemttprivatekey
+*.bikey
