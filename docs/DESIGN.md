@@ -1,11 +1,22 @@
 # AFCM Medical Simulator — Design Doc
 
-Status: **Draft v0.2** — pre-implementation. Nothing in this doc is committed to code yet.
+Status: **Draft v0.3** — pre-implementation. Nothing in this doc is committed to code yet.
 Owner: Tasman Dynamics
-Depends on: ACE3, KAT - Advanced Medical, CBA_A3
+Depends on: [AFCM](https://github.com/A3-TasmanDynamics/AFCM), CBA_A3
+Optional compat (secondary, not required): ACE3, KAT - Advanced Medical, ACM
 
-AFCM-Simulator is **standalone** — it does not depend on Tasman-Dynamics-Core. It owns its own UI
-component kit rather than sharing one. See §2.4 and §3 for the reasoning.
+AFCM-Simulator is **standalone** from Tasman-Dynamics-Core — it does not depend on Core, and owns
+its own UI component kit rather than sharing one. See §2.4 and §3 for that reasoning.
+
+**Relationship to AFCM changed as of this revision.** AFCM (the physiology-based medical overhaul
+— Lethal Triad Engine, ADF pharmacology, GCS/airway/stress — see that repo's own DESIGN.md) now
+exists as its own standalone project, CBA_A3-only, with no ACE3/KAT/ACM dependency. AFCM-Simulator
+is the scenario-authoring/UI tool that sits on top of it. Consequently: **AFCM's own state API is
+now the primary target for every injury-application path in this doc**, not ACE3/KAT hitpoints.
+ACE3/KAT/ACM support (the reason the original README lists them) is retained only as an **optional
+secondary bridge** for servers not running AFCM at all — lower priority, and it must not shape
+AFCM-Simulator's core data model (§4). Sections below are updated accordingly; anything still
+describing an ACE3/KAT-hitpoint-first design is a holdover being corrected in this pass.
 
 ---
 
@@ -13,11 +24,13 @@ component kit rather than sharing one. See §2.4 and §3 for the reasoning.
 
 AFCM Medical Simulator is a scenario-building tool: instructors/medics configure a patient's
 injuries (by limb, by type, by severity), spawn them into the world (individually or via preset,
-individually or randomized), and treat them under ACE3 + KAT - Advanced Medical rules. It must
-work identically in singleplayer, hosted MP, and dedicated server — same constraint set as every
-other TasDyn framework (see `about.md`: deterministic, zero-compromise multiplayer sync).
+individually or randomized), and treat them under AFCM's physiology engine (§3–§4 of AFCM's own
+DESIGN.md — Lethal Triad, pharmacology, GCS/airway). ACE3/KAT rules apply only on servers running
+in optional compat mode (no AFCM installed). It must work identically in singleplayer, hosted MP,
+and dedicated server — same constraint set as every other TasDyn framework (see `about.md`:
+deterministic, zero-compromise multiplayer sync).
 
-Out of scope for v1: AI-driven patient behavior beyond what ACE3/KAT already provide, campaign/
+Out of scope for v1: AI-driven patient behavior beyond what AFCM already provides, campaign/
 persistence layer, VR training modes.
 
 ---
@@ -88,54 +101,71 @@ This is a real, buildable option — but it's a genuine second application, not 
 ## 3. System Layering
 
 ```
-AFCM-Simulator (standalone addon)
-   ├─ depends on ─→ ACE3 (ace_medical, ace_medical_engine, ace_interaction menu)
-   ├─ depends on ─→ KAT - Advanced Medical (extended wound/treatment layer over ACE3 medical)
-   └─ depends on ─→ CBA_A3
+AFCM-Simulator (standalone addon, no Tasman-Dynamics-Core dependency)
+   ├─ depends on   ─→ AFCM (afcm_physiology, afcm_pharmacology, afcm_airway, afcm_neuro — the state API)
+   ├─ depends on   ─→ CBA_A3
+   └─ optional     ─→ ACE3 / KAT - Advanced Medical / ACM (compat-mode bridge only, for AFCM-less servers)
 ```
 
-No Tasman-Dynamics-Core dependency. Everything AFCM needs — dialog framework, event bus, domain
-logic — lives inside AFCM-Simulator's own addons (§7). The internal split still matters for
-maintainability even without a separate repo:
+Everything else this tool needs — dialog framework, event bus, scenario/domain logic — lives
+inside AFCM-Simulator's own addons (§7). The internal split:
 
-- **`afcm_ui`** owns the **dialog framework** (native-dialog component kit: buttons, sliders,
-  limb-diagram hit-areas, dropdowns, list boxes — styled once, reused across every AFCM screen) and
-  the **event bus** used to decouple "UI raised an intent" from "domain logic executed it," so a
+- **`afcm_sim_ui`** owns the **dialog framework** (native-dialog component kit: buttons, sliders,
+  limb-diagram hit-areas, dropdowns, list boxes — styled once, reused across every screen) and the
+  **event bus** used to decouple "UI raised an intent" from "domain logic executed it," so a
   Phase-2 overlay could later publish/subscribe to the same bus without a rewrite.
-- **`afcm_medical` / `afcm_spawner` / `afcm_ace_kat_bridge`** own: the body/injury data model,
-  injury presets, randomization profiles, patient spawner, stretcher placement, the map tool, and
-  the ACE3/KAT adapter that translates AFCM's internal injury representation into actual
-  `ace_medical_engine` hitpoint damage / KAT wound calls.
+- **`afcm_sim_scenario` / `afcm_sim_spawner`** own: injury presets, randomization profiles, patient
+  spawner, stretcher placement, the map tool — and call **AFCM's own state-mutation API** directly
+  (its `PatientState`, per AFCM's DESIGN.md §3) as the primary path.
+- **`afcm_sim_compat`** (optional, loads only if ACE3/KAT/ACM are present and AFCM is not) —
+  translates the same scenario/preset data into `ace_medical_engine` hitpoint damage / KAT wound
+  calls, so a preset built once still works on a legacy-medical server. This addon is isolated
+  precisely so it can be deleted without touching anything else if it's ever not worth maintaining.
 
 ---
 
 ## 4. Data Model
 
 ### 4.1 Body limb selection
-ACE3 medical's hitpoint set (which KAT extends rather than replaces) is the source of truth:
+AFCM's own site model is the source of truth (limb selection targets AFCM's `bleeds[].site` and
+general trauma sites, not an ACE3 hitpoint):
 
-| AFCM limb id | ACE3 hitpoint(s) |
+| AFCM-Simulator limb id | AFCM site |
+|---|---|
+| `head` | head |
+| `torso` | torso (chest/abdomen distinguished by `woundType`, not a separate site) |
+| `armLeft` / `armRight` | left/right arm |
+| `legLeft` / `legRight` | left/right leg |
+
+For **compat mode only** (`afcm_sim_compat`, §3), the same limb id additionally maps to an ACE3
+hitpoint:
+
+| AFCM-Simulator limb id | ACE3 hitpoint (compat mode only) |
 |---|---|
 | `head` | `HitHead` |
-| `torso` | `HitBody`, `HitNeck` (chest/neck grouped in UI, distinct hitpoints internally) |
+| `torso` | `HitBody`, `HitNeck` |
 | `armLeft` | `HitLeftArm` |
 | `armRight` | `HitRightArm` |
 | `legLeft` | `HitLeftLeg` |
 | `legRight` | `HitRightLeg` |
 
-> Needs verification once KAT's source is vendored/checked out locally — KAT is known to add
-> finer-grained bleeding/tourniquet-per-limb tracking on top of ACE3's hitpoints; this table
-> assumes it reuses ACE3's hitpoint names rather than introducing new ones. Flag as a spike task
-> before §6.2 is implemented.
+> Compat table needs verification once KAT's source is vendored/checked out locally — not required
+> for the AFCM-native path, only before `afcm_sim_compat` is implemented.
 
 ### 4.2 Injury object
+This is scenario-authoring input — what a preset or randomizer produces — which then gets applied
+to AFCM's `PatientState.bleeds`/trauma fields (native path) or translated to ACE3/KAT calls (compat
+path, §3):
 ```
 Injury = {
     limb: LimbId,
-    woundType: String,       // maps to ACE3 CfgWoundTypes / KAT's extended wound classes
-    severity: 0.0..1.0,      // damage magnitude at time of application
+    woundType: String,       // maps to an AFCM trauma/bleed classification natively;
+                              // to ACE3 CfgWoundTypes / KAT wound classes only in compat mode
+    severity: 0.0..1.0,      // initial trauma magnitude at time of application
     bleeding: Bool,
-    bleedRate: Number,       // only relevant if bleeding = true
+    bleedRate: Number,       // seed value only — AFCM's coagulation model then derives the
+                              // *actual* ongoing rate (see AFCM DESIGN.md §3); this is not the
+                              // authoritative rate once physiology starts simulating
     tourniquetable: Bool,    // derived from limb, not authored per-injury
     variables: {}            // free-form key/value for custom presets (e.g. "fracture": true)
 }
@@ -169,9 +199,10 @@ A named difficulty maps to a randomization *profile*, not a fixed injury set:
 | Extreme | 3–4 | 0.6–0.9 | High | Compound injuries, airway/breathing involvement |
 | F*CKED! | 4+ | 0.8–1.0 | Near-certain, multi-site | Full MASCAL-style casualty, time-pressure case |
 
-These ranges are a starting proposal, not tuned values — needs a pass with someone who knows KAT's
-actual severity/treatment thresholds so "Hard" reliably feels harder in KAT's system, not just in
-raw numbers.
+These ranges are a starting proposal, not tuned values — needs a pass against AFCM's actual
+physiology thresholds (coagulopathy/blood-volume curves, per AFCM DESIGN.md §2.1/§3) so "Hard"
+reliably feels harder inside the Lethal Triad engine, not just as raw numbers. A secondary pass
+against KAT's severity/treatment thresholds is needed only for `afcm_sim_compat`.
 
 ---
 
@@ -187,8 +218,9 @@ raw numbers.
   pipeline, three sources: manual, preset, randomized).
 - **Random Patient** — spawns a unit with a randomized identity/loadout *and* a randomized injury
   set (level-selectable) in one action — for quick drills.
-- **Stretcher Placement** — selectable stretcher type (ACE3/KAT-compatible classes), ghost-preview
-  placement (surface-snapped, like Zeus placement), spawns synced for MP.
+- **Stretcher Placement** — selectable stretcher type (AFCM-native classes; ACE3/KAT-compatible
+  classes also offered when compat mode is active), ghost-preview placement (surface-snapped, like
+  Zeus placement), spawns synced for MP.
 - **Map to Spawn Patients** — map-click patient placement/preview, supports batch placement for
   MASCAL scenarios, respects the same spawn pipeline as Random Patient.
 
@@ -201,12 +233,14 @@ desync, validation on an authority machine):
 
 - **Authority**: patient spawning, injury application, and preset resolution execute
   **server-side** (or the logical host in a non-dedicated game) as the single source of truth.
-  Clients send *requests* (spawn patient X with preset Y / apply injury Z to unit U); the
-  server validates and executes, then the resulting state (hitpoint damage, KAT wound state)
-  propagates through ACE3/KAT's own existing sync (both already handle hitpoint/medical state
-  replication) — AFCM does not need to invent its own damage-sync layer, only the
-  request→authority→domain-call path for *AFCM-specific* actions (preset application, spawn
-  placement) that ACE3/KAT don't know about.
+  Clients send *requests* (spawn patient X with preset Y / apply injury Z to unit U); the server
+  validates and executes, then the resulting state propagates through **AFCM's own
+  `PatientState` sync** (AFCM DESIGN.md §4 — AFCM already owns server-authoritative physiology
+  replication). AFCM-Simulator does not need to invent its own state-sync layer on the native
+  path, only the request→authority→domain-call path for *scenario-specific* actions (preset
+  application, spawn placement, randomization) that AFCM's engine doesn't know about on its own.
+  In compat mode, the equivalent propagates through ACE3/KAT's existing hitpoint/medical sync
+  instead.
 - **JIP**: preset library (built-in) is static per-addon-version, so no JIP concern. User-saved
   presets and any in-progress MASCAL spawn batches need to be re-sendable to late-joiners — likely
   via a `publicVariable`d small state table on the server, or a JIP event handler, scoped small
@@ -224,24 +258,29 @@ desync, validation on an authority machine):
 ```
 AFCM-Simulator/
   addons/
-    afcm_medical/            # domain logic: injury model, preset library, randomization profiles
-    afcm_ui/                 # native dialogs + component kit + event bus, self-contained
-    afcm_spawner/             # patient spawner, stretcher placement, map tool
-    afcm_ace_kat_bridge/      # translates AFCM injuries → ace_medical_engine / KAT calls
+    afcm_sim_scenario/       # domain logic: injury model, preset library, randomization profiles
+    afcm_sim_ui/              # native dialogs + component kit + event bus, self-contained
+    afcm_sim_spawner/         # patient spawner, stretcher placement, map tool
+    afcm_sim_compat/           # optional: translates scenario data → ace_medical_engine / KAT calls
+                                # (loads only if ACE3/KAT present and AFCM is not)
   docs/
     DESIGN.md                 # this file
     PRESET_FORMAT.md          # (future) user preset export/import spec
 ```
 
-No changes required to Tasman-Dynamics-Core for this project.
+No changes required to Tasman-Dynamics-Core for this project. Depends on AFCM's addons
+(`afcm_physiology`, `afcm_pharmacology`, `afcm_airway`, `afcm_neuro`) for the native path.
 
 ---
 
 ## 8. Open Questions (need your call before implementation starts)
 
-1. **KAT internals** — do we vendor/checkout KAT source locally to confirm hitpoint names, wound
-   classes, and treatment thresholds before locking §4.1/§4.4, or reverse-engineer from the packed
-   mod in-session?
+1. **KAT internals (compat mode only, lower priority)** — do we vendor/checkout KAT source locally
+   to confirm hitpoint names, wound classes, and treatment thresholds for `afcm_sim_compat`, or
+   reverse-engineer from the packed mod when that addon is actually scheduled?
+1a. **AFCM API surface (native path, higher priority)** — this doc assumes AFCM will expose a
+   stable `PatientState`-mutation API (per AFCM DESIGN.md §6); needs to be nailed down jointly with
+   AFCM's own implementation order (its §9 roadmap) since AFCM-Simulator's v1 MVP depends on it.
 2. **Preset sharing format** — plain SQF-readable string blob (easy in-mission use, ugly to diff/
    share) vs. JSON file players place in a folder (needs a file-read approach compatible with
    dedicated servers)?
@@ -256,8 +295,9 @@ No changes required to Tasman-Dynamics-Core for this project.
 ## 9. Phased Roadmap
 
 - **v0.1 (this doc)** — design only.
-- **v1 MVP** — native-dialog UI; manual limb + injury selection; ACE3/KAT bridge; single-patient
-  spawn (no map tool yet); SP + MP validated.
+- **v1 MVP** — native-dialog UI; manual limb + injury selection against AFCM's native API;
+  single-patient spawn (no map tool yet); SP + MP validated. `afcm_sim_compat` (ACE3/KAT bridge) is
+  not required for v1 and can land later, gated on AFCM's own rollout (its DESIGN.md §9).
 - **v2** — injury presets (built-in + user save/load); randomization levels; Random Patient;
   stretcher placement.
 - **v3** — map spawn tool, MASCAL batch placement, preset import/export/sharing.
