@@ -56,8 +56,8 @@ for how the detection actually works.
 | [Community Base Addons (CBA_A3)](https://github.com/CBATeam/CBA_A3) | Required |
 | [AFCM](https://github.com/A3-TasmanDynamics/AFCM) | Soft — enables the native physiology backend |
 | [ACE3](https://github.com/acemod/ACE3) | Soft — required for the compat backend |
-| [KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806) | Soft — enhances the compat backend if present alongside ACE3 |
-| [ACM (Advanced Combat Medicine)](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358) | Soft — alternative compat-backend enhancement alongside ACE3 |
+| [KAT - Advanced Medical](https://steamcommunity.com/workshop/filedetails/?id=2020940806) | Soft — its own backend (confirmed, outranks vanilla ACE3) if present alongside ACE3 |
+| [ACM (Advanced Combat Medicine)](https://steamcommunity.com/sharedfiles/filedetails/?id=3235483358) | Soft — alternative backend alongside ACE3 (target not yet confirmed) |
 
 > **At least one medical backend must be present** — AFCM, or ACE3 (optionally with KAT/ACM) — or
 > AFCM-Simulator has nothing to apply injuries to. Run with just ACE3 + KAT and skip AFCM entirely
