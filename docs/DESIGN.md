@@ -296,26 +296,50 @@ though the underlying math is completely different per backend.
 
 ## 5. Feature Breakdown
 
+Status markers below reflect actual implementation, not just design intent — most of this section
+is still the plan, not the state of the repo.
+
 - **Selectable Body Limbs** — limb-diagram UI (native dialog, clickable silhouette regions) →
-  emits `limb.selected` event on the bus.
+  emits `limb.selected` event on the bus. *Dialog exists (§2 button-per-limb version); nothing
+  consumes `limb.selected` yet.*
 - **Selectable Injuries** — per-limb injury editor (wound type, severity, bleed toggle, custom
-  variables) → emits `injury.applied`/`injury.removed`.
+  variables) → emits `injury.applied`/`injury.removed`. *Not implemented.*
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
+  *Not implemented.*
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
   that level's profile → applies via the same `injury.applied` path presets use (one application
-  pipeline, three sources: manual, preset, randomized).
+  pipeline, three sources: manual, preset, randomized). **Implemented**:
+  `afcm_sim_scenario_fnc_randomizeInjuries` rolls a real Injury array per the §4.4 profile table.
+  The "one pipeline, three sources" framing is aspirational until manual/preset paths exist — right
+  now randomization is the only source feeding the backend.
 - **Random Patient** — spawns a unit with a randomized identity/loadout *and* a randomized injury
-  set (level-selectable) in one action — for quick drills. **Zeus-facing**: the "Spawn Random
-  Patient" module (`afcm_sim_zeus`) is this feature's live, in-mission trigger.
+  set (level-selectable) in one action — for quick drills. **Implemented**:
+  `afcm_sim_spawner_fnc_spawnRandomPatient` (randomize → `spawnPatient` → apply via the active
+  backend after a short delay, DESIGN.md §2.5/REFERENCES.md). No randomized *identity/loadout* yet
+  — spawns a plain `C_man_1` civilian. **Zeus-facing**: the "Spawn Random Patient" module
+  (`afcm_sim_zeus`) calls this directly, using the `afcm_sim_defaultInjuryLevel` Addon Option as
+  its level (no per-placement level picker in Zeus yet).
 - **AFCM Patient (Eden)** — design-time patient placement for scripted scenarios: a mission maker
   places the module in the editor, picks an injury level from its Attributes panel, and it spawns/
   configures that patient on mission start (`afcm_sim_eden`). Distinct from Random Patient (Zeus,
   live) and Map to Spawn Patients (below, in-mission) — this is the pre-authoring path.
+  **Implemented**: calls `spawnRandomPatient` with the module's own attribute, same caveats as
+  Random Patient above.
 - **Stretcher Placement** — selectable stretcher type (class list sourced from whichever backend
   is active, §2.5), ghost-preview placement (surface-snapped, like Zeus placement), spawns synced
-  for MP.
+  for MP. *Not implemented.*
 - **Map to Spawn Patients** — map-click patient placement/preview, supports batch placement for
-  MASCAL scenarios, respects the same spawn pipeline as Random Patient.
+  MASCAL scenarios, respects the same spawn pipeline as Random Patient. *In-mission map-click tool
+  not implemented; the Eden-editor design-time equivalent is* **AFCM MASCAL Zone** *(§7 —
+  `AFCM_SIM_ModuleMascalZone`), which **is** implemented: patient-count + injury-level attributes,
+  spawns that many patients (loosely scattered via `spawnPatient`'s own position jitter) on mission
+  start.*
+- **Clear spawned patients** — not in the original feature list; added after reviewing a prior
+  working prototype (REFERENCES.md) that needed exactly this. **Implemented**, simplified:
+  `afcm_sim_spawner_fnc_clearAllPatients` deletes every patient spawned via `spawnPatient` and
+  clears the tracking list. No per-spawner/session-scoped clearing yet (the prototype's pattern —
+  clear only what one specific Zeus placement spawned — isn't built; this is a global "clear all"
+  only). No UI/module trigger for it yet either — callable, not yet exposed.
 
 ---
 

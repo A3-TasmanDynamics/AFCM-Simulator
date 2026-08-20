@@ -1,12 +1,9 @@
 /*
  * Author: Tasman Dynamics
- * Module function for AFCM_SIM_ModuleSpawnRandomPatient (Zeus). Should spawn a patient with a
+ * Module function for AFCM_SIM_ModuleSpawnRandomPatient (Zeus). Spawns a patient with a
  * randomized identity/loadout and randomized injury set at the module's placement position
- * (DESIGN.md §5 "Random Patient"), via afcm_sim_spawner.
- *
- * TODO — not yet implemented. afcm_sim_spawner has no real spawning logic yet (still a config-
- * only stub); this is a logging stub so the module is placeable and testable in Zeus now, without
- * pretending to actually spawn anything until the spawner is built.
+ * (DESIGN.md §5 "Random Patient"), via afcm_sim_spawner. Injury level comes from the
+ * afcm_sim_defaultInjuryLevel Addon Option (no per-module attribute for level yet).
  *
  * Arguments:
  * 0: Logic <OBJECT> - the placed module
@@ -22,5 +19,6 @@
 params ["_logic", "_units", "_activated"];
 
 if !(_activated) exitWith {};
+if !(isServer) exitWith {};
 
-diag_log text format ["[AFCM-Simulator][Zeus] Spawn Random Patient module activated at %1 - not yet implemented, see fnc_module_spawnRandomPatient.sqf TODO.", getPosASL _logic];
+[getPosASL _logic, afcm_sim_defaultInjuryLevel] call afcm_sim_spawner_fnc_spawnRandomPatient;

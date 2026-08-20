@@ -12,5 +12,20 @@ class CfgPatches
     };
 };
 
-// Patient spawner, stretcher placement, map tool (DESIGN.md §3/§5) — not yet implemented.
-// Scaffolded so the repo layout matches DESIGN.md §7.
+// Patient spawner (DESIGN.md §3/§5). Stretcher placement and the map tool are not yet implemented.
+// NOTE: explicit `file=`, full absolute virtual path — see afcm_sim_main/config.cpp for why both
+// the fnc_ filename AND the absolute-path form are required.
+class CfgFunctions
+{
+    class afcm_sim_spawner
+    {
+        tag = "afcm_sim_spawner";
+        class Functions
+        {
+            file = "\afcm_sim\addons\spawner\functions";
+            class spawnPatient { file = "\afcm_sim\addons\spawner\functions\fnc_spawnPatient.sqf"; };
+            class spawnRandomPatient { file = "\afcm_sim\addons\spawner\functions\fnc_spawnRandomPatient.sqf"; };
+            class clearAllPatients { file = "\afcm_sim\addons\spawner\functions\fnc_clearAllPatients.sqf"; };
+        };
+    };
+};
