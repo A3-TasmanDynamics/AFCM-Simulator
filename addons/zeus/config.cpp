@@ -13,12 +13,10 @@ class CfgPatches
 };
 
 // Zeus (curator) modules — the live, in-mission side of "Random Patient" / MASCAL placement
-// (DESIGN.md §5). Module function bodies are stubs for now: afcm_sim_spawner doesn't have real
-// patient-spawning logic yet, so these log rather than pretend to work. The module/category
-// config below follows the standard Module_F pattern (matches how vanilla and most community Zeus
-// modules — e.g. ACE3's — are declared); worth a real in-Zeus test once spawner logic exists,
-// since the exact function-triggering semantics for Zeus-placed modules aren't independently
-// verified here.
+// (DESIGN.md §5), now calling real afcm_sim_spawner logic. `scopeCurator = 2;` (below) is required
+// in addition to `scope = 2;` — confirmed via a real in-Zeus test that without it, the module
+// compiles and registers fine but simply never appears in the Zeus curator browser at all (plain
+// `scope=2` alone is not sufficient for Zeus specifically, unlike Eden).
 class CfgFunctions
 {
     class afcm_sim_zeus
@@ -49,6 +47,7 @@ class CfgVehicles
     class AFCM_SIM_ModuleSpawnRandomPatient: Module_F
     {
         scope = 2;
+        scopeCurator = 2;
         displayName = "Spawn Random Patient";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
         category = "AFCM_SIM_Zeus";

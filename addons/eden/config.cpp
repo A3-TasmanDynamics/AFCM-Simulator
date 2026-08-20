@@ -12,12 +12,12 @@ class CfgPatches
     };
 };
 
-// Eden (mission editor) module — the design-time side of patient placement (DESIGN.md §5 "Map to
-// Spawn Patients"): a mission maker places this, picks an injury level from its Attributes panel,
-// and it should spawn/configure that patient on mission start. Module_F + scope=2 is enough for
-// vanilla/ACE3-style modules to appear in Eden's Systems/Modules browser without an explicit
-// is3DEN flag; worth confirming placement/visibility in the actual editor once this is built,
-// since that isn't independently verified here.
+// Eden (mission editor) modules — the design-time side of patient placement (DESIGN.md §5 "Map to
+// Spawn Patients"), now calling real afcm_sim_spawner logic. `scopeCurator = 2;` is set here too
+// even though these are Eden-placed, not Zeus-placed — confirmed via a real in-Zeus test that
+// Zeus specifically requires it in addition to `scope = 2;` (plain scope=2 alone doesn't make a
+// module appear in the Zeus curator browser at all), and setting it also lets these modules be
+// placed via Zeus if a mission maker ever wants that, at no cost.
 class CfgFunctions
 {
     class afcm_sim_eden
@@ -49,6 +49,7 @@ class CfgVehicles
     class AFCM_SIM_ModulePatientPlacement: Module_F
     {
         scope = 2;
+        scopeCurator = 2;
         displayName = "AFCM Patient";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
         category = "AFCM_SIM_Eden";
@@ -87,6 +88,7 @@ class CfgVehicles
     class AFCM_SIM_ModuleMascalZone: Module_F
     {
         scope = 2;
+        scopeCurator = 2;
         displayName = "AFCM MASCAL Zone";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
         category = "AFCM_SIM_Eden";

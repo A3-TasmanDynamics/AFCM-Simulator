@@ -453,12 +453,14 @@ rather than one hard-required with the others bolted on.
    injury-application actions with a message (current assumption, §2.5), or refuse to let the mod
    initialize at all? Affects whether `afcm_sim_ui`/`afcm_sim_scenario` need a "no backend" state
    in their dialogs, not just a binary on/off.
-8. **Zeus/Eden module trigger mechanics** — `afcm_sim_zeus`/`afcm_sim_eden`'s `Module_F` classes
-   use the standard `function=`/`functionPriority=`/`isTriggerActivated=0`/`isGlobal=1` pattern
-   (matches vanilla and most community mods), but the exact call semantics for a Zeus-*placed*
-   module specifically (vs. an Eden-placed-and-synced one) aren't independently verified here —
-   needs an actual in-Zeus/in-Eden test once there's real spawner logic behind the stub functions
-   to confirm `ModuleActivated`-equivalent behaviour fires as expected.
+8. **Zeus/Eden module trigger mechanics — resolved (with a real fix along the way).** Confirmed via
+   an actual in-Zeus test: the `function=`/`functionPriority=`/`isTriggerActivated=0`/`isGlobal=1`
+   pattern is correct and fires as expected. But the module didn't *appear in the Zeus curator
+   browser at all* until `scopeCurator = 2;` was added — Zeus has its own visibility gate,
+   independent of the `scope = 2;` that's sufficient for Eden. Fixed on all three module classes
+   (`AFCM_SIM_ModuleSpawnRandomPatient`, `AFCM_SIM_ModulePatientPlacement`,
+   `AFCM_SIM_ModuleMascalZone`); Eden visibility itself is still not independently re-confirmed
+   after the fix, only Zeus.
 
 ---
 
