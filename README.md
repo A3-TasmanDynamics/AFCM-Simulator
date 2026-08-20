@@ -70,6 +70,7 @@ for how the detection actually works.
 | Doc | What's in it |
 |---|---|
 | [DESIGN.md](docs/DESIGN.md) | UI architecture decision, data model, MP authority, repo layout, phased roadmap |
+| [REFERENCES.md](docs/REFERENCES.md) | ACE3 medical framework/function sources grounding `afcm_sim_ace_compat`'s implementation |
 | [AFCM/TERMINOLOGY.md](https://github.com/A3-TasmanDynamics/AFCM/blob/main/docs/TERMINOLOGY.md) | Shared glossary — clinical, tactical-medicine, and radio-callings terminology |
 
 ## 🗺️ Status
