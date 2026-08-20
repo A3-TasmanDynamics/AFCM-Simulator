@@ -37,12 +37,20 @@ simulator script (not part of this repo) rather than taken on faith from the wik
   the working prototype deferred injury application by ~1s via `CBA_fnc_addPerFrameHandler` or
   `CBA_fnc_waitAndExecute`, letting the unit's medical state initialize first
 
-## KAT - Advanced Medical (still unconfirmed — no official wiki found)
+## KAT - Advanced Medical (KAM) — official sources, now confirmed
 
-KAT variable/function usage below is from the same working prototype, **not** an official source —
-KAT's own documentation wasn't located publicly (see AFCM/docs/REFERENCES.md and DESIGN.md §8 open
-question #1, which already flag KAT internals as needing verification). Recorded here because it's
-at least *evidence of real working usage*, stronger than nothing, but weaker than a citable source:
+Previously "no official documentation found" — resolved. KAT's real project is **KAM**
+(KAT-Advanced-Medical/KAM on GitHub), with an official wiki and a GitBook docs site.
+
+| Source | Use for |
+|---|---|
+| [GitHub — KAT-Advanced-Medical/KAM](https://github.com/KAT-Advanced-Medical/KAM) | The mod's actual repo. Confirms: HEMTT-built, GPL 3.0, requires **CBA_A3 3.16.0+** and **ACE3 3.16.1+** (built as an ACE3 medical extension, not standalone). Confirmed real addon folders (bare names, `kat` project prefix, same convention this repo uses — see DESIGN.md §7): `main`, `airway`, `breathing`, `chemical`, `circulation`, `feedback`, `gui`, `hypothermia`, `misc`, `ophthalmology`, `pharma`, `stretcher`, `surgery`, `vitals`, `watch`, `zeus` (+ an optional `compat_rhs_usf3`) — so the real `CfgPatches` root is **`kat_main`**, now used in `afcm_sim_kat_compat`'s `requiredAddons` |
+| [GitHub wiki](https://github.com/KAT-Advanced-Medical/KAM/wiki) | Classnames, KAM Injuries & Complications, KAM Injuries code snippets, KAM Items, KAT Settings. The Classnames page (fetched via raw wiki content) gave real confirmed item classes: `kat_bloodIV_A`/`_B`/`_AB`/`_O` (+ `_250`/`_500`/`_N` volume variants), `kat_AED`/`kat_X_AED`, `kat_IO_FAST`, `kat_IV_16`, pharmacology items `kat_ketamine`, `kat_fentanyl`, `kat_atropine`, `kat_amiodarone`, `kat_naloxone`, `kat_nitroglycerin`, `kat_TXA`, surgical `kat_clamp`/`kat_plate`/`kat_retractor`/`kat_scalpel`, and `kat_stretcherBag`/`Attachable_Helistretcher`. The Injuries/Settings pages exist but returned placeholder or thin content when checked — still not confirmed |
+| [GitBook — KAM Docs](https://kam-1.gitbook.io/kam-docs) | Clinical-doctrine-style documentation, not a code reference: airway/breathing management, cardiac arrest + AED protocol, fluids/blood-type compatibility, kidney function and acidosis, coagulation/clotting, surgery/fracture care, chemical warfare, an "essential values" appendix, and a full aid-procedure walkthrough. Notably covers **acidosis and coagulation** as distinct systems — worth a look for AFCM's own Lethal Triad Engine (AFCM DESIGN.md §2.1), as an existing example of how another Arma medical mod models the same physiology, independent of AFCM's own sourcing |
+
+**Still not confirmed**: the actual wound/injury-application function — KAT's equivalent of
+`ace_medical_fnc_addDamageToUnit`. Two adjacent pieces are confirmed from the same working
+prototype used for the ACE3 section above (not an official source, same caveat as before):
 
 - `_unit setVariable ["kat_surgery_fractures", _array, true]` — a 6-element array, one entry per
   limb; confirmed indices in practice: `2` = LeftArm, `3` = RightArm, `4` = LeftLeg, `5` = RightLeg
@@ -51,6 +59,11 @@ at least *evidence of real working usage*, stronger than nothing, but weaker tha
   `"kat_breathing_Hemopneumothorax"`, `"kat_breathing_Tensionpneumothorax"` (booleans) — followed
   by `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state; setting the
   variables alone was not sufficient in the working prototype
+
+`afcm_sim_kat_compat` now registers as a real backend (priority 15, above `ace_compat`'s 10) since
+its `requiredAddons` gate is real — it was previously kept as a non-registering stub specifically
+because the class name wasn't confirmed; that's resolved. `applyInjury`/`removeInjury` are still
+logging stubs pending the actual wound-application call.
 
 ---
 

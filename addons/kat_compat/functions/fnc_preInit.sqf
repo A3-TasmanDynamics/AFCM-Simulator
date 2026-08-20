@@ -3,7 +3,8 @@
  * Registers this backend with afcm_sim_main. Runs at this addon's own preInit — the engine
  * guarantees every addon's preInit finishes before any addon's postInit runs (where selection
  * happens, afcm_sim_main's postInit), regardless of load order between compat addons. Registers
- * at a lower priority than afcm_compat/kat_compat so AFCM/KAT win when present, per DESIGN.md §2.5.
+ * at a higher priority than afcm_sim_ace_compat — KAT's model should win over vanilla ACE3
+ * whenever KAT is actually present (DESIGN.md §2.5).
  *
  * Arguments:
  * None
@@ -15,7 +16,7 @@
 */
 
 private _interface = createHashMap;
-_interface set ["applyInjury", afcm_sim_ace_fnc_applyInjury];
-_interface set ["removeInjury", afcm_sim_ace_fnc_removeInjury];
+_interface set ["applyInjury", afcm_sim_kat_fnc_applyInjury];
+_interface set ["removeInjury", afcm_sim_kat_fnc_removeInjury];
 
-["ace", 10, _interface] call afcm_sim_fnc_backend_registerBackend;
+["kat", 15, _interface] call afcm_sim_fnc_backend_registerBackend;
