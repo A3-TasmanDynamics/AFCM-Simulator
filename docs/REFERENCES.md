@@ -37,6 +37,37 @@ simulator script (not part of this repo) rather than taken on faith from the wik
   the working prototype deferred injury application by ~1s via `CBA_fnc_addPerFrameHandler` or
   `CBA_fnc_waitAndExecute`, letting the unit's medical state initialize first
 
+## ACE3 medical source (confirmed directly from acemod/ACE3, not the wiki)
+
+The wiki documents `ace_medical_fnc_addDamageToUnit` and `ace_medical_fnc_addWound` by name but not
+their real internals or exact string requirements — pulled the real source via `gh api` to ground
+`afcm_sim_ace_compat`'s injury/bleeding logic exactly, rather than guessing from the docstrings.
+
+- **`addons/medical/functions/fnc_addDamageToUnit.sqf`** — real signature:
+  `[_unit, _damageToAdd, _bodyPart, _typeOfDamage, _instigator, _unused, _overrideInvuln] call
+  ace_medical_fnc_addDamageToUnit`. Lowercases `_bodyPart` internally before matching against
+  `ALL_BODY_PARTS`, so `"Head"`/`"head"` etc. both work. Requires `local _unit`. Internally fires a
+  `CBA_fnc_localEvent` (`ace_medical_woundReceived`) that ACE's own wound-selection logic (below)
+  turns into a *random* wound per the chosen `_typeOfDamage`'s weighting table — it does not create
+  a specific, predictable wound.
+- **`addons/medical_damage/ACE_Medical_Injuries.hpp`** — the real wound/damage-type config.
+  Confirmed real wound classes (case-sensitive, used by `addWound` below): `Abrasion`, `Avulsion`,
+  `Contusion`, `Crush`, `Cut`, `Laceration`, `VelocityWound`, `PunctureWound`, `ThermalBurn`.
+  Confirmed real `damageTypes` classes (what `_typeOfDamage` must be): `bullet`, `grenade`,
+  `explosive`, `shell`, `vehiclehit`, `vehiclecrash`, `collision`, `falling`, `backblast`, `stab`,
+  `punch`, `ropeburn`, `drowning`, `fire`, `burn`, `unknown` — confirms `afcm_sim_ace_compat`'s
+  existing `gunshot→bullet`/`shrapnel→grenade`/`blast→shell` mapping was already using real classes.
+- **`addons/medical/functions/fnc_addWound.sqf`** — a separate, lower-level real function the wiki
+  page doesn't explain: `[_unit, _bodyPart, [_woundType, _amountOf, _size, _woundDamage]] call
+  ace_medical_fnc_addWound`. Unlike `addDamageToUnit`, `_bodyPart` here is **not** lowercased
+  internally — it must already be one of the exact `ALL_BODY_PARTS` strings
+  (`"head"`/`"body"`/`"leftarm"`/`"rightarm"`/`"leftleg"`/`"rightleg"`, confirmed from
+  `addons/medical_engine/script_macros_medical.hpp`) or the lookup silently fails to match.
+  `_woundType` must exactly match a real wound class name above. `_size` (0/1/2) scales that wound
+  class's own `bleeding`/`pain` config values — it's the only lever this function gives over
+  bleeding severity. Used in `afcm_sim_ace_compat` to deterministically guarantee a bleeding wound
+  when the Injury object says `bleeding: true`, since `addDamageToUnit` alone leaves that to chance.
+
 ## KAT - Advanced Medical (KAM) — official sources, now confirmed
 
 Previously "no official documentation found" — resolved. KAT's real project is **KAM**
