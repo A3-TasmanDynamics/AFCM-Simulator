@@ -2,7 +2,7 @@
 
 <img src="../assets/doc-header.svg" alt="AFCM-Simulator Documentation" width="100%"/>
 
-[README](../../README.md) · [Design](../DESIGN.md) · [References](../REFERENCES.md) · [Addons Index](README.md) · [Injury Codes](../INJURY_CODES.md) · **ace_compat**
+[README](../../README.md) · [Design](../DESIGN.md) · [References](../REFERENCES.md) · [Addons Index](README.md) · [Injury Codes](../INJURY_CODES.md) · **ace_compat** · [kat_compat](KAT_COMPAT.md)
 
 </div>
 

@@ -197,7 +197,7 @@ they're shareable outside the mission file).
 | Backend | `LimbId` mapping | `woundType` mapping | Bleeding | Doc |
 |---|---|---|---|---|
 | `ace_compat` | **Real** | **Real** (3/16+ possible classes wired) | **Real** — deterministic via `addWound` | [ACE_COMPAT.md](addons/ACE_COMPAT.md) |
-| `kat_compat` | Not confirmed | Not confirmed | Not confirmed | — |
+| `kat_compat` | Not wired yet (would mirror `ace_compat`'s fold — same 6 ACE body parts underneath) | Real call identified (KAT extends ACE's own pipeline, doesn't replace it) but not yet wired into code | Same — identified, not wired | [KAT_COMPAT.md](addons/KAT_COMPAT.md) |
 | `afcm_compat` | Planned (table above) | Not started | Not started | — |
 | `acm_compat` | Not confirmed | Not confirmed | Not confirmed | — |
 

@@ -79,13 +79,26 @@ Previously "no official documentation found" — resolved. KAT's real project is
 | [GitHub wiki](https://github.com/KAT-Advanced-Medical/KAM/wiki) | Classnames, KAM Injuries & Complications, KAM Injuries code snippets, KAM Items, KAT Settings. The Classnames page (fetched via raw wiki content) gave real confirmed item classes: `kat_bloodIV_A`/`_B`/`_AB`/`_O` (+ `_250`/`_500`/`_N` volume variants), `kat_AED`/`kat_X_AED`, `kat_IO_FAST`, `kat_IV_16`, pharmacology items `kat_ketamine`, `kat_fentanyl`, `kat_atropine`, `kat_amiodarone`, `kat_naloxone`, `kat_nitroglycerin`, `kat_TXA`, surgical `kat_clamp`/`kat_plate`/`kat_retractor`/`kat_scalpel`, and `kat_stretcherBag`/`Attachable_Helistretcher`. The Injuries/Settings pages exist but returned placeholder or thin content when checked — still not confirmed |
 | [GitBook — KAM Docs](https://kam-1.gitbook.io/kam-docs) | Clinical-doctrine-style documentation, not a code reference: airway/breathing management, cardiac arrest + AED protocol, fluids/blood-type compatibility, kidney function and acidosis, coagulation/clotting, surgery/fracture care, chemical warfare, an "essential values" appendix, and a full aid-procedure walkthrough. Notably covers **acidosis and coagulation** as distinct systems — worth a look for AFCM's own Lethal Triad Engine (AFCM DESIGN.md §2.1), as an existing example of how another Arma medical mod models the same physiology, independent of AFCM's own sourcing |
 
-**Still not confirmed**: the actual wound/injury-application function — KAT's equivalent of
-`ace_medical_fnc_addDamageToUnit`. Two adjacent pieces are confirmed from the same working
-prototype used for the ACE3 section above (not an official source, same caveat as before):
+**Resolved**: whether KAT has its own equivalent of `ace_medical_fnc_addDamageToUnit` — it doesn't,
+because it doesn't need one. Confirmed directly from KAT's real source
+(`addons/breathing/ACE_Medical_Injuries.hpp`, `addons/chemical/ACE_Medical_Injuries.hpp` — verified
+independently via `raw.githubusercontent.com`, not just the GitHub API): KAT registers additional
+wound handlers and a custom damage type into ACE3's own real `ACE_Medical_Injuries` config tree
+(the same one documented above), rather than replacing ACE's damage-application API. Practically,
+this means `ace_medical_fnc_addDamageToUnit`/`ace_medical_fnc_addWound` — the exact same calls
+`afcm_sim_ace_compat` uses — are very likely the correct calls under KAT too, with KAT's own systems
+(pneumothorax, tamponade, chemical burns) triggering automatically as a side effect. Full writeup:
+[KAT_COMPAT.md §3](addons/KAT_COMPAT.md#3-the-real-finding-kat-extends-aces-wound-pipeline-it-doesnt-replace-it).
+
+Two adjacent pieces are confirmed from the same working prototype used for the ACE3 section above
+(not an official source, same caveat as before), now doubly confirmed for the fracture-array
+indexing (see KAT_COMPAT.md §4):
 
 - `_unit setVariable ["kat_surgery_fractures", _array, true]` — a 6-element array, one entry per
-  limb; confirmed indices in practice: `2` = LeftArm, `3` = RightArm, `4` = LeftLeg, `5` = RightLeg
-  (indices `0`/`1` unconfirmed — likely Head/Body, always `0` in the examples seen)
+  limb, indexed identically to ACE's own `ALL_BODY_PARTS`: `0` = Head, `1` = Body, `2` = LeftArm,
+  `3` = RightArm, `4` = LeftLeg, `5` = RightLeg — confirmed via KAT's real
+  `addons/surgery/functions/fnc_fractureCheck.sqf`, which indexes this array with
+  `ALL_BODY_PARTS find toLower _bodyPart`
 - `_unit setVariable ["kat_breathing_pneumothorax", _severity, true]`,
   `"kat_breathing_Hemopneumothorax"`, `"kat_breathing_Tensionpneumothorax"` (booleans) — followed
   by `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state; setting the
@@ -94,7 +107,9 @@ prototype used for the ACE3 section above (not an official source, same caveat a
 `afcm_sim_kat_compat` now registers as a real backend (priority 15, above `ace_compat`'s 10) since
 its `requiredAddons` gate is real — it was previously kept as a non-registering stub specifically
 because the class name wasn't confirmed; that's resolved. `applyInjury`/`removeInjury` are still
-logging stubs pending the actual wound-application call.
+logging stubs in code, but the specific research blocker that justified that (no known KAT
+equivalent of `ace_medical_fnc_addDamageToUnit`) is now resolved too — see
+[KAT_COMPAT.md](addons/KAT_COMPAT.md) for the full writeup and what's still actually open.
 
 ## Zeus/Curator module categorization (official wiki + confirmed via KAT's real config)
 

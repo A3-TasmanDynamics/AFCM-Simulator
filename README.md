@@ -71,7 +71,7 @@ for how the detection actually works.
 |---|---|
 | [DESIGN.md](docs/DESIGN.md) | UI architecture decision, data model, MP authority, repo layout, phased roadmap |
 | [REFERENCES.md](docs/REFERENCES.md) | ACE3 medical framework/function sources grounding `afcm_sim_ace_compat`'s implementation |
-| [docs/addons/](docs/addons/README.md) | Per-addon index — one deep-dive doc per PBO, starting with [ACE_COMPAT.md](docs/addons/ACE_COMPAT.md) for `afcm_sim_ace_compat` |
+| [docs/addons/](docs/addons/README.md) | Per-addon index — one deep-dive doc per PBO: [ACE_COMPAT.md](docs/addons/ACE_COMPAT.md) for `afcm_sim_ace_compat`, [KAT_COMPAT.md](docs/addons/KAT_COMPAT.md) for `afcm_sim_kat_compat` |
 | [INJURY_CODES.md](docs/INJURY_CODES.md) | The full injury coding reference — body parts, wound types, severity/bleeding coding, real ACE3 wound classes, and per-backend implementation status in one place |
 | [AFCM/TERMINOLOGY.md](https://github.com/A3-TasmanDynamics/AFCM/blob/main/docs/TERMINOLOGY.md) | Shared glossary — clinical, tactical-medicine, and radio-callings terminology |
 
