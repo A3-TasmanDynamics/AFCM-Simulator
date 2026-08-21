@@ -1,15 +1,15 @@
 <div align="center">
 
-<img src="assets/doc-header.svg" alt="AFCM-Simulator Documentation" width="100%"/>
+<img src="../assets/doc-header.svg" alt="AFCM-Simulator Documentation" width="100%"/>
 
-[README](../README.md) · [Design](DESIGN.md) · [References](REFERENCES.md) · **ace_compat**
+[README](../../README.md) · [Design](../DESIGN.md) · [References](../REFERENCES.md) · [Addons Index](README.md) · **ace_compat**
 
 </div>
 
 # `afcm_sim_ace_compat`
 
-**A Tasman Dynamics Backend Module** — part of [AFCM-Simulator](../README.md)'s soft-dependency
-backend architecture (see [DESIGN.md §2.5](DESIGN.md#25-soft-dependencies--runtime-backend-detection)).
+**A Tasman Dynamics Backend Module** — part of [AFCM-Simulator](../../README.md)'s soft-dependency
+backend architecture (see [DESIGN.md §2.5](../DESIGN.md#25-soft-dependencies--runtime-backend-detection)).
 
 Status: **partially implemented** — `applyInjury` is real, `removeInjury` is a stub.
 Owner: Tasman Dynamics
@@ -67,7 +67,7 @@ Registers itself on `preInit` (`fnc_preInit.sqf`) at **priority 10** — the low
 Highest priority registered on the machine wins. `ace_compat` sits at the bottom deliberately: it's
 the generic fallback for "just plain ACE3," and anything more specific to what's actually installed
 (AFCM's own physiology model, KAT's medical overhaul) should take precedence when present. See
-[DESIGN.md §2.5](DESIGN.md#25-soft-dependencies--runtime-backend-detection) for the full
+[DESIGN.md §2.5](../DESIGN.md#25-soft-dependencies--runtime-backend-detection) for the full
 registration/selection lifecycle and why it's safe regardless of PBO load order.
 
 ---
@@ -88,7 +88,7 @@ Builds an interface `HashMap` (`{"applyInjury": ..., "removeInjury": ...}`) and 
 ```
 **Real implementation.** Never called directly — dispatched to via
 `afcm_sim_fnc_backend_applyInjury` when `"ace"` is the active backend. Takes an `Injury` `HashMap`
-(see [DESIGN.md §4.2](DESIGN.md#42-injury-object)) and:
+(see [DESIGN.md §4.2](../DESIGN.md#42-injury-object)) and:
 
 1. Maps the backend-agnostic `limb` (`head`/`torso`/`armLeft`/`armRight`/`legLeft`/`legRight`) to
    ACE3's lowercase body-part strings and `woundType` (`gunshot`/`shrapnel`/`blast`) to a real ACE3
@@ -139,7 +139,7 @@ wiki documents `addWound`'s existence but not these details):
   name exactly: `Abrasion`, `Avulsion`, `Contusion`, `Crush`, `Cut`, `Laceration`, `VelocityWound`,
   `PunctureWound`, `ThermalBurn`.
 
-Full source citations for all of this are in [REFERENCES.md](REFERENCES.md#ace3-medical-source-confirmed-directly-from-acemodace3-not-the-wiki).
+Full source citations for all of this are in [REFERENCES.md](../REFERENCES.md#ace3-medical-source-confirmed-directly-from-acemodace3-not-the-wiki).
 
 ---
 
@@ -175,7 +175,7 @@ All six values above are real, confirmed `ACE_Medical_Injuries.hpp` classes — 
   (`0`/`1`/`2`), so the `Injury` object's `bleedRate` (roughly `0.1`–`0.4` from
   `afcm_sim_scenario_fnc_randomizeInjuries`) is bucketed into small/medium/large rather than
   scaled 1:1 — there's no finer-grained lever ACE exposes here.
-  [DESIGN.md §4.4](DESIGN.md#44-injury-levels-randomization-difficulty)'s Easy–F\*CKED! severity
+  [DESIGN.md §4.4](../DESIGN.md#44-injury-levels-randomization-difficulty)'s Easy–F\*CKED! severity
   ranges are a starting proposal, not yet tuned against how "Hard" actually feels in practice on
   this backend specifically.
 - **No fracture/airway/breathing handling.** `ace_medical_engine` supports fractures and airway

@@ -2,7 +2,7 @@
 
 <img src="assets/doc-header.svg" alt="AFCM-Simulator Documentation" width="100%"/>
 
-[README](../README.md) · **Design** · [References](REFERENCES.md) · [ace_compat](ACE_COMPAT.md) · [AFCM/Terminology](https://github.com/A3-TasmanDynamics/AFCM/blob/main/docs/TERMINOLOGY.md)
+[README](../README.md) · **Design** · [References](REFERENCES.md) · [Addons](addons/README.md) · [AFCM/Terminology](https://github.com/A3-TasmanDynamics/AFCM/blob/main/docs/TERMINOLOGY.md)
 
 </div>
 
