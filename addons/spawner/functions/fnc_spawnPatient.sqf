@@ -32,10 +32,14 @@ if (isNil "AFCM_SIM_spawnedPatients") then {
     AFCM_SIM_spawnedPatients = [];
 };
 
+// Z is always forced to 0 here, regardless of what the caller's _pos carries (module logics report
+// getPosASL, which has real sea-level altitude in its Z - reusing that Z as an ATL height was
+// spawning patients floating above the terrain rather than on it). setPosATL with Z=0 snaps to
+// ground level at that x/y.
 private _jitteredPos = [
     (_pos select 0) + (random 4 - 2),
     (_pos select 1) + (random 4 - 2),
-    _pos param [2, 0]
+    0
 ];
 
 private _unit = AFCM_SIM_patientGroup createUnit ["C_man_1", _jitteredPos, [], 0, "NONE"];
@@ -44,6 +48,10 @@ _unit setUnitPos "DOWN";
 _unit setCaptive true;
 _unit setDir (random 360);
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
+
+// Patients always spawn unconscious - confirmed native `setUnconscious` (REFERENCES.md), not
+// ACE/KAT-specific, so this holds even with no medical backend registered at all (DESIGN.md §2.5).
+_unit setUnconscious true;
 
 AFCM_SIM_spawnedPatients pushBack _unit;
 publicVariable "AFCM_SIM_spawnedPatients";

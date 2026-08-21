@@ -34,14 +34,16 @@ class CfgFunctions
     };
 };
 
-// Two separate category systems point at the same "AFCM_SIM_Eden" name: CfgVehicleClasses is what
-// the Eden (2D editor) "Add Object" browser groups by; CfgFactionClasses + a matching `side` on the
-// module class is the wholly separate mechanism Zeus uses (see addons/zeus/config.cpp for the full
-// story — CfgVehicleClasses alone does nothing for Zeus). Both are declared here since these
-// modules set `scopeCurator = 2;` and so are placeable via either.
+// Two separate category systems, only one of which is shared with addons/zeus/config.cpp:
+// CfgVehicleClasses is what the Eden (2D editor) "Add Object" browser groups by, and is local to
+// this file since Zeus doesn't use it at all. CfgFactionClasses + a matching `side` on the module
+// class is the mechanism Zeus actually uses (see addons/zeus/config.cpp for the full story) — its
+// class name, `AFCM_SIM_Category`, MUST match the one declared there exactly, since Arma merges
+// same-named config classes across addons and that's what puts every AFCM module (this file's
+// Zeus-placeable ones plus zeus/config.cpp's own) under one unified Zeus category instead of two.
 class CfgVehicleClasses
 {
-    class AFCM_SIM_Eden
+    class AFCM_SIM_Category
     {
         displayName = "AFCM Medical Simulator";
     };
@@ -49,7 +51,7 @@ class CfgVehicleClasses
 
 class CfgFactionClasses
 {
-    class AFCM_SIM_Eden
+    class AFCM_SIM_Category
     {
         displayName = "AFCM Medical Simulator";
         priority = 2;
@@ -68,7 +70,7 @@ class CfgVehicles
         side = 7;
         displayName = "AFCM Patient";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
-        category = "AFCM_SIM_Eden";
+        category = "AFCM_SIM_Category";
         function = "afcm_sim_eden_fnc_module_patientPlacement";
         functionPriority = 1;
         isGlobal = 1;
@@ -108,7 +110,7 @@ class CfgVehicles
         side = 7;
         displayName = "AFCM MASCAL Zone";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
-        category = "AFCM_SIM_Eden";
+        category = "AFCM_SIM_Category";
         function = "afcm_sim_eden_fnc_module_mascalZone";
         functionPriority = 1;
         isGlobal = 1;

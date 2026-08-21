@@ -23,6 +23,11 @@ class CfgPatches
 // mechanism. Zeus groups modules by CfgFactionClasses + a matching `side` on the module class
 // itself. `side = 7` is the neutral "Logic" side, which shows up regardless of the mission's
 // actual side setup (that's what KAT uses for its own always-visible "KAM" category).
+//
+// `AFCM_SIM_Category` (below) must use the exact same class name as the CfgFactionClasses entry
+// declared in addons/eden/config.cpp — Arma merges same-named config classes across all loaded
+// addons, so a shared name here is what puts every AFCM module (Zeus's + Eden's Zeus-placeable
+// ones) under a single unified category instead of two separate ones both labelled the same thing.
 class CfgFunctions
 {
     class afcm_sim_zeus
@@ -40,7 +45,7 @@ class CfgFunctions
 
 class CfgFactionClasses
 {
-    class AFCM_SIM_Zeus
+    class AFCM_SIM_Category
     {
         displayName = "AFCM Medical Simulator";
         priority = 2;
@@ -59,7 +64,7 @@ class CfgVehicles
         side = 7;
         displayName = "Spawn Random Patient";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
-        category = "AFCM_SIM_Zeus";
+        category = "AFCM_SIM_Category";
         function = "afcm_sim_zeus_fnc_module_spawnRandomPatient";
         functionPriority = 1;
         isGlobal = 1;

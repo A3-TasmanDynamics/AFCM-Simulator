@@ -92,8 +92,18 @@ Two distinct, additive gotchas, both required together:
    always-visible "KAM" Zeus category is implemented.
 
 Both `afcm_sim_zeus/config.cpp` and `afcm_sim_eden/config.cpp` (the latter's modules also set
-`scopeCurator = 2;` so they're Zeus-placeable) now declare a `CfgFactionClasses` category with
+`scopeCurator = 2;` so they're Zeus-placeable) declare a `CfgFactionClasses` category with
 `side = 7` and set `side = 7;` on each module class, in addition to the existing `scopeCurator = 2;`.
+The `CfgFactionClasses` class name (`AFCM_SIM_Category`) is identical in both files — Arma merges
+same-named config classes across addons, and without a shared name each file's declaration produced
+its own separate Zeus category, both labelled "AFCM Medical Simulator" (confirmed as a real
+in-game symptom, not just a theoretical risk).
+
+## Vanilla unconscious state (official wiki)
+
+| Source | Use for |
+|---|---|
+| [setUnconscious](https://community.bistudio.com/wiki/setUnconscious) | `unit setUnconscious set` (Boolean, no return value) — vanilla engine command, not ACE/KAT-specific, confirmed still present in Arma 3. Used in `afcm_sim_spawner_fnc_spawnPatient` so spawned patients are always unconscious even with no medical backend registered at all (DESIGN.md §2.5) |
 
 ---
 
