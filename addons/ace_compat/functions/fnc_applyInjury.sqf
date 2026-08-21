@@ -35,15 +35,24 @@ params ["_unit", "_injury"];
 
 if (isNull _unit) exitWith {};
 
-// Lowercase ACE body part strings - required as-is for addWound, and also valid for
+// AFCM-Simulator's LimbId has 13 real anatomical values (INJURY_CODES.md §1); ACE3 only has 6 real
+// body parts, so five LimbIds fold onto "body" and each limb's two segments fold onto one ACE arm/
+// leg. Lowercase ACE body part strings - required as-is for addWound, and also valid for
 // addDamageToUnit (which lowercases internally regardless of case passed in).
 private _bodyPartMap = createHashMapFromArray [
     ["head", "head"],
-    ["torso", "body"],
-    ["armLeft", "leftarm"],
-    ["armRight", "rightarm"],
-    ["legLeft", "leftleg"],
-    ["legRight", "rightleg"]
+    ["neck", "body"],
+    ["chest", "body"],
+    ["abdomen", "body"],
+    ["pelvis", "body"],
+    ["upperArmLeft", "leftarm"],
+    ["forearmLeft", "leftarm"],
+    ["upperArmRight", "rightarm"],
+    ["forearmRight", "rightarm"],
+    ["thighLeft", "leftleg"],
+    ["shinLeft", "leftleg"],
+    ["thighRight", "rightleg"],
+    ["shinRight", "rightleg"]
 ];
 private _damageTypeMap = createHashMapFromArray [
     ["gunshot", "bullet"],
@@ -60,7 +69,7 @@ private _bleedWoundTypeMap = createHashMapFromArray [
     ["blast", "PunctureWound"]
 ];
 
-private _limb = _injury getOrDefault ["limb", "torso"];
+private _limb = _injury getOrDefault ["limb", "chest"];
 private _woundType = _injury getOrDefault ["woundType", "gunshot"];
 private _severity = _injury getOrDefault ["severity", 0.5];
 private _bleeding = _injury getOrDefault ["bleeding", false];

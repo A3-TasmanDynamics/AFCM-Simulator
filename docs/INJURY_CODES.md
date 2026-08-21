@@ -23,22 +23,39 @@ real API, inside its own compat addon.
 
 ## 1. Body Parts — `LimbId`
 
-Six values, defined in [DESIGN.md §4.1](DESIGN.md#41-body-limb-selection). This is the complete
-set — there is no separate neck/hand/foot granularity at this layer.
+13 values, defined in [DESIGN.md §4.1](DESIGN.md#41-body-limb-selection) — real anatomical regions,
+not just ACE3's 6 hitpoints, so a casualty assessment can tell chest trauma from abdominal trauma,
+or an upper-arm wound from a forearm one.
 
 | `LimbId` | Real-world region | `afcm_sim_afcm_compat` target | `afcm_sim_ace_compat` target |
 |---|---|---|---|
-| `head` | Head | AFCM head site | `"head"` (ACE `ALL_BODY_PARTS`) |
-| `torso` | Chest/abdomen (not split at this layer) | AFCM torso site (chest/abdomen split via `woundType`) | `"body"` |
-| `armLeft` | Left arm | AFCM left-arm site | `"leftarm"` |
-| `armRight` | Right arm | AFCM right-arm site | `"rightarm"` |
-| `legLeft` | Left leg | AFCM left-leg site | `"leftleg"` |
-| `legRight` | Right leg | AFCM right-leg site | `"rightleg"` |
+| `head` | Head | AFCM head site | `"head"` |
+| `neck` | Neck | AFCM torso site | `"body"` |
+| `chest` | Chest | AFCM torso site | `"body"` |
+| `abdomen` | Abdomen | AFCM torso site | `"body"` |
+| `pelvis` | Pelvis / hips | AFCM torso site | `"body"` |
+| `upperArmLeft` | Left shoulder-to-elbow | AFCM left-arm site | `"leftarm"` |
+| `forearmLeft` | Left elbow-to-hand | AFCM left-arm site | `"leftarm"` |
+| `upperArmRight` | Right shoulder-to-elbow | AFCM right-arm site | `"rightarm"` |
+| `forearmRight` | Right elbow-to-hand | AFCM right-arm site | `"rightarm"` |
+| `thighLeft` | Left hip-to-knee | AFCM left-leg site | `"leftleg"` |
+| `shinLeft` | Left knee-to-foot | AFCM left-leg site | `"leftleg"` |
+| `thighRight` | Right hip-to-knee | AFCM right-leg site | `"rightleg"` |
+| `shinRight` | Right knee-to-foot | AFCM right-leg site | `"rightleg"` |
 
 **Status**: `afcm_sim_afcm_compat`'s column is planned, not real yet (§9 — deferred stub, no AFCM
 API to target). `afcm_sim_ace_compat`'s column is real and confirmed — see
 [ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part) for the source. `kat_compat`
 and `acm_compat` don't have a confirmed mapping yet (`applyInjury` is still a stub for both).
+
+ACE3 itself only tracks 6 real body parts, so five of the 13 `LimbId`s above (`neck`/`chest`/
+`abdomen`/`pelvis`, all folding to `"body"`, plus each limb's two segments folding to one ACE part)
+collapse when `ace_compat` applies them — that granularity is only meaningful to AFCM-Simulator's
+own scenario layer and (once built) AFCM's native backend, not to ACE3.
+
+`tourniquetable` (§2) is only ever `true` for the 8 limb-segment values
+(`upperArmLeft`/`forearmLeft`/`upperArmRight`/`forearmRight`/`thighLeft`/`shinLeft`/`thighRight`/
+`shinRight`) — never for `head`/`neck`/`chest`/`abdomen`/`pelvis`.
 
 > Note the casing difference from ACE3's own API: `ace_medical_fnc_addDamageToUnit` accepts
 > `"Head"`/`"Body"`/`"LeftArm"`/etc. (it lowercases internally), but

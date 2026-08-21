@@ -4,7 +4,9 @@
  * "limb.selected" on the UI event bus (DESIGN.md §5) and closes the dialog.
  *
  * Arguments:
- * 0: LimbId <STRING> - see DESIGN.md §4.1 (head / torso / armLeft / armRight / legLeft / legRight)
+ * 0: LimbId <STRING> - see DESIGN.md §4.1 / INJURY_CODES.md §1 (head / neck / chest / abdomen /
+ *    pelvis / upperArmLeft / forearmLeft / upperArmRight / forearmRight / thighLeft / shinLeft /
+ *    thighRight / shinRight)
  *
  * Return Value:
  * None

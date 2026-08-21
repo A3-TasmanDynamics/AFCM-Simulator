@@ -35,9 +35,18 @@ private _profiles = [
 private _profile = _profiles select _level;
 _profile params ["_minCount", "_maxCount", "_minSeverity", "_maxSeverity", "_bleedChance"];
 
-private _limbs = ["head", "torso", "armLeft", "armRight", "legLeft", "legRight"];
+// 13 real anatomical regions (DESIGN.md §4.1 / INJURY_CODES.md §1) - not just ACE3's 6 hitpoints.
+private _limbs = [
+    "head", "neck", "chest", "abdomen", "pelvis",
+    "upperArmLeft", "forearmLeft", "upperArmRight", "forearmRight",
+    "thighLeft", "shinLeft", "thighRight", "shinRight"
+];
 private _woundTypes = ["gunshot", "shrapnel", "blast"];
-private _tourniquetableLimbs = ["armLeft", "armRight", "legLeft", "legRight"];
+// Only the 8 limb-segment regions are tourniquetable - never head/neck/chest/abdomen/pelvis.
+private _tourniquetableLimbs = [
+    "upperArmLeft", "forearmLeft", "upperArmRight", "forearmRight",
+    "thighLeft", "shinLeft", "thighRight", "shinRight"
+];
 
 private _count = _minCount + floor (random ((_maxCount - _minCount) + 1));
 private _usedLimbs = [];

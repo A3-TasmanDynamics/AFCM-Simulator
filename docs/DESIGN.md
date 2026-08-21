@@ -218,19 +218,29 @@ by construction (§2.5). The internal split:
 ## 4. Data Model
 
 ### 4.1 Body limb selection
-The `LimbId` set below is the backend-agnostic vocabulary the UI/scenario layer actually uses.
-Each active backend (§2.5) maps it to its own target internally — the scenario layer never sees
-an AFCM site or an ACE3 hitpoint directly, only a `LimbId`:
+The `LimbId` set below is the backend-agnostic vocabulary the UI/scenario layer actually uses —
+13 real anatomical regions, not just ACE3's 6 hitpoints, so a casualty assessment can distinguish
+chest from abdominal trauma or an upper-arm wound from a forearm one. Each active backend (§2.5)
+maps it to its own target internally — the scenario layer never sees an AFCM site or an ACE3 body
+part directly, only a `LimbId`:
 
-| AFCM-Simulator `LimbId` | `afcm_sim_afcm_compat` target | `afcm_sim_ace_compat` target (ACE3 hitpoint) |
-|---|---|---|
-| `head` | AFCM head site | `HitHead` |
-| `torso` | AFCM torso site (chest/abdomen split via `woundType`) | `HitBody`, `HitNeck` |
-| `armLeft` / `armRight` | AFCM left/right arm site | `HitLeftArm` / `HitRightArm` |
-| `legLeft` / `legRight` | AFCM left/right leg site | `HitLeftLeg` / `HitRightLeg` |
+| AFCM-Simulator `LimbId` | Real-world region | `afcm_sim_afcm_compat` target | `afcm_sim_ace_compat` target (ACE3 body part) |
+|---|---|---|---|
+| `head` | Head | AFCM head site | `head` |
+| `neck` | Neck | AFCM torso site | `body` |
+| `chest` | Chest | AFCM torso site | `body` |
+| `abdomen` | Abdomen | AFCM torso site | `body` |
+| `pelvis` | Pelvis / hips | AFCM torso site | `body` |
+| `upperArmLeft` / `upperArmRight` | Shoulder-to-elbow | AFCM left/right arm site | `leftarm` / `rightarm` |
+| `forearmLeft` / `forearmRight` | Elbow-to-hand | AFCM left/right arm site | `leftarm` / `rightarm` |
+| `thighLeft` / `thighRight` | Hip-to-knee | AFCM left/right leg site | `leftleg` / `rightleg` |
+| `shinLeft` / `shinRight` | Knee-to-foot | AFCM left/right leg site | `leftleg` / `rightleg` |
 
-> The ACE3-hitpoint column needs verification once KAT's source is vendored/checked out locally —
-> only blocks `afcm_sim_ace_compat`, not `afcm_sim_afcm_compat`.
+ACE3 only has 6 real body parts (`head`/`body`/`leftarm`/`rightarm`/`leftleg`/`rightleg`, confirmed
+in [ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part)) — `afcm_sim_ace_compat`
+folds all 13 `LimbId`s down to those 6 (five of them collapse onto `body`). `tourniquetable` (§4.2)
+is only ever `true` for the 8 limb-segment values above — never for `head`/`neck`/`chest`/
+`abdomen`/`pelvis`.
 
 ### 4.2 Injury object
 This is scenario-authoring input — what a preset or randomizer produces — passed to whichever

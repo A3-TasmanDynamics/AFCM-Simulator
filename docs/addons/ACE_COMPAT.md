@@ -147,14 +147,26 @@ Full source citations for all of this are in [REFERENCES.md](../REFERENCES.md#ac
 
 ### 4.1 `LimbId` → ACE3 body part
 
-| AFCM-Simulator `LimbId` | ACE3 body part (lowercase, real `ALL_BODY_PARTS` value) |
+AFCM-Simulator's `LimbId` has 13 real anatomical values (see
+[INJURY_CODES.md §1](../INJURY_CODES.md#1-body-parts--limbid)); ACE3 itself only has 6 real body
+parts (lowercase, real `ALL_BODY_PARTS` value), so this backend folds several `LimbId`s onto the
+same target:
+
+| AFCM-Simulator `LimbId` | ACE3 body part |
 |---|---|
 | `head` | `head` |
-| `torso` | `body` |
-| `armLeft` | `leftarm` |
-| `armRight` | `rightarm` |
-| `legLeft` | `leftleg` |
-| `legRight` | `rightleg` |
+| `neck` | `body` |
+| `chest` | `body` |
+| `abdomen` | `body` |
+| `pelvis` | `body` |
+| `upperArmLeft` | `leftarm` |
+| `forearmLeft` | `leftarm` |
+| `upperArmRight` | `rightarm` |
+| `forearmRight` | `rightarm` |
+| `thighLeft` | `leftleg` |
+| `shinLeft` | `leftleg` |
+| `thighRight` | `rightleg` |
+| `shinRight` | `rightleg` |
 
 ### 4.2 `woundType` → ACE3 damage type / bleeding wound class
 
