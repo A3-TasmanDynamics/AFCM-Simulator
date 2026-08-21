@@ -2,7 +2,7 @@
 
 <img src="assets/doc-header.svg" alt="AFCM-Simulator Documentation" width="100%"/>
 
-[README](../README.md) · [Design](DESIGN.md) · **References**
+[README](../README.md) · [Design](DESIGN.md) · **References** · [ace_compat](ACE_COMPAT.md)
 
 </div>
 
