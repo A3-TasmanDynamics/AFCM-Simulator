@@ -137,19 +137,42 @@ Not yet wired into `applyInjury` — documented here because they were confirmed
 working prototype, cross-checked against real source, or directly from real KAT function bodies
 fetched this pass) and are the natural next layer once baseline damage (§3) is real:
 
-- **`kat_surgery_fractures`** — `_unit setVariable ["kat_surgery_fractures", _array, true]`, a
-  6-element array, one entry per body part. Indexing **doubly confirmed** — matches ACE's own
-  `ALL_BODY_PARTS` ordering (`[head, body, leftarm, rightarm, leftleg, rightleg]`), verified
-  directly against KAT's real `addons/surgery/functions/fnc_fractureCheck.sqf` (`ALL_BODY_PARTS
-  find toLower _bodyPart`) in addition to the prior working-prototype source: index `2` = LeftArm,
-  `3` = RightArm, `4` = LeftLeg, `5` = RightLeg (`0`/`1` = Head/Body, always seen as `0`).
-  **Per-limb value is a severity/treatment-stage scale, not a boolean** — confirmed from the full
-  working prototype's own in-file comment: `0` = Unaffected, `1` = Stable Fracture, `2` = Compound
-  Fracture, `3` = Comminuted Fracture, `2.1`/`3.1` = Open Fracture, `2.2`/`3.2` = Prepared Fracture,
-  `2.5` = Irrigated Fracture, `3.5` = Clamped Fracture. The `.1`/`.2`/`.5` suffixes read as
-  *treatment progress* on top of a base severity (`2`/`3`) rather than independent severities —
-  e.g. `2` → `2.1` (opened) → `2.2` (prepared) looks like a real surgical-progression sequence, not
-  confirmed against KAT's own surgery functions beyond `fractureCheck`'s read-only comparison logic.
+**`kat_surgery_fractures`** — a 6-element array, one entry per body part, indexed identically to
+ACE's own `ALL_BODY_PARTS` — **doubly confirmed**: matches the prior working-prototype source, and
+directly against KAT's real `addons/surgery/functions/fnc_fractureCheck.sqf` (`ALL_BODY_PARTS find
+toLower _bodyPart`). Each entry is a **severity/treatment-stage scale, not a boolean** — confirmed
+from the full working prototype's own in-file comment. Real example usage:
+
+```sqf
+/*
+Fracture severity scale (kat_surgery_fractures per-limb value):
+0 = Unaffected, 1 = Stable Fracture, 2 = Compound Fracture, 3 = Comminuted Fracture,
+2.1/3.1 = Open Fracture, 2.2/3.2 = Prepared Fracture, 2.5 = Irrigated Fracture, 3.5 = Clamped Fracture
+
+Array index -> limb: [head, torso, leftArm, rightArm, leftLeg, rightLeg]
+*/
+
+// Stable fracture, left arm
+_unit setVariable ["kat_surgery_fractures", [0, 0, 1, 0, 0, 0], true];
+
+// Compound fracture, right arm
+_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 2, 0, 0], true];
+
+// Comminuted fracture, left leg
+_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 0, 3, 0], true];
+
+// Open compound fracture, right leg (treatment-progress stage on top of severity 2)
+_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 0, 0, 2.1], true];
+```
+
+The `.1`/`.2`/`.5` suffixes read as *treatment progress* on top of a base severity (`2`/`3`) rather
+than independent severities — e.g. `2` → `2.1` (opened) → `2.2` (prepared) looks like a real
+surgical-progression sequence, not confirmed against KAT's own surgery functions beyond
+`fractureCheck`'s read-only comparison logic. Note this array's index order is KAT/ACE's own 6 body
+parts, **not** AFCM-Simulator's 13-value `LimbId` — a future real `applyInjury` would need to fold
+`LimbId`'s `leftUpperArm`/`leftForearm` (etc.) onto this same single `leftArm` slot, exactly like
+`ace_compat` already does for damage ([§4.1](ACE_COMPAT.md#41-limbid--ace3-body-part) on that doc).
+
 - **`kat_breathing_pneumothorax`** / **`kat_breathing_Hemopneumothorax`** /
   **`kat_breathing_Tensionpneumothorax`** — set via `setVariable`, then
   `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state (setting the

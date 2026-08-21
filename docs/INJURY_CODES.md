@@ -211,21 +211,35 @@ something `afcm_sim_scenario`'s randomizer or a future preset currently produces
 so it's not lost, and as the natural next layer once `kat_compat`'s `applyInjury` is real
 (full context: [KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables)).
 
-**Fracture severity** (`kat_surgery_fractures`, a 6-element array indexed like ACE's
-`ALL_BODY_PARTS`) is a **scale, not a boolean**:
+**Fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb — and each
+entry is a **severity/treatment-stage scale, not a boolean**. Note this array's own index order is
+**KAT/ACE's** 6 body parts (`head, torso, leftArm, rightArm, leftLeg, rightLeg`) — **not**
+AFCM-Simulator's 13-value `LimbId` from §1, since KAT sits directly on ACE's 6 real body parts
+underneath. A future `kat_compat` would need to fold `LimbId`'s `leftUpperArm`/`leftForearm` (etc.)
+onto this same single `leftArm` slot, exactly like `ace_compat` already does for damage
+([ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part)):
 
-| Value | Meaning |
-|---|---|
-| `0` | Unaffected |
-| `1` | Stable Fracture |
-| `2` | Compound Fracture |
-| `2.1` | Open Fracture (compound) |
-| `2.2` | Prepared Fracture (compound) |
-| `2.5` | Irrigated Fracture (compound) |
-| `3` | Comminuted Fracture |
-| `3.1` | Open Fracture (comminuted) |
-| `3.2` | Prepared Fracture (comminuted) |
-| `3.5` | Clamped Fracture (comminuted) |
+```sqf
+/*
+Fracture severity scale (kat_surgery_fractures per-limb value):
+0 = Unaffected, 1 = Stable Fracture, 2 = Compound Fracture, 3 = Comminuted Fracture,
+2.1/3.1 = Open Fracture, 2.2/3.2 = Prepared Fracture, 2.5 = Irrigated Fracture, 3.5 = Clamped Fracture
+
+Array index -> limb: [head, torso, leftArm, rightArm, leftLeg, rightLeg]
+*/
+
+// Stable fracture, left arm
+_unit setVariable ["kat_surgery_fractures", [0, 0, 1, 0, 0, 0], true];
+
+// Compound fracture, right arm
+_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 2, 0, 0], true];
+
+// Comminuted fracture, left leg
+_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 0, 3, 0], true];
+
+// Open compound fracture, right leg (treatment-progress stage on top of severity 2)
+_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 0, 0, 2.1], true];
+```
 
 The `.1`/`.2`/`.5` suffixes read as treatment-progress stages layered on top of a base severity
 (`2` or `3`), not independent severities — not confirmed beyond the source comment itself.
