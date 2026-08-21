@@ -34,11 +34,26 @@ class CfgFunctions
     };
 };
 
+// Two separate category systems point at the same "AFCM_SIM_Eden" name: CfgVehicleClasses is what
+// the Eden (2D editor) "Add Object" browser groups by; CfgFactionClasses + a matching `side` on the
+// module class is the wholly separate mechanism Zeus uses (see addons/zeus/config.cpp for the full
+// story — CfgVehicleClasses alone does nothing for Zeus). Both are declared here since these
+// modules set `scopeCurator = 2;` and so are placeable via either.
 class CfgVehicleClasses
 {
     class AFCM_SIM_Eden
     {
         displayName = "AFCM Medical Simulator";
+    };
+};
+
+class CfgFactionClasses
+{
+    class AFCM_SIM_Eden
+    {
+        displayName = "AFCM Medical Simulator";
+        priority = 2;
+        side = 7;
     };
 };
 
@@ -50,6 +65,7 @@ class CfgVehicles
     {
         scope = 2;
         scopeCurator = 2;
+        side = 7;
         displayName = "AFCM Patient";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
         category = "AFCM_SIM_Eden";
@@ -89,6 +105,7 @@ class CfgVehicles
     {
         scope = 2;
         scopeCurator = 2;
+        side = 7;
         displayName = "AFCM MASCAL Zone";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
         category = "AFCM_SIM_Eden";

@@ -17,6 +17,12 @@ class CfgPatches
 // in addition to `scope = 2;` — confirmed via a real in-Zeus test that without it, the module
 // compiles and registers fine but simply never appears in the Zeus curator browser at all (plain
 // `scope=2` alone is not sufficient for Zeus specifically, unlike Eden).
+//
+// Second, bigger gotcha (found by diffing against KAT's real addons/zeus/config.cpp): Zeus does
+// NOT use CfgVehicleClasses for module categorization at all — that's an Eden (2D editor) only
+// mechanism. Zeus groups modules by CfgFactionClasses + a matching `side` on the module class
+// itself. `side = 7` is the neutral "Logic" side, which shows up regardless of the mission's
+// actual side setup (that's what KAT uses for its own always-visible "KAM" category).
 class CfgFunctions
 {
     class afcm_sim_zeus
@@ -32,11 +38,13 @@ class CfgFunctions
     };
 };
 
-class CfgVehicleClasses
+class CfgFactionClasses
 {
     class AFCM_SIM_Zeus
     {
         displayName = "AFCM Medical Simulator";
+        priority = 2;
+        side = 7;
     };
 };
 
@@ -48,6 +56,7 @@ class CfgVehicles
     {
         scope = 2;
         scopeCurator = 2;
+        side = 7;
         displayName = "Spawn Random Patient";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
         category = "AFCM_SIM_Zeus";

@@ -65,6 +65,36 @@ its `requiredAddons` gate is real — it was previously kept as a non-registerin
 because the class name wasn't confirmed; that's resolved. `applyInjury`/`removeInjury` are still
 logging stubs pending the actual wound-application call.
 
+## Zeus/Curator module categorization (official wiki + confirmed via KAT's real config)
+
+Two real, in-game bugs traced back to this: the "AFCM Medical Simulator" category never appeared
+in the Zeus CREATE panel despite the modules loading cleanly with no config errors.
+
+| Source | Use for |
+|---|---|
+| [Modules](https://community.bistudio.com/wiki/Modules) | Confirms `CfgFactionClasses` is the real category mechanism for modules, not `CfgVehicleClasses` — a module's `category` value must name a `CfgFactionClasses` class, and `BIS_fnc_initModules` groups modules into the Zeus/Eden module browser by `CfgFactionClasses` entries whose `side` equals `sideLogic` |
+| [Arma 3: Curator](https://community.bistudio.com/wiki/Arma_3:_Curator) / [BIS_fnc_moduleCurator](https://community.bistudio.com/wiki/BIS_fnc_moduleCurator) | Curator-specific module display/access plumbing |
+| [T167804](https://feedback.bistudio.com/T167804) | `fn_initModules` creates a group per `CfgFactionClasses` entry — corroborates the above |
+
+Two distinct, additive gotchas, both required together:
+
+1. **`scopeCurator = 2;`** on the `Module_F`-derived class itself. `scope = 2;` alone is enough for
+   the module to appear in the **Eden** (2D editor) object browser, but Zeus has its own separate
+   visibility gate — without `scopeCurator = 2;`, the module compiles and registers fine but never
+   appears in the Zeus curator browser at all.
+2. **`CfgFactionClasses`, not `CfgVehicleClasses`, plus a matching `side` on the module class.**
+   `CfgVehicleClasses` is what the **Eden** "Add Object" browser groups by — it does nothing for
+   Zeus. Zeus groups modules by `CfgFactionClasses` entries, matched via each module's own `side`.
+   `side = 7` (`sideLogic`) is the neutral side that always shows regardless of the mission's actual
+   side setup — confirmed as the real value in practice by diffing against KAT's own
+   `addons/zeus/config.cpp` (`class GVAR(baseModule): Module_F { side=7; ... }`,
+   `class CfgFactionClasses { class GVAR(KAM) { side = 7; }; };`), which is exactly how KAT's own
+   always-visible "KAM" Zeus category is implemented.
+
+Both `afcm_sim_zeus/config.cpp` and `afcm_sim_eden/config.cpp` (the latter's modules also set
+`scopeCurator = 2;` so they're Zeus-placeable) now declare a `CfgFactionClasses` category with
+`side = 7` and set `side = 7;` on each module class, in addition to the existing `scopeCurator = 2;`.
+
 ---
 
 <div align="center">
