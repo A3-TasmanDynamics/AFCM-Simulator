@@ -110,7 +110,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             h = "0.04 * safeZoneH";
             action = "[""neck""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
-        class UpperArmLeft: RscButton
+        class LeftUpperArm: RscButton
         {
             idc = IDC_AFCM_SIM_LS_UPARM_L;
             text = "Left Upper Arm";
@@ -118,7 +118,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             y = "0.235 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
             h = "0.045 * safeZoneH";
-            action = "[""upperArmLeft""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+            action = "[""leftUpperArm""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
         class Chest: RscButton
         {
@@ -130,7 +130,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             h = "0.045 * safeZoneH";
             action = "[""chest""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
-        class UpperArmRight: RscButton
+        class RightUpperArm: RscButton
         {
             idc = IDC_AFCM_SIM_LS_UPARM_R;
             text = "Right Upper Arm";
@@ -138,9 +138,9 @@ class RscDisplayAFCM_SIM_LimbSelect
             y = "0.235 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
             h = "0.045 * safeZoneH";
-            action = "[""upperArmRight""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+            action = "[""rightUpperArm""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
-        class ForearmLeft: RscButton
+        class LeftForearm: RscButton
         {
             idc = IDC_AFCM_SIM_LS_FOREARM_L;
             text = "Left Forearm";
@@ -148,7 +148,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             y = "0.29 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
             h = "0.045 * safeZoneH";
-            action = "[""forearmLeft""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+            action = "[""leftForearm""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
         class Abdomen: RscButton
         {
@@ -160,7 +160,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             h = "0.045 * safeZoneH";
             action = "[""abdomen""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
-        class ForearmRight: RscButton
+        class RightForearm: RscButton
         {
             idc = IDC_AFCM_SIM_LS_FOREARM_R;
             text = "Right Forearm";
@@ -168,7 +168,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             y = "0.29 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
             h = "0.045 * safeZoneH";
-            action = "[""forearmRight""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+            action = "[""rightForearm""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
         class Pelvis: RscButton
         {
@@ -180,7 +180,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             h = "0.045 * safeZoneH";
             action = "[""pelvis""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
-        class ThighLeft: RscButton
+        class LeftThigh: RscButton
         {
             idc = IDC_AFCM_SIM_LS_THIGH_L;
             text = "Left Thigh";
@@ -188,9 +188,9 @@ class RscDisplayAFCM_SIM_LimbSelect
             y = "0.40 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
             h = "0.045 * safeZoneH";
-            action = "[""thighLeft""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+            action = "[""leftThigh""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
-        class ThighRight: RscButton
+        class RightThigh: RscButton
         {
             idc = IDC_AFCM_SIM_LS_THIGH_R;
             text = "Right Thigh";
@@ -198,9 +198,9 @@ class RscDisplayAFCM_SIM_LimbSelect
             y = "0.40 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
             h = "0.045 * safeZoneH";
-            action = "[""thighRight""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+            action = "[""rightThigh""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
-        class ShinLeft: RscButton
+        class LeftShin: RscButton
         {
             idc = IDC_AFCM_SIM_LS_SHIN_L;
             text = "Left Shin";
@@ -208,9 +208,9 @@ class RscDisplayAFCM_SIM_LimbSelect
             y = "0.455 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
             h = "0.045 * safeZoneH";
-            action = "[""shinLeft""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+            action = "[""leftShin""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
-        class ShinRight: RscButton
+        class RightShin: RscButton
         {
             idc = IDC_AFCM_SIM_LS_SHIN_R;
             text = "Right Shin";
@@ -218,7 +218,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             y = "0.455 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
             h = "0.045 * safeZoneH";
-            action = "[""shinRight""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+            action = "[""rightShin""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
         };
         class Close: RscButton
         {

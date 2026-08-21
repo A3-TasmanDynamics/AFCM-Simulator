@@ -90,9 +90,9 @@ Builds an interface `HashMap` (`{"applyInjury": ..., "removeInjury": ...}`) and 
 `afcm_sim_fnc_backend_applyInjury` when `"ace"` is the active backend. Takes an `Injury` `HashMap`
 (see [DESIGN.md §4.2](../DESIGN.md#42-injury-object)) and:
 
-1. Maps the backend-agnostic `limb` (`head`/`torso`/`armLeft`/`armRight`/`legLeft`/`legRight`) to
-   ACE3's lowercase body-part strings and `woundType` (`gunshot`/`shrapnel`/`blast`) to a real ACE3
-   damage-type class (`bullet`/`grenade`/`shell`).
+1. Maps the backend-agnostic `limb` (13 real anatomical regions — see
+   [§4.1](#41-limbid--ace3-body-part)) to ACE3's 6 lowercase body-part strings, and `woundType`
+   (`gunshot`/`shrapnel`/`blast`) to a real ACE3 damage-type class (`bullet`/`grenade`/`shell`).
 2. Calls `ace_medical_fnc_addDamageToUnit` with `severity` as the damage amount — this drives ACE's
    normal damage-to-wound pipeline (a *random* wound chosen from that damage type's weighting
    table).
@@ -159,14 +159,14 @@ same target:
 | `chest` | `body` |
 | `abdomen` | `body` |
 | `pelvis` | `body` |
-| `upperArmLeft` | `leftarm` |
-| `forearmLeft` | `leftarm` |
-| `upperArmRight` | `rightarm` |
-| `forearmRight` | `rightarm` |
-| `thighLeft` | `leftleg` |
-| `shinLeft` | `leftleg` |
-| `thighRight` | `rightleg` |
-| `shinRight` | `rightleg` |
+| `leftUpperArm` | `leftarm` |
+| `leftForearm` | `leftarm` |
+| `rightUpperArm` | `rightarm` |
+| `rightForearm` | `rightarm` |
+| `leftThigh` | `leftleg` |
+| `leftShin` | `leftleg` |
+| `rightThigh` | `rightleg` |
+| `rightShin` | `rightleg` |
 
 ### 4.2 `woundType` → ACE3 damage type / bleeding wound class
 

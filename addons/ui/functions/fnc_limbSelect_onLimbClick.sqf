@@ -5,8 +5,8 @@
  *
  * Arguments:
  * 0: LimbId <STRING> - see DESIGN.md §4.1 / INJURY_CODES.md §1 (head / neck / chest / abdomen /
- *    pelvis / upperArmLeft / forearmLeft / upperArmRight / forearmRight / thighLeft / shinLeft /
- *    thighRight / shinRight)
+ *    pelvis / leftUpperArm / leftForearm / rightUpperArm / rightForearm / leftThigh / leftShin /
+ *    rightThigh / rightShin)
  *
  * Return Value:
  * None

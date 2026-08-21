@@ -231,10 +231,10 @@ part directly, only a `LimbId`:
 | `chest` | Chest | AFCM torso site | `body` |
 | `abdomen` | Abdomen | AFCM torso site | `body` |
 | `pelvis` | Pelvis / hips | AFCM torso site | `body` |
-| `upperArmLeft` / `upperArmRight` | Shoulder-to-elbow | AFCM left/right arm site | `leftarm` / `rightarm` |
-| `forearmLeft` / `forearmRight` | Elbow-to-hand | AFCM left/right arm site | `leftarm` / `rightarm` |
-| `thighLeft` / `thighRight` | Hip-to-knee | AFCM left/right leg site | `leftleg` / `rightleg` |
-| `shinLeft` / `shinRight` | Knee-to-foot | AFCM left/right leg site | `leftleg` / `rightleg` |
+| `leftUpperArm` / `rightUpperArm` | Shoulder-to-elbow | AFCM left/right arm site | `leftarm` / `rightarm` |
+| `leftForearm` / `rightForearm` | Elbow-to-hand | AFCM left/right arm site | `leftarm` / `rightarm` |
+| `leftThigh` / `rightThigh` | Hip-to-knee | AFCM left/right leg site | `leftleg` / `rightleg` |
+| `leftShin` / `rightShin` | Knee-to-foot | AFCM left/right leg site | `leftleg` / `rightleg` |
 
 ACE3 only has 6 real body parts (`head`/`body`/`leftarm`/`rightarm`/`leftleg`/`rightleg`, confirmed
 in [ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part)) — `afcm_sim_ace_compat`

@@ -34,14 +34,14 @@ or an upper-arm wound from a forearm one.
 | `chest` | Chest | AFCM torso site | `"body"` |
 | `abdomen` | Abdomen | AFCM torso site | `"body"` |
 | `pelvis` | Pelvis / hips | AFCM torso site | `"body"` |
-| `upperArmLeft` | Left shoulder-to-elbow | AFCM left-arm site | `"leftarm"` |
-| `forearmLeft` | Left elbow-to-hand | AFCM left-arm site | `"leftarm"` |
-| `upperArmRight` | Right shoulder-to-elbow | AFCM right-arm site | `"rightarm"` |
-| `forearmRight` | Right elbow-to-hand | AFCM right-arm site | `"rightarm"` |
-| `thighLeft` | Left hip-to-knee | AFCM left-leg site | `"leftleg"` |
-| `shinLeft` | Left knee-to-foot | AFCM left-leg site | `"leftleg"` |
-| `thighRight` | Right hip-to-knee | AFCM right-leg site | `"rightleg"` |
-| `shinRight` | Right knee-to-foot | AFCM right-leg site | `"rightleg"` |
+| `leftUpperArm` | Left shoulder-to-elbow | AFCM left-arm site | `"leftarm"` |
+| `leftForearm` | Left elbow-to-hand | AFCM left-arm site | `"leftarm"` |
+| `rightUpperArm` | Right shoulder-to-elbow | AFCM right-arm site | `"rightarm"` |
+| `rightForearm` | Right elbow-to-hand | AFCM right-arm site | `"rightarm"` |
+| `leftThigh` | Left hip-to-knee | AFCM left-leg site | `"leftleg"` |
+| `leftShin` | Left knee-to-foot | AFCM left-leg site | `"leftleg"` |
+| `rightThigh` | Right hip-to-knee | AFCM right-leg site | `"rightleg"` |
+| `rightShin` | Right knee-to-foot | AFCM right-leg site | `"rightleg"` |
 
 **Status**: `afcm_sim_afcm_compat`'s column is planned, not real yet (§9 — deferred stub, no AFCM
 API to target). `afcm_sim_ace_compat`'s column is real and confirmed — see
@@ -54,8 +54,8 @@ collapse when `ace_compat` applies them — that granularity is only meaningful 
 own scenario layer and (once built) AFCM's native backend, not to ACE3.
 
 `tourniquetable` (§2) is only ever `true` for the 8 limb-segment values
-(`upperArmLeft`/`forearmLeft`/`upperArmRight`/`forearmRight`/`thighLeft`/`shinLeft`/`thighRight`/
-`shinRight`) — never for `head`/`neck`/`chest`/`abdomen`/`pelvis`.
+(`leftUpperArm`/`leftForearm`/`rightUpperArm`/`rightForearm`/`leftThigh`/`leftShin`/`rightThigh`/
+`rightShin`) — never for `head`/`neck`/`chest`/`abdomen`/`pelvis`.
 
 > Note the casing difference from ACE3's own API: `ace_medical_fnc_addDamageToUnit` accepts
 > `"Head"`/`"Body"`/`"LeftArm"`/etc. (it lowercases internally), but

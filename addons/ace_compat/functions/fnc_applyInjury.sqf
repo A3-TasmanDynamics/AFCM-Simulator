@@ -45,14 +45,14 @@ private _bodyPartMap = createHashMapFromArray [
     ["chest", "body"],
     ["abdomen", "body"],
     ["pelvis", "body"],
-    ["upperArmLeft", "leftarm"],
-    ["forearmLeft", "leftarm"],
-    ["upperArmRight", "rightarm"],
-    ["forearmRight", "rightarm"],
-    ["thighLeft", "leftleg"],
-    ["shinLeft", "leftleg"],
-    ["thighRight", "rightleg"],
-    ["shinRight", "rightleg"]
+    ["leftUpperArm", "leftarm"],
+    ["leftForearm", "leftarm"],
+    ["rightUpperArm", "rightarm"],
+    ["rightForearm", "rightarm"],
+    ["leftThigh", "leftleg"],
+    ["leftShin", "leftleg"],
+    ["rightThigh", "rightleg"],
+    ["rightShin", "rightleg"]
 ];
 private _damageTypeMap = createHashMapFromArray [
     ["gunshot", "bullet"],
