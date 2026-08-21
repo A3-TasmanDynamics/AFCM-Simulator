@@ -25,17 +25,44 @@ guessed function names or signatures. Confirmed in practice against a working pr
 ## Confirmed function usage (from a working prototype)
 
 The functions above were cross-checked against a real, previously-working ACE3/KAT medical
-simulator script (not part of this repo) rather than taken on faith from the wiki alone:
+simulator script (`med_sim.sqf`, not part of this repo — the full file was reviewed, not just
+fragments) rather than taken on faith from the wiki alone:
 
 - `[_unit, _damage, _hitpoint, _damageType] call ace_medical_fnc_addDamageToUnit` — hitpoint
   strings used in practice: `"Head"`, `"Body"`, `"LeftArm"`, `"RightArm"`, `"LeftLeg"`,
-  `"RightLeg"` — matches DESIGN.md §4.1's `LimbId` → ACE3 hitpoint table
+  `"RightLeg"` — matches DESIGN.md §4.1's `LimbId` → ACE3 hitpoint table. Damage type used
+  interchangeably for the same head wound across commented-out alternates: `"shell"`, `"grenade"`,
+  `"explosive"` — consistent with all three being real `ACE_Medical_Injuries.hpp` classes, not a
+  sign any one is specifically "correct" for head trauma
 - `[_unit, true] call ace_medical_fnc_setUnconscious`
-- `[_unit, _painLevel] call ace_medical_status_fnc_adjustPainLevel` and the equivalent direct
-  `_unit setVariable ["ace_medical_pain", _painLevel, true]`
+- **Both** `[_unit, _painLevel] call ace_medical_status_fnc_adjustPainLevel` **and** the direct
+  `_unit setVariable ["ace_medical_pain", _painLevel, true]` are used together in the same preset
+  (set to `0.6` directly, then `adjustPainLevel` called with `0.7` afterward) — the prototype
+  doesn't rely on just one mechanism; exact interaction between a direct pain set and a subsequent
+  `adjustPainLevel` call isn't confirmed (i.e. whether the latter is additive on top of the former
+  or simply overrides it), only that both were used together in working code
 - A real, non-obvious gotcha: injuries applied immediately on `createUnit` didn't take reliably —
-  the working prototype deferred injury application by ~1s via `CBA_fnc_addPerFrameHandler` or
-  `CBA_fnc_waitAndExecute`, letting the unit's medical state initialize first
+  the working prototype deferred injury application by 1 second via `[{...}, [_unit, ...], 1] call
+  CBA_fnc_waitAndExecute`, letting the unit's medical state initialize first
+
+### ACE Interaction Menu — confirmed, not currently used by this repo
+
+Not part of AFCM-Simulator's own architecture (`ui`'s dialogs are native `RscDisplay`, not the ACE
+self/object-interaction menu — [DESIGN.md §2.4](DESIGN.md#24-decision)), but real, confirmed API
+worth recording since the prototype used it to trigger the whole medical-simulator menu from a
+placed object (a laptop). Relevant if a future feature ever wants an ACE-interaction-menu entry
+point (e.g. right-click a patient to open the injury dialog) as an alternative trigger alongside
+the Zeus/Eden modules:
+
+- `ace_interact_menu_fnc_createAction` — builds one menu action. Real positional args seen in
+  practice: `[id, displayText, icon, statement (code, `params ["_target", "_player", "_params"]`),
+  condition (code), insertChildren (code), extraParams (array), positionOffset (array), showDisabled
+  (number)]`
+- `ace_interact_menu_fnc_addActionToObject` — attaches a built action to an object at a given menu
+  path: `[_targetObject, 0, ["ACE_MainActions"], _action]` for a top-level entry,
+  `[_targetObject, 0, ["ACE_MainActions", "medSimulator"], _action]` for a submenu nested under a
+  previously-created action with id `"medSimulator"` — path segments are action ids, not display
+  text
 
 ## ACE3 medical source (confirmed directly from acemod/ACE3, not the wiki)
 
@@ -98,7 +125,11 @@ indexing (see KAT_COMPAT.md §4):
   limb, indexed identically to ACE's own `ALL_BODY_PARTS`: `0` = Head, `1` = Body, `2` = LeftArm,
   `3` = RightArm, `4` = LeftLeg, `5` = RightLeg — confirmed via KAT's real
   `addons/surgery/functions/fnc_fractureCheck.sqf`, which indexes this array with
-  `ALL_BODY_PARTS find toLower _bodyPart`
+  `ALL_BODY_PARTS find toLower _bodyPart`. Per-limb **severity value** (from the full prototype's
+  own in-file comment, not just the array shape): `0` = Unaffected, `1` = Stable Fracture, `2` =
+  Compound Fracture, `3` = Comminuted Fracture, `2.1`/`3.1` = Open Fracture, `2.2`/`3.2` = Prepared
+  Fracture, `2.5` = Irrigated Fracture, `3.5` = Clamped Fracture — a real severity/treatment-stage
+  scale, not a boolean per limb
 - `_unit setVariable ["kat_breathing_pneumothorax", _severity, true]`,
   `"kat_breathing_Hemopneumothorax"`, `"kat_breathing_Tensionpneumothorax"` (booleans) — followed
   by `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state; setting the

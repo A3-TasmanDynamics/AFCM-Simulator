@@ -143,6 +143,13 @@ fetched this pass) and are the natural next layer once baseline damage (§3) is 
   directly against KAT's real `addons/surgery/functions/fnc_fractureCheck.sqf` (`ALL_BODY_PARTS
   find toLower _bodyPart`) in addition to the prior working-prototype source: index `2` = LeftArm,
   `3` = RightArm, `4` = LeftLeg, `5` = RightLeg (`0`/`1` = Head/Body, always seen as `0`).
+  **Per-limb value is a severity/treatment-stage scale, not a boolean** — confirmed from the full
+  working prototype's own in-file comment: `0` = Unaffected, `1` = Stable Fracture, `2` = Compound
+  Fracture, `3` = Comminuted Fracture, `2.1`/`3.1` = Open Fracture, `2.2`/`3.2` = Prepared Fracture,
+  `2.5` = Irrigated Fracture, `3.5` = Clamped Fracture. The `.1`/`.2`/`.5` suffixes read as
+  *treatment progress* on top of a base severity (`2`/`3`) rather than independent severities —
+  e.g. `2` → `2.1` (opened) → `2.2` (prepared) looks like a real surgical-progression sequence, not
+  confirmed against KAT's own surgery functions beyond `fractureCheck`'s read-only comparison logic.
 - **`kat_breathing_pneumothorax`** / **`kat_breathing_Hemopneumothorax`** /
   **`kat_breathing_Tensionpneumothorax`** — set via `setVariable`, then
   `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state (setting the

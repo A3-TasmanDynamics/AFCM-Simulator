@@ -350,6 +350,12 @@ is still the plan, not the state of the repo.
   clears the tracking list. No per-spawner/session-scoped clearing yet (the prototype's pattern —
   clear only what one specific Zeus placement spawned — isn't built; this is a global "clear all"
   only). No UI/module trigger for it yet either — callable, not yet exposed.
+  **The prototype's actual technique**, confirmed from its full source (`med_sim.sqf`, REFERENCES.md):
+  a `HashMap` keyed by a composite session id string — `"{spawnerNetId}|L{level}|C{count}|{timestamp}"`
+  — built fresh per spawn call, with a clear function that filters keys by matching `spawnerNetId`
+  prefix, then either clears just the most-recent-timestamp match ("last") or every match ("all")
+  for that specific spawner. Worth reusing directly if per-spawner clearing gets built here —
+  `netId` of the placed Zeus/Eden module logic is the natural `spawnerNetId` equivalent.
 
 ---
 

@@ -203,6 +203,39 @@ they're shareable outside the mission file).
 
 ---
 
+## 6. KAT-Specific Coding (Confirmed, Not Yet Wired)
+
+KAT tracks some state that has no equivalent in the backend-agnostic `Injury` object at all —
+confirmed real, but not part of §1–§4's shared vocabulary since it's KAT-internal state, not
+something `afcm_sim_scenario`'s randomizer or a future preset currently produces. Documented here
+so it's not lost, and as the natural next layer once `kat_compat`'s `applyInjury` is real
+(full context: [KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables)).
+
+**Fracture severity** (`kat_surgery_fractures`, a 6-element array indexed like ACE's
+`ALL_BODY_PARTS`) is a **scale, not a boolean**:
+
+| Value | Meaning |
+|---|---|
+| `0` | Unaffected |
+| `1` | Stable Fracture |
+| `2` | Compound Fracture |
+| `2.1` | Open Fracture (compound) |
+| `2.2` | Prepared Fracture (compound) |
+| `2.5` | Irrigated Fracture (compound) |
+| `3` | Comminuted Fracture |
+| `3.1` | Open Fracture (comminuted) |
+| `3.2` | Prepared Fracture (comminuted) |
+| `3.5` | Clamped Fracture (comminuted) |
+
+The `.1`/`.2`/`.5` suffixes read as treatment-progress stages layered on top of a base severity
+(`2` or `3`), not independent severities — not confirmed beyond the source comment itself.
+
+**Pneumothorax** (`kat_breathing_pneumothorax`) is a `Number` (severity), alongside two booleans
+(`kat_breathing_Hemopneumothorax`, `kat_breathing_Tensionpneumothorax`) — all three set via
+`setVariable`, then `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state.
+
+---
+
 <div align="center">
 
 **Tasman Dynamics** — Engineering high-fidelity systems for the future of multi-domain simulation.
