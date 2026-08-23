@@ -62,7 +62,7 @@ class CfgVehicles
         scope = 2;
         scopeCurator = 2;
         side = 7;
-        displayName = "Spawn Random Patient";
+        displayName = "Spawn Patient";
         icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_zeus_fnc_module_spawnRandomPatient";

@@ -42,8 +42,8 @@ selection/priority actually works across all four of these at once.
 
 | Addon | PBO | `requiredAddons` | What it does |
 |---|---|---|---|
-| `zeus` | `afcm_sim_zeus` | `cba_main`, `afcm_sim_main`, `afcm_sim_scenario`, `afcm_sim_spawner` | "Spawn Random Patient" Zeus module. Category grouping via `CfgFactionClasses` + `side = 7`, not `CfgVehicleClasses` (Zeus-specific gotcha, not an Eden mechanism — see the module's own `config.cpp` comments) |
-| `eden` | `afcm_sim_eden` | `cba_main`, `afcm_sim_main`, `afcm_sim_scenario`, `afcm_sim_spawner` | "AFCM Patient" (single patient + injury-level attribute) and "AFCM MASCAL Zone" (patient-count + injury-level attributes) Eden modules. Both also set `scopeCurator = 2` so they're Zeus-placeable too |
+| `zeus` | `afcm_sim_zeus` | `cba_main`, `afcm_sim_main`, `afcm_sim_scenario`, `afcm_sim_spawner` | "Spawn Patient" Zeus module (class still named `AFCM_SIM_ModuleSpawnRandomPatient` internally) — spawns clean/unconscious, injuries picked afterward via the "Edit Injuries" action, not randomized. Category grouping via `CfgFactionClasses` + `side = 7`, not `CfgVehicleClasses` (Zeus-specific gotcha, not an Eden mechanism — see the module's own `config.cpp` comments) |
+| `eden` | `afcm_sim_eden` | `cba_main`, `afcm_sim_main`, `afcm_sim_scenario`, `afcm_sim_spawner` | "AFCM Patient" (spawns clean, same "Edit Injuries" flow as Zeus's Spawn Patient — no injury-level attribute anymore) and "AFCM MASCAL Zone" (patient-count + injury-level attributes, still randomized — batch/mass-casualty drills are the one place that still makes sense) Eden modules. Both also set `scopeCurator = 2` so they're Zeus-placeable too |
 
 ---
 

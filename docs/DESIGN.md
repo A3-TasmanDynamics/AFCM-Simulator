@@ -210,9 +210,10 @@ by construction (§2.5). The internal split:
   else. All `requiredAddon` `afcm_sim_main` (for the interface they register against), not
   `afcm_sim_scenario`.
 - **`afcm_sim_zeus`** / **`afcm_sim_eden`** own the editor-facing side of patient
-  authoring/placement (§5) — a Zeus module ("Spawn Random Patient") and two Eden modules ("AFCM
-  Patient" and "AFCM MASCAL Zone", both with an injury-level attribute). **Implemented** — all
-  three call the real `afcm_sim_spawner_fnc_spawnRandomPatient`, not stubs. `requiredAddon`
+  authoring/placement (§5) — a Zeus module ("Spawn Patient") and two Eden modules ("AFCM Patient"
+  and "AFCM MASCAL Zone"). **Implemented** — all three call real `afcm_sim_spawner` functions, not
+  stubs. Only MASCAL Zone still has an injury-level attribute/randomizes — Spawn Patient and AFCM
+  Patient spawn clean and rely on the "Edit Injuries" selection flow instead. `requiredAddon`
   `afcm_sim_main`, `afcm_sim_scenario`, and `afcm_sim_spawner`.
 
 ---
@@ -340,24 +341,31 @@ is still the plan, not the state of the repo.
   `afcm_sim_scenario_fnc_randomizeInjuries` rolls a real Injury array per the §4.4 profile table.
   The "one pipeline, three sources" framing is aspirational until manual/preset paths exist — right
   now randomization is the only source feeding the backend.
-- **Random Patient** — spawns a unit with a randomized identity/loadout *and* a randomized injury
-  set (level-selectable) in one action — for quick drills. **Implemented**:
-  `afcm_sim_spawner_fnc_spawnRandomPatient` (randomize → `spawnPatient` → apply via the active
-  backend after a short delay, DESIGN.md §2.5/REFERENCES.md). No randomized *identity/loadout* yet
-  — spawns a plain `C_man_1` civilian. **Zeus-facing**: the "Spawn Random Patient" module
-  (`afcm_sim_zeus`) calls this directly, using the `afcm_sim_defaultInjuryLevel` Addon Option as
-  its level (no per-placement level picker in Zeus yet).
+- **Spawn Patient (Zeus)** — spawns a clean, unconscious patient at the module's position; the Zeus
+  operator then picks the actual injury via the "Edit Injuries" scroll action every spawned patient
+  gets (§ Selectable Injuries above), rather than a random roll. **Implemented**:
+  `afcm_sim_spawner_fnc_spawnPatient` called directly (no injuries argument), `disableAI "ALL"` set
+  on the unit so it can't do anything autonomously (this is also what stops a spawned patient from
+  visibly recovering/"healing itself" on its own — a real, standard fix for native AI/engine
+  behavior, unrelated to any ACE/KAT-specific system). No randomized identity/loadout yet — spawns a
+  plain `C_man_1` civilian. **Not** randomized anymore despite the module class still being named
+  `AFCM_SIM_ModuleSpawnRandomPatient` internally (display name is now just "Spawn Patient" —
+  renaming the class would orphan it in any mission that's already placed one).
+  `afcm_sim_spawner_fnc_spawnRandomPatient` (the actual randomizer wrapper) still exists and is
+  still used by AFCM MASCAL Zone (§ below) — batch/mass-casualty drills are the one place
+  random-by-design still makes sense.
 - **AFCM Patient (Eden)** — design-time patient placement for scripted scenarios: a mission maker
-  places the module in the editor, picks an injury level from its Attributes panel, and it spawns/
-  configures that patient on mission start (`afcm_sim_eden`). Distinct from Random Patient (Zeus,
-  live) and Map to Spawn Patients (below, in-mission) — this is the pre-authoring path.
-  **Implemented**: calls `spawnRandomPatient` with the module's own attribute, same caveats as
-  Random Patient above.
+  places the module, and it spawns a clean, unconscious patient on mission start
+  (`afcm_sim_eden`) — same "Edit Injuries" selection flow as Zeus's Spawn Patient, not a random
+  roll. Distinct from Spawn Patient (Zeus, live) and Map to Spawn Patients (below, in-mission) —
+  this is the pre-authoring path. **Implemented**: calls `spawnPatient` directly, no injuries
+  argument. The module's old "Injury Level" attribute is gone (eden/config.cpp) — it stopped doing
+  anything once this module stopped auto-randomizing.
 - **Stretcher Placement** — selectable stretcher type (class list sourced from whichever backend
   is active, §2.5), ghost-preview placement (surface-snapped, like Zeus placement), spawns synced
   for MP. *Not implemented.*
 - **Map to Spawn Patients** — map-click patient placement/preview, supports batch placement for
-  MASCAL scenarios, respects the same spawn pipeline as Random Patient. *In-mission map-click tool
+  MASCAL scenarios, respects the same spawn pipeline as Spawn Patient. *In-mission map-click tool
   not implemented; the Eden-editor design-time equivalent is* **AFCM MASCAL Zone** *(§7 —
   `AFCM_SIM_ModuleMascalZone`), which **is** implemented: patient-count + injury-level attributes,
   spawns that many patients (loosely scattered via `spawnPatient`'s own position jitter) on mission
@@ -422,9 +430,9 @@ AFCM-Simulator/
                     # requiredAddons = {cba_main, afcm_sim_main} — calls the backend interface only
     spawner/       # afcm_sim_spawner — patient spawner, stretcher placement, map tool
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario}
-    zeus/          # afcm_sim_zeus — "Spawn Random Patient" Zeus module (§5), currently a stub
+    zeus/          # afcm_sim_zeus — "Spawn Patient" Zeus module (§5), implemented
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario, afcm_sim_spawner}
-    eden/          # afcm_sim_eden — "AFCM Patient" Eden module (§5), currently a stub
+    eden/          # afcm_sim_eden — "AFCM Patient"/"AFCM MASCAL Zone" Eden modules (§5), implemented
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario, afcm_sim_spawner}
     afcm_compat/   # afcm_sim_afcm_compat — implements the interface against AFCM's PatientState API
                     # requiredAddons = {cba_main, afcm_main, afcm_sim_main} — only loads if AFCM present

@@ -77,27 +77,11 @@ class CfgVehicles
         isTriggerActivated = 0;
         curatorCanAttach = 0;
 
-        // Injury-level attribute (DESIGN.md §4.4). Gameplay-authoring difficulty scale — NOT a
-        // real triage category, see TERMINOLOGY.md §2/§10. Value read back via
-        // `_logic getVariable ["AFCM_SIM_injuryLevel", 0]` in the module function once it's real.
-        class Attributes
-        {
-            class AFCM_SIM_InjuryLevel
-            {
-                displayName = "Injury Level";
-                property = "AFCM_SIM_injuryLevel";
-                control = "combo";
-                defaultValue = "0";
-                class Values
-                {
-                    class Easy { name = "Easy"; value = 0; default = 1; };
-                    class Medium { name = "Medium"; value = 1; };
-                    class Hard { name = "Hard"; value = 2; };
-                    class Extreme { name = "Extreme"; value = 3; };
-                    class Fucked { name = "F*CKED!"; value = 4; };
-                };
-            };
-        };
+        // No Injury Level attribute anymore - this module now spawns a clean, unconscious patient
+        // and relies on the "Edit Injuries" scroll action (added to every spawned patient,
+        // afcm_sim_spawner_fnc_spawnPatient) for real injury selection, same as Zeus's Spawn
+        // Patient module. AFCM_SIM_ModuleMascalZone below keeps its own Injury Level attribute -
+        // that one's still a randomized batch-spawn tool.
     };
 
     // Design-time counterpart to "Map to Spawn Patients... MASCAL scenarios" (DESIGN.md §5) — a
