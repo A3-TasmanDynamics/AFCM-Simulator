@@ -49,13 +49,6 @@ _unit setCaptive true;
 _unit setDir (random 360);
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
 
-// addAction is local to whichever machine calls it - every client (present + JIP) needs to run
-// this itself for the "Edit Injuries" scroll action to actually show up for them. Called by name
-// (not a config requiredAddons dependency on afcm_sim_ui) since remoteExec resolves function names
-// at runtime regardless of load-order/dependency declarations, same as the prior working prototype
-// (REFERENCES.md, `remoteExec ["med_casualties", 2]`).
-[_unit] remoteExec ["afcm_sim_ui_fnc_addInjuryEditorAction", 0, true];
-
 // Patients always spawn unconscious - confirmed native `setUnconscious` (REFERENCES.md), not
 // ACE/KAT-specific, so this holds even with no medical backend registered at all (DESIGN.md §2.5).
 _unit setUnconscious true;
@@ -66,6 +59,16 @@ publicVariable "AFCM_SIM_spawnedPatients";
 [{
     params ["_unit", "_injuries"];
     if (isNull _unit) exitWith {};
+
+    // addAction is local to whichever machine calls it - every client (present + JIP) needs to run
+    // this itself for the "Edit Injuries" scroll action to actually show up for them. Deferred here
+    // alongside injury application (not run immediately on createUnit) for the same reason - a
+    // freshly created unit's netId isn't guaranteed to have finished replicating to every client
+    // yet. Called by name (not a config requiredAddons dependency on afcm_sim_ui) since remoteExec
+    // resolves function names at runtime regardless of load-order/dependency declarations, same as
+    // the prior working prototype (REFERENCES.md, `remoteExec ["med_casualties", 2]`).
+    [_unit] remoteExec ["afcm_sim_ui_fnc_addInjuryEditorAction", 0, true];
+
     { [_unit, _x] call afcm_sim_fnc_backend_applyInjury; } forEach _injuries;
 }, [_unit, _injuries], 1] call CBA_fnc_waitAndExecute;
 

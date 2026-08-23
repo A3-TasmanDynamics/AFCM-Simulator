@@ -17,5 +17,6 @@
 private _interface = createHashMap;
 _interface set ["applyInjury", afcm_sim_ace_fnc_applyInjury];
 _interface set ["removeInjury", afcm_sim_ace_fnc_removeInjury];
+_interface set ["getState", afcm_sim_ace_fnc_getState];
 
 ["ace", 10, _interface] call afcm_sim_fnc_backend_registerBackend;

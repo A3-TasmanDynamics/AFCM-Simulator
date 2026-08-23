@@ -22,4 +22,6 @@ params ["_targetUnit"];
 
 missionNamespace setVariable ["AFCM_SIM_UI_targetUnit", _targetUnit];
 
-createDialog "RscDisplayAFCM_SIM_LimbSelect"
+private _result = createDialog "RscDisplayAFCM_SIM_LimbSelect";
+diag_log text format ["[AFCM-Simulator][UI] limbSelect_open for %1 - createDialog result: %2.", _targetUnit, _result];
+_result

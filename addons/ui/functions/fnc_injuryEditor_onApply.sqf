@@ -33,7 +33,11 @@ private _bleeding = cbChecked _bleedingCB;
 private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
 private _limb = missionNamespace getVariable ["AFCM_SIM_UI_targetLimb", "chest"];
 
-if !(isNull _targetUnit) then {
+diag_log text format ["[AFCM-Simulator][UI] Apply clicked - target %1, limb '%2', woundType '%3', severity %4, bleeding %5.", _targetUnit, _limb, _woundType, _severity, _bleeding];
+
+if (isNull _targetUnit) then {
+    diag_log text "[AFCM-Simulator][UI] Apply aborted - AFCM_SIM_UI_targetUnit is objNull.";
+} else {
     [_targetUnit, _limb, _woundType, _severity, _bleeding] remoteExec ["afcm_sim_scenario_fnc_serverApplyInjury", 2];
     ["injury.applied", [_targetUnit, _limb, _woundType, _severity, _bleeding]] call afcm_sim_ui_fnc_publish;
 };

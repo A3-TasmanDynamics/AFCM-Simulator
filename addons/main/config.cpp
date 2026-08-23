@@ -41,6 +41,7 @@ class CfgFunctions
             class backend_applyInjury { file = "\afcm_sim\addons\main\functions\fnc_backend_applyInjury.sqf"; };
             class backend_removeInjury { file = "\afcm_sim\addons\main\functions\fnc_backend_removeInjury.sqf"; };
             class backend_getActive { file = "\afcm_sim\addons\main\functions\fnc_backend_getActive.sqf"; };
+            class backend_getState { file = "\afcm_sim\addons\main\functions\fnc_backend_getState.sqf"; };
             // postInit, not preInit: the engine guarantees every addon's preInit (where backend
             // registration happens, see fnc_backend_registerBackend.sqf) finishes before ANY
             // addon's postInit runs — a native two-phase guarantee that doesn't need CBA's event

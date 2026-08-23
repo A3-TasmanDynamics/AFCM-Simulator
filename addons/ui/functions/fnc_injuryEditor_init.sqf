@@ -56,4 +56,16 @@ params ["_display"];
 
     (_display displayCtrl 14) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_injuryEditor_onApply];
     (_display displayCtrl 15) ctrlAddEventHandler ["ButtonClick", { closeDialog 0; }];
+
+    // Live status readout (fnc_injuryEditor_refreshState.sqf), removed on close by
+    // fnc_injuryEditor_cleanup.sqf (onUnload). 0.5s interval - fast enough to read as "live"
+    // without polling every frame for a value that mostly doesn't change that often.
+    private _pfhHandle = [
+        { params ["_args", "_handle"]; [_args, _handle] call afcm_sim_ui_fnc_injuryEditor_refreshState; },
+        0.5,
+        [_display]
+    ] call CBA_fnc_addPerFrameHandler;
+    missionNamespace setVariable ["AFCM_SIM_UI_statePFH", _pfhHandle];
+
+    diag_log text format ["[AFCM-Simulator][UI] Injury editor opened for limb '%1'.", _limb];
 }, [_display]] call CBA_fnc_execNextFrame;

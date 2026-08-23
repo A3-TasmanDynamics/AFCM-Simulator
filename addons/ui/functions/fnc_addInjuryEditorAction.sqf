@@ -22,7 +22,10 @@ if (isNull _unit) exitWith {};
 
 _unit addAction [
     "<t color='#c1272d'>AFCM: Edit Injuries</t>",
-    { [_this select 0] call afcm_sim_ui_fnc_limbSelect_open; },
+    {
+        diag_log text format ["[AFCM-Simulator][UI] Edit Injuries action used on %1.", _this select 0];
+        [_this select 0] call afcm_sim_ui_fnc_limbSelect_open;
+    },
     [],
     1.5,
     true,
@@ -31,3 +34,5 @@ _unit addAction [
     "true",
     5
 ];
+
+diag_log text format ["[AFCM-Simulator][UI] Edit Injuries action added to %1.", _unit];

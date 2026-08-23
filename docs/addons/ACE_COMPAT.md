@@ -108,6 +108,21 @@ Builds an interface `HashMap` (`{"applyInjury": ..., "removeInjury": ...}`) and 
 ACE3's real removal-side API (something in the spirit of `ace_medical_fnc_fullHeal`, or a targeted
 per-wound removal — unconfirmed which fits the `Injury` object shape) hasn't been researched yet.
 
+### `afcm_sim_ace_fnc_getState`
+```sqf
+[_unit, _limb] call afcm_sim_ace_fnc_getState
+```
+**Real implementation.** Backs the injury editor's live medical-status readout
+(`afcm_sim_ui`/`RscDisplayAFCM_SIM_InjuryEditor`) via `afcm_sim_fnc_backend_getState`. Read-only and
+deliberately only uses ACE3 getters that don't require `local _unit` —
+`ace_medical_fnc_isInjured` and `ace_medical_fnc_getOpenWounds` — since, unlike `applyInjury`, this
+needs to work when called from any client, not just the server. `ace_medical_fnc_getBloodLoss` is
+real and confirmed (REFERENCES.md) but explicitly **not** used here for that reason. Returns a
+`HashMap`: `injured` (Bool), `pain` (direct `ace_medical_pain` variable read), `lifeState`/
+`incapacitatedState` (vanilla engine commands, not ACE-specific), and `limbWoundCount`/
+`limbBleeding` for whichever `LimbId` was passed (folded to an ACE body part the same way
+`applyInjury` does — [§4.1](#41-limbid--ace3-body-part)).
+
 ---
 
 ## 3. Why Two ACE Calls, Not One

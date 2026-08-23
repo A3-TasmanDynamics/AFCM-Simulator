@@ -323,7 +323,13 @@ is still the plan, not the state of the repo.
   API as confirmed-but-unused, consistent with §2.4's decision to keep AFCM-Simulator's own UI
   ACE-independent). Apply routes through `afcm_sim_scenario_fnc_serverApplyInjury` → the same
   `afcm_sim_fnc_backend_applyInjury` dispatch the randomizer uses (DESIGN.md §6 — server-authoritative,
-  never applied client-side).
+  never applied client-side). Also shows **live medical state** while open — a new
+  `afcm_sim_fnc_backend_getState` dispatch (mirrors `applyInjury`'s pattern, read-only, safe from
+  any machine) reports consciousness (`lifeState`/`incapacitatedState`), pain, whether the unit is
+  injured at all, and the selected limb's open-wound/bleeding state; `afcm_sim_ace_compat` implements
+  it via `ace_medical_fnc_isInjured`/`getOpenWounds` (both safe to call off the unit's owning
+  machine, unlike `getBloodLoss` which requires `local _unit` and is deliberately not used here).
+  Refreshed on a 0.5s `CBA_fnc_addPerFrameHandler` while the dialog is open, removed on close.
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
   *Not implemented.*
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from

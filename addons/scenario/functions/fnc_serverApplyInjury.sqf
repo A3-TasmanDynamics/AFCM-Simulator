@@ -26,8 +26,14 @@
 
 params ["_unit", "_limb", "_woundType", ["_severity", 0.5], ["_bleeding", false]];
 
-if !(isServer) exitWith {};
-if (isNull _unit) exitWith {};
+diag_log text format ["[AFCM-Simulator] serverApplyInjury received - unit %1, limb '%2', woundType '%3', severity %4, bleeding %5 (isServer=%6).", _unit, _limb, _woundType, _severity, _bleeding, isServer];
+
+if !(isServer) exitWith {
+    diag_log text "[AFCM-Simulator] serverApplyInjury aborted - not running on the server.";
+};
+if (isNull _unit) exitWith {
+    diag_log text "[AFCM-Simulator] serverApplyInjury aborted - unit is objNull on the server (network sync issue?).";
+};
 
 // Same 8 limb-segment values as afcm_sim_scenario_fnc_randomizeInjuries - only arms/legs are
 // tourniquetable, never head/neck/chest/abdomen/pelvis.

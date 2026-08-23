@@ -43,7 +43,9 @@ class CfgFunctions
             file = "\afcm_sim\addons\ui\functions";
             class injuryEditor_open { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_open.sqf"; };
             class injuryEditor_init { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_init.sqf"; };
+            class injuryEditor_cleanup { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_cleanup.sqf"; };
             class injuryEditor_onApply { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onApply.sqf"; };
+            class injuryEditor_refreshState { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_refreshState.sqf"; };
             class addInjuryEditorAction { file = "\afcm_sim\addons\ui\functions\fnc_addInjuryEditorAction.sqf"; };
         };
     };
@@ -250,20 +252,25 @@ class RscDisplayAFCM_SIM_LimbSelect
 #define IDC_AFCM_SIM_IE_BLEEDING   13
 #define IDC_AFCM_SIM_IE_APPLY      14
 #define IDC_AFCM_SIM_IE_CANCEL     15
+#define IDC_AFCM_SIM_IE_STATUS     16
 
 class RscCombo;
 class RscCheckBox;
 
 // Second real screen for "Selectable Injuries" (DESIGN.md §5) — wound type, severity, bleed
-// toggle, per limb. Opened by fnc_limbSelect_onLimbClick.sqf right after a limb is picked; Apply
-// remoteExecs to afcm_sim_scenario_fnc_serverApplyInjury (DESIGN.md §6 — never applies locally).
-// IDCs here are hardcoded 1/10-15 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf
-// read via `_display displayCtrl <n>` — keep both in sync if either changes.
+// toggle, per limb, plus a live medical-status readout (afcm_sim_fnc_backend_getState) refreshed
+// on a per-frame handler while the dialog is open. Opened by fnc_limbSelect_onLimbClick.sqf right
+// after a limb is picked; Apply remoteExecs to afcm_sim_scenario_fnc_serverApplyInjury (DESIGN.md
+// §6 — never applies locally).
+// IDCs here are hardcoded 1/10-16 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
+// fnc_injuryEditor_refreshState.sqf read via `_display displayCtrl <n>` — keep both in sync if
+// either changes.
 class RscDisplayAFCM_SIM_InjuryEditor
 {
     idd = IDD_AFCM_SIM_INJURYEDITOR;
     movingEnable = 1;
     onLoad = "call afcm_sim_ui_fnc_injuryEditor_init;";
+    onUnload = "call afcm_sim_ui_fnc_injuryEditor_cleanup;";
 
     class controls
     {
@@ -343,12 +350,26 @@ class RscDisplayAFCM_SIM_InjuryEditor
             w = "0.04 * safeZoneH";
             h = "0.04 * safeZoneH";
         };
+        // Live medical state (afcm_sim_fnc_backend_getState), refreshed on a per-frame handler
+        // added in fnc_injuryEditor_init.sqf and removed in fnc_injuryEditor_cleanup.sqf while this
+        // dialog is open — genuinely live, not just a snapshot from when the dialog opened.
+        class StatusText: RscText
+        {
+            idc = IDC_AFCM_SIM_IE_STATUS;
+            text = "";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.515 * safeZoneH + safeZoneY";
+            w = "0.36 * safeZoneW";
+            h = "0.065 * safeZoneH";
+            sizeEx = "0.02 * safeZoneH";
+            colorText[] = {0.85, 0.85, 0.8, 1};
+        };
         class Apply: RscButton
         {
             idc = IDC_AFCM_SIM_IE_APPLY;
             text = "Apply";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.52 * safeZoneH + safeZoneY";
+            y = "0.59 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -357,7 +378,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_CANCEL;
             text = "Cancel";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.52 * safeZoneH + safeZoneY";
+            y = "0.59 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.045 * safeZoneH";
         };

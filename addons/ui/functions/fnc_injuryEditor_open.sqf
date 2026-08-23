@@ -27,4 +27,6 @@ if (isNull _targetUnit) exitWith { false };
 missionNamespace setVariable ["AFCM_SIM_UI_targetUnit", _targetUnit];
 missionNamespace setVariable ["AFCM_SIM_UI_targetLimb", _limb];
 
-createDialog "RscDisplayAFCM_SIM_InjuryEditor"
+private _result = createDialog "RscDisplayAFCM_SIM_InjuryEditor";
+diag_log text format ["[AFCM-Simulator][UI] injuryEditor_open for %1/%2 - createDialog result: %3.", _targetUnit, _limb, _result];
+_result
