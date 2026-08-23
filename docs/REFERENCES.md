@@ -137,10 +137,10 @@ indexing (see KAT_COMPAT.md §4):
 
 `afcm_sim_kat_compat` now registers as a real backend (priority 15, above `ace_compat`'s 10) since
 its `requiredAddons` gate is real — it was previously kept as a non-registering stub specifically
-because the class name wasn't confirmed; that's resolved. `applyInjury`/`removeInjury` are still
-logging stubs in code, but the specific research blocker that justified that (no known KAT
-equivalent of `ace_medical_fnc_addDamageToUnit`) is now resolved too — see
-[KAT_COMPAT.md](addons/KAT_COMPAT.md) for the full writeup and what's still actually open.
+because the class name wasn't confirmed; that's resolved. `applyInjury`/`getState` are now real too
+— they reuse `ace_compat`'s exact ACE3 calls, since KAT extends ACE3's own wound pipeline rather
+than replacing it. `removeInjury` is still a stub. See [KAT_COMPAT.md](addons/KAT_COMPAT.md) for
+the full writeup and what's still actually open.
 
 ## Zeus/Curator module categorization (official wiki + confirmed via KAT's real config)
 

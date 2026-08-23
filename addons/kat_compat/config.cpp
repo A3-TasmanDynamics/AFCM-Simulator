@@ -20,10 +20,10 @@ class CfgPatches
 // REFERENCES.md. This PBO now only loads if KAT is actually present, so it's safe to register as
 // a real backend (previously deferred specifically because this class name wasn't confirmed).
 //
-// Still not implemented: the actual wound/injury-application call — KAT's equivalent of
-// ace_medical_fnc_addDamageToUnit isn't confirmed yet (REFERENCES.md), so applyInjury/removeInjury
-// stay logging stubs. NOTE: explicit `file=` per leaf class, full absolute virtual path — see
-// afcm_sim_main/config.cpp for why both the fnc_ filename AND the absolute-path form are required.
+// applyInjury/getState are now real (KAT_COMPAT.md §3 — KAT extends ACE3's own wound pipeline
+// rather than replacing it, so afcm_sim_ace_compat's real ACE3 calls apply correctly here too).
+// removeInjury is still a stub. NOTE: explicit `file=` per leaf class, full absolute virtual path —
+// see afcm_sim_main/config.cpp for why both the fnc_ filename AND the absolute-path form are required.
 class CfgFunctions
 {
     class afcm_sim_kat
@@ -34,6 +34,7 @@ class CfgFunctions
             file = "\afcm_sim\addons\kat_compat\functions";
             class applyInjury { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyInjury.sqf"; };
             class removeInjury { file = "\afcm_sim\addons\kat_compat\functions\fnc_removeInjury.sqf"; };
+            class getState { file = "\afcm_sim\addons\kat_compat\functions\fnc_getState.sqf"; };
             class preInit { file = "\afcm_sim\addons\kat_compat\functions\fnc_preInit.sqf"; preInit = 1; };
         };
     };

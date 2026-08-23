@@ -45,8 +45,10 @@ or an upper-arm wound from a forearm one.
 
 **Status**: `afcm_sim_afcm_compat`'s column is planned, not real yet (§9 — deferred stub, no AFCM
 API to target). `afcm_sim_ace_compat`'s column is real and confirmed — see
-[ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part) for the source. `kat_compat`
-and `acm_compat` don't have a confirmed mapping yet (`applyInjury` is still a stub for both).
+[ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part) for the source.
+`afcm_sim_kat_compat` uses the identical mapping (KAT sits on the same 6 ACE body parts underneath
+— [KAT_COMPAT.md §3](addons/KAT_COMPAT.md#3-the-real-finding-kat-extends-aces-wound-pipeline-it-doesnt-replace-it)).
+`acm_compat` doesn't have a confirmed mapping yet (`applyInjury` is still a stub).
 
 ACE3 itself only tracks 6 real body parts, so five of the 13 `LimbId`s above (`neck`/`chest`/
 `abdomen`/`pelvis`, all folding to `"body"`, plus each limb's two segments folding to one ACE part)
@@ -197,7 +199,7 @@ they're shareable outside the mission file).
 | Backend | `LimbId` mapping | `woundType` mapping | Bleeding | Doc |
 |---|---|---|---|---|
 | `ace_compat` | **Real** | **Real** (3/16+ possible classes wired) | **Real** — deterministic via `addWound` | [ACE_COMPAT.md](addons/ACE_COMPAT.md) |
-| `kat_compat` | Not wired yet (would mirror `ace_compat`'s fold — same 6 ACE body parts underneath) | Real call identified (KAT extends ACE's own pipeline, doesn't replace it) but not yet wired into code | Same — identified, not wired | [KAT_COMPAT.md](addons/KAT_COMPAT.md) |
+| `kat_compat` | **Real** — identical fold to `ace_compat` | **Real** — identical to `ace_compat` | **Real** — identical to `ace_compat` | [KAT_COMPAT.md](addons/KAT_COMPAT.md) |
 | `afcm_compat` | Planned (table above) | Not started | Not started | — |
 | `acm_compat` | Not confirmed | Not confirmed | Not confirmed | — |
 
@@ -207,9 +209,10 @@ they're shareable outside the mission file).
 
 KAT tracks some state that has no equivalent in the backend-agnostic `Injury` object at all —
 confirmed real, but not part of §1–§4's shared vocabulary since it's KAT-internal state, not
-something `afcm_sim_scenario`'s randomizer or a future preset currently produces. Documented here
-so it's not lost, and as the natural next layer once `kat_compat`'s `applyInjury` is real
-(full context: [KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables)).
+something `afcm_sim_scenario`'s randomizer or a future preset currently produces. `kat_compat`'s
+`applyInjury` is real now (§5 above), but doesn't touch any of this yet — it's the natural next
+layer once that baseline is proven working (full context:
+[KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables)).
 
 **Fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb — and each
 entry is a **severity/treatment-stage scale, not a boolean**. Note this array's own index order is

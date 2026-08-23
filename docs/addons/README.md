@@ -34,7 +34,7 @@ selection/priority actually works across all four of these at once.
 | Addon | PBO | `requiredAddons` | Priority | Status |
 |---|---|---|---|---|
 | `afcm_compat` | `afcm_sim_afcm_compat` | `afcm_main` | 20+ (planned) | Deferred, config-only stub — waiting on AFCM's `PatientState` API to stabilize |
-| **[`kat_compat`](KAT_COMPAT.md)** | `afcm_sim_kat_compat` | `ace_medical_engine`, `kat_main` | 15 | **Registers as a real backend.** `applyInjury`/`removeInjury` are still logging stubs in code, but the real call is now identified — KAT extends ACE's own wound pipeline rather than replacing it. **Full doc: [KAT_COMPAT.md](KAT_COMPAT.md)** |
+| **[`kat_compat`](KAT_COMPAT.md)** | `afcm_sim_kat_compat` | `ace_medical_engine`, `kat_main` | 15 | **`applyInjury`/`getState` are real** — identical to `ace_compat`'s, since KAT extends ACE's own wound pipeline rather than replacing it. `removeInjury` is a stub. **Full doc: [KAT_COMPAT.md](KAT_COMPAT.md)** |
 | `acm_compat` | `afcm_sim_acm_compat` | `ace_medical_engine` | between ace/kat (planned) | Deferred stub — `requiredAddons` is still a placeholder identical to `ace_compat`'s, since ACM's real `CfgPatches` class name isn't confirmed |
 | **[`ace_compat`](ACE_COMPAT.md)** | `afcm_sim_ace_compat` | `ace_medical_engine` | 10 | **`applyInjury` is real** (grounded directly in ACE3 source — `ace_medical_fnc_addDamageToUnit` + `ace_medical_fnc_addWound`). `removeInjury` is a stub. **Full doc: [ACE_COMPAT.md](ACE_COMPAT.md)** |
 

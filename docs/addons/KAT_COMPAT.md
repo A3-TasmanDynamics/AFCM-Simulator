@@ -11,9 +11,9 @@
 **A Tasman Dynamics Backend Module** — part of [AFCM-Simulator](../../README.md)'s soft-dependency
 backend architecture (see [DESIGN.md §2.5](../DESIGN.md#25-soft-dependencies--runtime-backend-detection)).
 
-Status: **registers as a real backend; `applyInjury`/`removeInjury` are still logging stubs** —
-see [§3](#3-the-real-finding-kat-extends-aces-wound-pipeline-it-doesnt-replace-it) for why that
-stub status is now a choice, not a blocker.
+Status: **registers as a real backend; `applyInjury`/`getState` are real, `removeInjury` is still a
+stub** — see [§3](#3-the-real-finding-kat-extends-aces-wound-pipeline-it-doesnt-replace-it) for the
+research that made `applyInjury` possible.
 Owner: Tasman Dynamics
 PBO: `afcm_sim_kat_compat.pbo` (folder: `addons/kat_compat`)
 Function tag: `afcm_sim_kat`
@@ -23,7 +23,7 @@ Target: [KAT - Advanced Medical (KAM)](https://github.com/KAT-Advanced-Medical/K
 
 ## 1. What This Addon Is
 
-`kat_compat` implements AFCM-Simulator's backend interface (`applyInjury`/`removeInjury`) against
+`kat_compat` implements AFCM-Simulator's backend interface (`applyInjury`/`removeInjury`/`getState`) against
 **KAT - Advanced Medical** (real project name **KAM**, `kat_main` `CfgPatches` root) — the more
 detailed medical overhaul many servers run instead of, or on top of, plain ACE3 medical. Same
 soft-dependency mechanism as every other compat addon (see
@@ -71,11 +71,18 @@ All under the `afcm_sim_kat` tag.
 ### `afcm_sim_kat_fnc_preInit`
 Registers this backend with `afcm_sim_main` under id `"kat"`, priority 15. Real, runs automatically.
 
-### `afcm_sim_kat_fnc_applyInjury` / `afcm_sim_kat_fnc_removeInjury`
-**Currently stubs.** Both just `diag_log` a "not yet implemented" message and return. This was
-originally left unimplemented because KAT's own equivalent of `ace_medical_fnc_addDamageToUnit`
-hadn't been found — §3 below is new research (not present when the stub was first written) that
-resolves that specific blocker.
+### `afcm_sim_kat_fnc_applyInjury`
+**Real implementation.** Identical in substance to `afcm_sim_ace_fnc_applyInjury` — same `LimbId`
+fold, same `addDamageToUnit`/`addWound` calls (§3 explains why that's correct under KAT too), same
+bleeding-wound logic. Was a stub specifically because that research hadn't been done yet.
+
+### `afcm_sim_kat_fnc_getState`
+**Real implementation.** Identical in substance to `afcm_sim_ace_fnc_getState` (see
+[ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_getstate)) — same read-only, any-machine-safe ACE3
+getters, since KAT extends the same underlying state ACE3 tracks rather than replacing it.
+
+### `afcm_sim_kat_fnc_removeInjury`
+**Stub.** No real removal call wired up yet — same open question as `ace_compat`'s.
 
 ---
 
@@ -133,9 +140,10 @@ genuinely unconfirmed before, now has a real, source-grounded answer.
 
 ## 4. Confirmed KAT-Specific Variables
 
-Not yet wired into `applyInjury` — documented here because they were confirmed (either via a prior
-working prototype, cross-checked against real source, or directly from real KAT function bodies
-fetched this pass) and are the natural next layer once baseline damage (§3) is real:
+Not wired into `applyInjury` yet (it handles baseline damage/bleeding only, §3) — documented here
+because they were confirmed (either via a prior working prototype, cross-checked against real
+source, or directly from real KAT function bodies fetched this pass) and are the natural next layer
+now that baseline damage is real:
 
 **`kat_surgery_fractures`** — a 6-element array, one entry per body part, indexed identically to
 ACE's own `ALL_BODY_PARTS` — **doubly confirmed**: matches the prior working-prototype source, and
@@ -169,9 +177,10 @@ The `.1`/`.2`/`.5` suffixes read as *treatment progress* on top of a base severi
 than independent severities — e.g. `2` → `2.1` (opened) → `2.2` (prepared) looks like a real
 surgical-progression sequence, not confirmed against KAT's own surgery functions beyond
 `fractureCheck`'s read-only comparison logic. Note this array's index order is KAT/ACE's own 6 body
-parts, **not** AFCM-Simulator's 13-value `LimbId` — a future real `applyInjury` would need to fold
-`LimbId`'s `leftUpperArm`/`leftForearm` (etc.) onto this same single `leftArm` slot, exactly like
-`ace_compat` already does for damage ([§4.1](ACE_COMPAT.md#41-limbid--ace3-body-part) on that doc).
+parts, **not** AFCM-Simulator's 13-value `LimbId` — wiring this into `applyInjury` would need the
+same `LimbId` → ACE body-part fold `applyInjury` already uses for damage
+([§4.1](ACE_COMPAT.md#41-limbid--ace3-body-part) on the ACE_COMPAT.md doc) to collapse
+`leftUpperArm`/`leftForearm` (etc.) onto this array's single `leftArm` slot.
 
 - **`kat_breathing_pneumothorax`** / **`kat_breathing_Hemopneumothorax`** /
   **`kat_breathing_Tensionpneumothorax`** — set via `setVariable`, then
@@ -187,19 +196,17 @@ parts, **not** AFCM-Simulator's 13-value `LimbId` — a future real `applyInjury
 
 ## 5. Known Gaps
 
-- **`applyInjury`/`removeInjury` are still stubs in code**, even though §3 resolves the research
-  blocker that justified leaving them that way — implementing the real call (mirroring
-  `ace_compat`'s `addDamageToUnit`/`addWound` usage) hasn't been done yet.
+- **`removeInjury` is still a stub.** `applyInjury`/`getState` are real now (§3); no real ACE3/KAT
+  removal call is wired up yet, same open question as `ace_compat`'s.
+- **KAT-specific state (fractures, pneumothorax) not wired into `applyInjury`.** It applies baseline
+  damage/bleeding through the same real ACE3 calls `ace_compat` uses, but doesn't touch
+  `kat_surgery_fractures`/`kat_breathing_*` (§4) — those need their own pass.
 - **Fracture-*setting* function unconfirmed.** `fnc_fractureCheck.sqf` (§4) only *reads*
   `kat_surgery_fractures` — the real function that *writes* it (KAT's fracture-infliction entry
   point) hasn't been found yet.
 - **Chemical burn trigger path unconfirmed.** `KAT_chemicalBurn` (§3) is a real registered damage
   type, but what actually calls `addDamageToUnit`/`addWound` with that type (a specific ammo type?
   an area-effect script?) hasn't been traced.
-- **`bleedRate`/limb-segment mapping not yet KAT-specific.** Once `applyInjury` is implemented for
-  real, it'll need its own `LimbId` → ACE body-part fold (identical shape to
-  [ACE_COMPAT.md §4.1](ACE_COMPAT.md#41-limbid--ace3-body-part), since KAT sits on the same 6 ACE
-  body parts underneath) — not written yet since the function itself isn't.
 
 ---
 

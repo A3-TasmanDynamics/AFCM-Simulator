@@ -143,8 +143,10 @@ logic:
   present). **`kat_compat` is confirmed and registers as a real backend** (priority 15) —
   `requiredAddons` gates on the real `kat_main` (KAT's actual `CfgPatches` root, confirmed via
   [github.com/KAT-Advanced-Medical/KAM](https://github.com/KAT-Advanced-Medical/KAM), see
-  REFERENCES.md); `applyInjury`/`removeInjury` are still logging stubs since the actual wound-
-  application call isn't confirmed. **`acm_compat` remains a deferred, config-only stub** —
+  REFERENCES.md); `applyInjury`/`getState` are now real too (KAT extends ACE3's own wound pipeline
+  rather than replacing it — confirmed from KAT's real source, KAT_COMPAT.md §3 — so
+  `ace_compat`'s exact ACE3 calls apply correctly here as well). `removeInjury` is still a stub.
+  **`acm_compat` remains a deferred, config-only stub** —
   `requiredAddons` is still identical to `ace_compat`'s (ACE3 only) because ACM's real `CfgPatches`
   class name isn't confirmed (§8) — registering it as a real backend before that would make it win
   priority over `ace_compat` on any ACE3-only setup, which would be wrong. KAT and ACM are both
@@ -208,10 +210,10 @@ by construction (§2.5). The internal split:
   else. All `requiredAddon` `afcm_sim_main` (for the interface they register against), not
   `afcm_sim_scenario`.
 - **`afcm_sim_zeus`** / **`afcm_sim_eden`** own the editor-facing side of patient
-  authoring/placement (§5) — a Zeus module ("Spawn Random Patient") and an Eden module ("AFCM
-  Patient", with an injury-level attribute), both currently logging stubs pending real
-  `afcm_sim_spawner` logic. `requiredAddon` `afcm_sim_main`, `afcm_sim_scenario`, and
-  `afcm_sim_spawner`.
+  authoring/placement (§5) — a Zeus module ("Spawn Random Patient") and two Eden modules ("AFCM
+  Patient" and "AFCM MASCAL Zone", both with an injury-level attribute). **Implemented** — all
+  three call the real `afcm_sim_spawner_fnc_spawnRandomPatient`, not stubs. `requiredAddon`
+  `afcm_sim_main`, `afcm_sim_scenario`, and `afcm_sim_spawner`.
 
 ---
 
