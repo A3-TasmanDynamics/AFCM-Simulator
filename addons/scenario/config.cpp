@@ -25,6 +25,7 @@ class CfgFunctions
         {
             file = "\afcm_sim\addons\scenario\functions";
             class randomizeInjuries { file = "\afcm_sim\addons\scenario\functions\fnc_randomizeInjuries.sqf"; };
+            class serverApplyInjury { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyInjury.sqf"; };
         };
     };
 };

@@ -38,6 +38,14 @@ class CfgFunctions
             class limbSelect_open { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_open.sqf"; };
             class limbSelect_onLimbClick { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_onLimbClick.sqf"; };
         };
+        class InjuryEditor
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class injuryEditor_open { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_open.sqf"; };
+            class injuryEditor_init { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_init.sqf"; };
+            class injuryEditor_onApply { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onApply.sqf"; };
+            class addInjuryEditorAction { file = "\afcm_sim\addons\ui\functions\fnc_addInjuryEditorAction.sqf"; };
+        };
     };
 };
 
@@ -229,6 +237,129 @@ class RscDisplayAFCM_SIM_LimbSelect
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "closeDialog 0;";
+        };
+    };
+};
+
+#define IDD_AFCM_SIM_INJURYEDITOR 25602
+
+#define IDC_AFCM_SIM_IE_TITLE      1
+#define IDC_AFCM_SIM_IE_LIMBLABEL  10
+#define IDC_AFCM_SIM_IE_WOUNDTYPE  11
+#define IDC_AFCM_SIM_IE_SEVERITY   12
+#define IDC_AFCM_SIM_IE_BLEEDING   13
+#define IDC_AFCM_SIM_IE_APPLY      14
+#define IDC_AFCM_SIM_IE_CANCEL     15
+
+class RscCombo;
+class RscCheckBox;
+
+// Second real screen for "Selectable Injuries" (DESIGN.md §5) — wound type, severity, bleed
+// toggle, per limb. Opened by fnc_limbSelect_onLimbClick.sqf right after a limb is picked; Apply
+// remoteExecs to afcm_sim_scenario_fnc_serverApplyInjury (DESIGN.md §6 — never applies locally).
+// IDCs here are hardcoded 1/10-15 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf
+// read via `_display displayCtrl <n>` — keep both in sync if either changes.
+class RscDisplayAFCM_SIM_InjuryEditor
+{
+    idd = IDD_AFCM_SIM_INJURYEDITOR;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_injuryEditor_init;";
+
+    class controls
+    {
+        class Title: RscText
+        {
+            idc = IDC_AFCM_SIM_IE_TITLE;
+            text = "AFCM-Simulator — Injury Editor";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.28 * safeZoneH + safeZoneY";
+            w = "0.36 * safeZoneW";
+            h = "0.035 * safeZoneH";
+            sizeEx = "0.025 * safeZoneH";
+            colorText[] = {1, 1, 1, 1};
+        };
+        class LimbLabel: RscText
+        {
+            idc = IDC_AFCM_SIM_IE_LIMBLABEL;
+            text = "Injury";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.315 * safeZoneH + safeZoneY";
+            w = "0.36 * safeZoneW";
+            h = "0.035 * safeZoneH";
+            sizeEx = "0.022 * safeZoneH";
+            colorText[] = {0.76, 0.68, 0.62, 1};
+        };
+        class WoundTypeLabel: RscText
+        {
+            idc = -1;
+            text = "Wound Type";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.365 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            colorText[] = {1, 1, 1, 1};
+        };
+        class WoundType: RscCombo
+        {
+            idc = IDC_AFCM_SIM_IE_WOUNDTYPE;
+            x = "0.5 * safeZoneW + safeZoneX";
+            y = "0.365 * safeZoneH + safeZoneY";
+            w = "0.18 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class SeverityLabel: RscText
+        {
+            idc = -1;
+            text = "Severity";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.415 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            colorText[] = {1, 1, 1, 1};
+        };
+        class Severity: RscCombo
+        {
+            idc = IDC_AFCM_SIM_IE_SEVERITY;
+            x = "0.5 * safeZoneW + safeZoneX";
+            y = "0.415 * safeZoneH + safeZoneY";
+            w = "0.18 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class BleedingLabel: RscText
+        {
+            idc = -1;
+            text = "Bleeding";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.465 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            colorText[] = {1, 1, 1, 1};
+        };
+        class Bleeding: RscCheckBox
+        {
+            idc = IDC_AFCM_SIM_IE_BLEEDING;
+            x = "0.5 * safeZoneW + safeZoneX";
+            y = "0.465 * safeZoneH + safeZoneY";
+            w = "0.04 * safeZoneH";
+            h = "0.04 * safeZoneH";
+        };
+        class Apply: RscButton
+        {
+            idc = IDC_AFCM_SIM_IE_APPLY;
+            text = "Apply";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.52 * safeZoneH + safeZoneY";
+            w = "0.17 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        class Cancel: RscButton
+        {
+            idc = IDC_AFCM_SIM_IE_CANCEL;
+            text = "Cancel";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.52 * safeZoneH + safeZoneY";
+            w = "0.17 * safeZoneW";
+            h = "0.045 * safeZoneH";
         };
     };
 };

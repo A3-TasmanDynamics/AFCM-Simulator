@@ -310,10 +310,20 @@ Status markers below reflect actual implementation, not just design intent — m
 is still the plan, not the state of the repo.
 
 - **Selectable Body Limbs** — limb-diagram UI (native dialog, clickable silhouette regions) →
-  emits `limb.selected` event on the bus. *Dialog exists (§2 button-per-limb version); nothing
-  consumes `limb.selected` yet.*
+  emits `limb.selected` event on the bus. **Implemented** (§2 button-per-limb version, not a
+  silhouette): picking a limb publishes `limb.selected` and opens the injury editor below for the
+  same limb — `limb.selected` is consumed now, not a dead-end event.
 - **Selectable Injuries** — per-limb injury editor (wound type, severity, bleed toggle, custom
-  variables) → emits `injury.applied`/`injury.removed`. *Not implemented.*
+  variables) → emits `injury.applied`/`injury.removed`. **Implemented, partially**: wound
+  type/severity/bleeding are real (`RscDisplayAFCM_SIM_InjuryEditor`, `afcm_sim_ui`); severity is a
+  4-band combo (Light/Moderate/Severe/Critical → 0.25/0.5/0.75/1.0), not a continuous slider.
+  `variables` (custom free-form fields) not exposed in the UI. Publishes `injury.applied`; no
+  removal path yet, so no `injury.removed`. Entry point is a vanilla `addAction` ("Edit Injuries")
+  added to every spawned patient — not an ACE interaction-menu entry (REFERENCES.md documents that
+  API as confirmed-but-unused, consistent with §2.4's decision to keep AFCM-Simulator's own UI
+  ACE-independent). Apply routes through `afcm_sim_scenario_fnc_serverApplyInjury` → the same
+  `afcm_sim_fnc_backend_applyInjury` dispatch the randomizer uses (DESIGN.md §6 — server-authoritative,
+  never applied client-side).
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
   *Not implemented.*
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from

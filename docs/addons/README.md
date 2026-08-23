@@ -20,7 +20,7 @@ below is real — pulled from each addon's own `config.cpp`, not aspirational.
 | Addon | PBO | `requiredAddons` | What it does |
 |---|---|---|---|
 | `main` | `afcm_sim_main` | `cba_main` | Owns the backend interface (`afcm_sim_fnc_backend_registerBackend`/`selectBackend`/`applyInjury`/`removeInjury`/`getActive`) that every other addon calls through, plus the CBA Addon Options settings (`afcm_sim_debugLogging`, `afcm_sim_defaultInjuryLevel`). The only addon every other AFCM-Simulator addon ultimately depends on |
-| `ui` | `afcm_sim_ui` | `cba_main` | Dialog framework + event bus (`afcm_sim_ui_fnc_publish`/`subscribe`). Native `RscDisplay` limb-select dialog (button-per-limb, not a silhouette) |
+| `ui` | `afcm_sim_ui` | `cba_main` | Dialog framework + event bus (`afcm_sim_ui_fnc_publish`/`subscribe`). Two real dialogs: limb-select (button-per-limb, not a silhouette) and the injury editor (wound type/severity/bleeding) it opens next. Entry point is a vanilla `addAction` on spawned patients, not the ACE interaction menu |
 | `scenario` | `afcm_sim_scenario` | `cba_main`, `afcm_sim_main` | Domain logic — currently `afcm_sim_scenario_fnc_randomizeInjuries`, which rolls a real `Injury` array from an injury-level profile ([DESIGN.md §4.4](../DESIGN.md#44-injury-levels-randomization-difficulty)) |
 | `spawner` | `afcm_sim_spawner` | `cba_main`, `afcm_sim_main`, `afcm_sim_scenario` | Patient spawning/clearing — `spawnPatient`, `spawnRandomPatient`, `clearAllPatients`. Owns `AFCM_SIM_patientGroup`/`AFCM_SIM_spawnedPatients`. Server-authoritative |
 
