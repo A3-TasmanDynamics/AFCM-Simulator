@@ -69,7 +69,7 @@ class CfgVehicles
         scopeCurator = 2;
         side = 7;
         displayName = "AFCM Patient";
-        icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
+        icon = "\afcm_sim\addons\eden\data\module_patient.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_eden_fnc_module_patientPlacement";
         functionPriority = 1;
@@ -93,7 +93,7 @@ class CfgVehicles
         scopeCurator = 2;
         side = 7;
         displayName = "AFCM MASCAL Zone";
-        icon = "\a3\ui_f\data\IGUI\Cfg\Cursors\iconCursorTarget_ca.paa";
+        icon = "\afcm_sim\addons\eden\data\module_mascal.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_eden_fnc_module_mascalZone";
         functionPriority = 1;
