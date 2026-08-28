@@ -56,6 +56,7 @@ params ["_display"];
 
     (_display displayCtrl 14) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_injuryEditor_onApply];
     (_display displayCtrl 15) ctrlAddEventHandler ["ButtonClick", { closeDialog 0; }];
+    (_display displayCtrl 17) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_injuryEditor_onReset];
 
     // Live status readout (fnc_injuryEditor_refreshState.sqf), removed on close by
     // fnc_injuryEditor_cleanup.sqf (onUnload). 0.5s interval - fast enough to read as "live"

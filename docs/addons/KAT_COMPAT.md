@@ -81,6 +81,10 @@ bleeding-wound logic. Was a stub specifically because that research hadn't been 
 [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_getstate)) — same read-only, any-machine-safe ACE3
 getters, since KAT extends the same underlying state ACE3 tracks rather than replacing it.
 
+### `afcm_sim_kat_fnc_reset`
+**Real implementation.** Identical to `afcm_sim_ace_fnc_reset` — `ace_medical_fnc_fullHeal` then
+re-lock `setUnconscious true`. Backs the injury editor's Reset Patient button.
+
 ### `afcm_sim_kat_fnc_removeInjury`
 **Stub.** No real removal call wired up yet — same open question as `ace_compat`'s.
 

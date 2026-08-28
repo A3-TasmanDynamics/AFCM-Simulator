@@ -332,7 +332,15 @@ is still the plan, not the state of the repo.
   injured at all, and the selected limb's open-wound/bleeding state; `afcm_sim_ace_compat` implements
   it via `ace_medical_fnc_isInjured`/`getOpenWounds` (both safe to call off the unit's owning
   machine, unlike `getBloodLoss` which requires `local _unit` and is deliberately not used here).
-  Refreshed on a 0.5s `CBA_fnc_addPerFrameHandler` while the dialog is open, removed on close.
+  Refreshed on a 0.5s `CBA_fnc_addPerFrameHandler` while the dialog is open, removed on close. A
+  **Reset Patient** button wipes everything done to the patient so far (wounds, bandages, drugs)
+  via a new `afcm_sim_fnc_backend_reset` dispatch — `afcm_sim_ace_compat`/`afcm_sim_kat_compat` both
+  implement it as `ace_medical_fnc_fullHeal` (real, confirmed) followed by re-locking the unit back
+  to `setUnconscious true`, so a reset hands back the same "just spawned" baseline rather than a
+  fully awake, healthy unit. Routes through `afcm_sim_scenario_fnc_serverReset`, same
+  server-authoritative request pattern as Apply. Unlike Apply/Cancel, Reset leaves the dialog open —
+  the live status readout shows the clean state within moments and the instructor can immediately
+  pick a fresh injury.
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
   *Not implemented.*
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from

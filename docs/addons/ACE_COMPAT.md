@@ -123,6 +123,15 @@ real and confirmed (REFERENCES.md) but explicitly **not** used here for that rea
 `limbBleeding` for whichever `LimbId` was passed (folded to an ACE body part the same way
 `applyInjury` does — [§4.1](#41-limbid--ace3-body-part)).
 
+### `afcm_sim_ace_fnc_reset`
+```sqf
+[_unit] call afcm_sim_ace_fnc_reset
+```
+**Real implementation.** Backs the injury editor's Reset Patient button. Calls the real, confirmed
+`ace_medical_fnc_fullHeal` (REFERENCES.md) to wipe all wounds/damage/drugs, then immediately
+re-applies `setUnconscious true` — a reset hands back the same "just spawned" unconscious baseline
+DESIGN.md §5 establishes for every patient, not a fully awake, healthy unit.
+
 ---
 
 ## 3. Why Two ACE Calls, Not One

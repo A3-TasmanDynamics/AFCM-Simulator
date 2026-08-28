@@ -45,6 +45,7 @@ class CfgFunctions
             class injuryEditor_init { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_init.sqf"; };
             class injuryEditor_cleanup { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_cleanup.sqf"; };
             class injuryEditor_onApply { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onApply.sqf"; };
+            class injuryEditor_onReset { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onReset.sqf"; };
             class injuryEditor_refreshState { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_refreshState.sqf"; };
             class addInjuryEditorAction { file = "\afcm_sim\addons\ui\functions\fnc_addInjuryEditorAction.sqf"; };
         };
@@ -253,6 +254,7 @@ class RscDisplayAFCM_SIM_LimbSelect
 #define IDC_AFCM_SIM_IE_APPLY      14
 #define IDC_AFCM_SIM_IE_CANCEL     15
 #define IDC_AFCM_SIM_IE_STATUS     16
+#define IDC_AFCM_SIM_IE_RESET      17
 
 class RscCombo;
 class RscCheckBox;
@@ -261,10 +263,11 @@ class RscCheckBox;
 // toggle, per limb, plus a live medical-status readout (afcm_sim_fnc_backend_getState) refreshed
 // on a per-frame handler while the dialog is open. Opened by fnc_limbSelect_onLimbClick.sqf right
 // after a limb is picked; Apply remoteExecs to afcm_sim_scenario_fnc_serverApplyInjury (DESIGN.md
-// §6 — never applies locally).
-// IDCs here are hardcoded 1/10-16 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
-// fnc_injuryEditor_refreshState.sqf read via `_display displayCtrl <n>` — keep both in sync if
-// either changes.
+// §6 — never applies locally). Reset remoteExecs to afcm_sim_scenario_fnc_serverReset (fullHeal +
+// re-lock unconscious) and keeps the dialog open, unlike Apply/Cancel.
+// IDCs here are hardcoded 1/10-17 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
+// fnc_injuryEditor_onReset.sqf/fnc_injuryEditor_refreshState.sqf read via `_display displayCtrl <n>`
+// — keep both in sync if either changes.
 class RscDisplayAFCM_SIM_InjuryEditor
 {
     idd = IDD_AFCM_SIM_INJURYEDITOR;
@@ -381,6 +384,18 @@ class RscDisplayAFCM_SIM_InjuryEditor
             y = "0.59 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.045 * safeZoneH";
+        };
+        // Separate row, distinct from Apply/Cancel - wipes everything done to the patient so far
+        // and starts the exercise over, rather than committing/discarding one injury.
+        class Reset: RscButton
+        {
+            idc = IDC_AFCM_SIM_IE_RESET;
+            text = "Reset Patient";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.645 * safeZoneH + safeZoneY";
+            w = "0.36 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            colorBackground[] = {0.5, 0.15, 0.13, 1};
         };
     };
 };

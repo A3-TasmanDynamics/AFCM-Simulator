@@ -1,37 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- Multiple patients inside a placement zone, for the Eden "AFCM MASCAL Zone" module. Same
-       reclining-figure language as module-patient.svg, scaled down and repeated, inside a dashed
-       zone ring to read as "batch placement area" rather than one patient. -->
-
-  <!-- Zone ring -->
-  <circle cx="64" cy="64" r="54" fill="none" stroke="#f2efe6" stroke-width="4" stroke-dasharray="10 8" opacity="0.6"/>
-
-  <!-- Three small reclining figures at different positions/rotations -->
-  <g fill="#f2efe6">
-    <g transform="translate(30,46) rotate(-10) scale(0.62)">
-      <circle cx="30" cy="76" r="11"/>
-      <rect x="38" y="70" width="46" height="13" rx="6.5"/>
-      <rect x="40" y="80" width="8" height="15" rx="4" transform="rotate(70 44 87.5)"/>
-      <rect x="55" y="80" width="8" height="15" rx="4" transform="rotate(55 59 87.5)"/>
-    </g>
-    <g transform="translate(56,74) rotate(6) scale(0.62)">
-      <circle cx="30" cy="76" r="11"/>
-      <rect x="38" y="70" width="46" height="13" rx="6.5"/>
-      <rect x="40" y="80" width="8" height="15" rx="4" transform="rotate(70 44 87.5)"/>
-      <rect x="55" y="80" width="8" height="15" rx="4" transform="rotate(55 59 87.5)"/>
-    </g>
-    <g transform="translate(24,86) rotate(-4) scale(0.55)">
-      <circle cx="30" cy="76" r="11"/>
-      <rect x="38" y="70" width="46" height="13" rx="6.5"/>
-      <rect x="40" y="80" width="8" height="15" rx="4" transform="rotate(70 44 87.5)"/>
-      <rect x="55" y="80" width="8" height="15" rx="4" transform="rotate(55 59 87.5)"/>
-    </g>
-  </g>
-
-  <!-- Medical cross badge -->
-  <g transform="translate(96,28)">
-    <circle r="20" fill="#1c2e20" stroke="#f2efe6" stroke-width="3"/>
-    <rect x="-10" y="-3.2" width="20" height="6.4" rx="2" fill="#c1272d"/>
-    <rect x="-3.2" y="-10" width="6.4" height="20" rx="2" fill="#c1272d"/>
+  <!-- MASCAL Zone module icon (Eden "AFCM MASCAL Zone"). Same AFCM cross as module-patient.svg,
+       plus a simple ring to read as "zone/area" rather than a single patient - still just an
+       icon, no illustrated shape. -->
+  <circle cx="64" cy="64" r="54" fill="none" stroke="#f2efe6" stroke-width="6"/>
+  <g transform="translate(64,64)">
+    <rect x="-34" y="-10.5" width="68" height="21" rx="4" fill="#c1272d" stroke="#f2efe6" stroke-width="3.5"/>
+    <rect x="-10.5" y="-34" width="21" height="68" rx="4" fill="#c1272d" stroke="#f2efe6" stroke-width="3.5"/>
   </g>
 </svg>
