@@ -50,12 +50,11 @@ _unit setDir (random 360);
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
 
 // A patient is a static casualty prop, not an autonomous actor - disableAI "ALL" stops every native
-// AI subsystem (movement, targeting, combat FSM), including whatever native/engine-level behavior
-// was making spawned patients visibly recover/heal on their own over time. Real, standard fix for
-// "why does my downed AI heal itself" - unrelated to ace_medical_ai specifically (confirmed via its
-// real source: fnc_healSelf.sqf explicitly refuses to treat an unconscious unit, and fnc_healUnit.sqf
-// only pulls from the injured unit's OWN group's assigned medic - AFCM_SIM_patientGroup has no
-// medic, so that addon was already ruled out as the cause here).
+// AI subsystem (movement, targeting, combat FSM). Kept as general hardening even after finding the
+// real cause of patients "healing themselves" (afcm_sim_fnc's disableSpontaneousWakeup, main/
+// preInit): ACE's own `ace_medical_statemachine_fnc_handleStateUnconscious` spontaneously wakes
+// stable-vitals unconscious units on a timer regardless of AI subsystem state - this doesn't stop
+// that, but stops the patient doing anything else on its own in the meantime.
 _unit disableAI "ALL";
 
 // Patients always spawn unconscious - confirmed native `setUnconscious` (REFERENCES.md), not

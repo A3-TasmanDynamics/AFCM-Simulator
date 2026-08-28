@@ -353,9 +353,11 @@ is still the plan, not the state of the repo.
   operator then picks the actual injury via the "Edit Injuries" scroll action every spawned patient
   gets (§ Selectable Injuries above), rather than a random roll. **Implemented**:
   `afcm_sim_spawner_fnc_spawnPatient` called directly (no injuries argument), `disableAI "ALL"` set
-  on the unit so it can't do anything autonomously (this is also what stops a spawned patient from
-  visibly recovering/"healing itself" on its own — a real, standard fix for native AI/engine
-  behavior, unrelated to any ACE/KAT-specific system). No randomized identity/loadout yet — spawns a
+  on the unit so it can't do anything autonomously. What actually stops a spawned patient from
+  visibly recovering/"healing itself" is a separate, real ACE3 mechanic in a different addon than
+  first suspected — see REFERENCES.md's "Why patients were healing themselves" for the full
+  two-round investigation and `afcm_sim_fnc_disableSpontaneousWakeup` (`main`, `preInit`). No
+  randomized identity/loadout yet — spawns a
   plain `C_man_1` civilian. **Not** randomized anymore despite the module class still being named
   `AFCM_SIM_ModuleSpawnRandomPatient` internally (display name is now just "Spawn Patient" —
   renaming the class would orphan it in any mission that's already placed one).

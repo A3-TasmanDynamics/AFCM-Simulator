@@ -50,6 +50,10 @@ class CfgFunctions
             // CBA_fnc_addEventHandler; that event doesn't exist as a subscribable global broadcast
             // — CBA's own postInit is the same per-addon postInit=1 mechanism as this one.)
             class main_postInit { file = "\afcm_sim\addons\main\functions\fnc_main_postInit.sqf"; postInit = 1; };
+            // preInit, not postInit: just subscribes to a CBA event (CBA_settingsInitialized) -
+            // needs to be registered before that event can possibly fire, and doesn't depend on
+            // backend registration/selection at all, so there's no reason to wait for postInit.
+            class disableSpontaneousWakeup { file = "\afcm_sim\addons\main\functions\fnc_disableSpontaneousWakeup.sqf"; preInit = 1; };
         };
         class Settings
         {

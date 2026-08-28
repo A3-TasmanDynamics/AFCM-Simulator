@@ -182,6 +182,39 @@ in-game symptom, not just a theoretical risk).
 |---|---|
 | [setUnconscious](https://community.bistudio.com/wiki/setUnconscious) | `unit setUnconscious set` (Boolean, no return value) — vanilla engine command, not ACE/KAT-specific, confirmed still present in Arma 3. Used in `afcm_sim_spawner_fnc_spawnPatient` so spawned patients are always unconscious even with no medical backend registered at all (DESIGN.md §2.5) |
 
+## Why patients were "healing themselves" (confirmed directly from acemod/ACE3, two rounds of research)
+
+**Round 1 (incomplete)**: suspected `ace_medical_ai` ("Makes AI units heal themselves and each
+other"). Read its real source and ruled it out with high confidence:
+`addons/medical_ai/functions/fnc_healSelf.sqf` explicitly refuses to treat a unit that's
+unconscious; `fnc_healUnit.sqf`/`fnc_addHealingCommandActions.sqf` only ever search the *treating*
+unit's own group for who to heal. `AFCM_SIM_patientGroup` has no medic and no other members, so
+neither path should have applied — and yet the symptom persisted after a `disableAI "ALL"` fix
+built on that conclusion.
+
+**Round 2 (the actual cause)**: a *different* real ACE3 addon,
+[`medical_statemachine`](https://github.com/acemod/ACE3/tree/master/addons/medical_statemachine)
+(not `medical_ai`), owns the incapacitated/unconscious state itself.
+`addons/medical_statemachine/functions/fnc_handleStateUnconscious.sqf` runs on every unconscious
+unit regardless of AI subsystem state, and implements a real, intentional "spontaneous wake up"
+mechanic: once a unit's vitals stabilize (`hasStableVitals`), there's a random chance every check
+interval — real setting `ace_medical_spontaneousWakeUpChance`, default `0.1` — that the unit simply
+wakes up with **zero treatment**. Once awake, `ace_medical_ai`'s unconsciousness guard (Round 1)
+no longer blocks it, and since `ace_medical_ai_requireItems` also defaults to disabled, the
+now-conscious patient can "bandage"/"use morphine" on itself for free with an empty inventory —
+exactly the real `Activity Log` entries a live test showed (`"has bandaged patient"`, `"used
+Morphine Autoinjector"`).
+
+Fix: `afcm_sim_fnc_disableSpontaneousWakeup` (`main`, `preInit`) sets
+`ace_medical_spontaneousWakeUpChance` to `0`, server-authoritative, once `CBA_settingsInitialized`
+fires (same real event `ace_medical_ai`'s own postInit waits for). Confirmed from the setting's own
+real `CBA_fnc_addSetting` call (`addons/medical/initSettings.inc.sqf`) that — unlike
+`ace_medical_ai_enabledFor`, which explicitly requires a mission restart — this one doesn't, so it
+takes effect live. This is mission-wide, not scoped to just AFCM-Simulator's own patients (no
+per-unit override exists in ACE's real source, same conclusion as Round 1) — a deliberate choice
+for a mod whose entire purpose is realistic medical training, where "casualties self-stabilize with
+zero treatment" is directly at odds with the point of the exercise.
+
 ---
 
 <div align="center">
