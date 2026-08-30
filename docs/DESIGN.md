@@ -340,7 +340,17 @@ is still the plan, not the state of the repo.
   fully awake, healthy unit. Routes through `afcm_sim_scenario_fnc_serverReset`, same
   server-authoritative request pattern as Apply. Unlike Apply/Cancel, Reset leaves the dialog open —
   the live status readout shows the clean state within moments and the instructor can immediately
-  pick a fresh injury.
+  pick a fresh injury. The dialog is **backend-aware**: it queries `afcm_sim_fnc_backend_getActive`
+  on open and adapts — wound type/severity/bleeding show for both `ace`/`kat` (labeled with the real
+  backend name, since both consume the same real ACE3 calls underneath); KAT additionally gets real
+  **Fracture** and **Pneumothorax** controls with no ACE equivalent (`kat_surgery_fractures`,
+  `kat_breathing_pneumothorax`/`Hemopneumothorax`/`Tensionpneumothorax` — INJURY_CODES.md §6),
+  applied via two new KAT-specific request paths
+  (`afcm_sim_scenario_fnc_serverApplyKatFracture`/`serverApplyKatPneumothorax`) that call
+  `afcm_sim_kat_compat` directly rather than going through the generic Injury/backend-interface
+  dispatch, since this state has no meaning under plain ACE or AFCM. If no usable backend is active
+  (nothing registered, or only `afcm` — not yet supported by this UI, DESIGN.md §2.5), Apply is
+  disabled and the limb label explains why instead of offering controls that would silently no-op.
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
   *Not implemented.*
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from

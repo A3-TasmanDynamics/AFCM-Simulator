@@ -6,6 +6,11 @@
  * locally (DESIGN.md §6, same "request -> server validates/applies" pattern as the prior working
  * prototype, REFERENCES.md).
  *
+ * When KAT is the active backend, also reads the Fracture/Pneumothorax combos (only visible for
+ * KAT, fnc_injuryEditor_init.sqf) and sends those as separate KAT-specific requests
+ * (afcm_sim_scenario_fnc_serverApplyKatFracture/Pneumothorax) - these aren't part of the generic
+ * Injury object, so they don't go through afcm_sim_fnc_backend_applyInjury at all.
+ *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Apply button <CONTROL>
  *
@@ -18,6 +23,7 @@
 params ["_ctrlApply"];
 
 private _display = ctrlParent _ctrlApply;
+private _backend = call afcm_sim_fnc_backend_getActive;
 
 private _woundTypes = ["gunshot", "shrapnel", "blast"];
 private _severities = [0.25, 0.5, 0.75, 1.0];
@@ -33,13 +39,25 @@ private _bleeding = cbChecked _bleedingCB;
 private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
 private _limb = missionNamespace getVariable ["AFCM_SIM_UI_targetLimb", "chest"];
 
-diag_log text format ["[AFCM-Simulator][UI] Apply clicked - target %1, limb '%2', woundType '%3', severity %4, bleeding %5.", _targetUnit, _limb, _woundType, _severity, _bleeding];
+diag_log text format ["[AFCM-Simulator][UI] Apply clicked - target %1, limb '%2', woundType '%3', severity %4, bleeding %5, backend '%6'.", _targetUnit, _limb, _woundType, _severity, _bleeding, _backend];
 
 if (isNull _targetUnit) then {
     diag_log text "[AFCM-Simulator][UI] Apply aborted - AFCM_SIM_UI_targetUnit is objNull.";
 } else {
     [_targetUnit, _limb, _woundType, _severity, _bleeding] remoteExec ["afcm_sim_scenario_fnc_serverApplyInjury", 2];
     ["injury.applied", [_targetUnit, _limb, _woundType, _severity, _bleeding]] call afcm_sim_ui_fnc_publish;
+
+    if (_backend == "kat") then {
+        private _fractureSeverity = lbCurSel (_display displayCtrl 18);
+        if (_fractureSeverity > 0) then {
+            [_targetUnit, _limb, _fractureSeverity] remoteExec ["afcm_sim_scenario_fnc_serverApplyKatFracture", 2];
+        };
+
+        private _pneumoState = lbCurSel (_display displayCtrl 19);
+        if (_pneumoState > 0) then {
+            [_targetUnit, _pneumoState] remoteExec ["afcm_sim_scenario_fnc_serverApplyKatPneumothorax", 2];
+        };
+    };
 };
 
 closeDialog 0;

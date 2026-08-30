@@ -255,6 +255,10 @@ class RscDisplayAFCM_SIM_LimbSelect
 #define IDC_AFCM_SIM_IE_CANCEL     15
 #define IDC_AFCM_SIM_IE_STATUS     16
 #define IDC_AFCM_SIM_IE_RESET      17
+#define IDC_AFCM_SIM_IE_FRACTURE   18
+#define IDC_AFCM_SIM_IE_PNEUMO     19
+#define IDC_AFCM_SIM_IE_FRACTURE_LABEL  20
+#define IDC_AFCM_SIM_IE_PNEUMO_LABEL    21
 
 class RscCombo;
 class RscCheckBox;
@@ -265,7 +269,15 @@ class RscCheckBox;
 // after a limb is picked; Apply remoteExecs to afcm_sim_scenario_fnc_serverApplyInjury (DESIGN.md
 // §6 — never applies locally). Reset remoteExecs to afcm_sim_scenario_fnc_serverReset (fullHeal +
 // re-lock unconscious) and keeps the dialog open, unlike Apply/Cancel.
-// IDCs here are hardcoded 1/10-17 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
+//
+// Backend-aware (fnc_injuryEditor_init.sqf queries afcm_sim_fnc_backend_getActive on open): the
+// Fracture/Pneumothorax controls (KAT-only real state, no ACE equivalent — INJURY_CODES.md §6) are
+// shown only when KAT is confirmed active, hidden otherwise; if no backend is active at all, Apply
+// is disabled and the limb label explains why instead of offering controls that would silently
+// no-op. Wound type/severity/bleeding stay visible for both ACE and KAT since both consume the same
+// real calls under the hood (ACE_COMPAT.md §3/KAT_COMPAT.md §3).
+//
+// IDCs here are hardcoded 1/10-21 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
 // fnc_injuryEditor_onReset.sqf/fnc_injuryEditor_refreshState.sqf read via `_display displayCtrl <n>`
 // — keep both in sync if either changes.
 class RscDisplayAFCM_SIM_InjuryEditor
@@ -282,21 +294,23 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_TITLE;
             text = "AFCM-Simulator — Injury Editor";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.28 * safeZoneH + safeZoneY";
+            y = "0.19 * safeZoneH + safeZoneY";
             w = "0.36 * safeZoneW";
             h = "0.035 * safeZoneH";
             sizeEx = "0.025 * safeZoneH";
             colorText[] = {1, 1, 1, 1};
         };
+        // Text set dynamically in fnc_injuryEditor_init.sqf — shows the limb name AND the active
+        // backend ("Injury — Left Arm (KAT Advanced Medical)"), or a "no backend active" message.
         class LimbLabel: RscText
         {
             idc = IDC_AFCM_SIM_IE_LIMBLABEL;
             text = "Injury";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.315 * safeZoneH + safeZoneY";
+            y = "0.225 * safeZoneH + safeZoneY";
             w = "0.36 * safeZoneW";
             h = "0.035 * safeZoneH";
-            sizeEx = "0.022 * safeZoneH";
+            sizeEx = "0.02 * safeZoneH";
             colorText[] = {0.76, 0.68, 0.62, 1};
         };
         class WoundTypeLabel: RscText
@@ -304,7 +318,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Wound Type";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.365 * safeZoneH + safeZoneY";
+            y = "0.275 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.04 * safeZoneH";
             colorText[] = {1, 1, 1, 1};
@@ -313,7 +327,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_WOUNDTYPE;
             x = "0.5 * safeZoneW + safeZoneX";
-            y = "0.365 * safeZoneH + safeZoneY";
+            y = "0.275 * safeZoneH + safeZoneY";
             w = "0.18 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -322,7 +336,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Severity";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.415 * safeZoneH + safeZoneY";
+            y = "0.325 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.04 * safeZoneH";
             colorText[] = {1, 1, 1, 1};
@@ -331,7 +345,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_SEVERITY;
             x = "0.5 * safeZoneW + safeZoneX";
-            y = "0.415 * safeZoneH + safeZoneY";
+            y = "0.325 * safeZoneH + safeZoneY";
             w = "0.18 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -340,7 +354,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Bleeding";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.465 * safeZoneH + safeZoneY";
+            y = "0.375 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.04 * safeZoneH";
             colorText[] = {1, 1, 1, 1};
@@ -349,8 +363,46 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_BLEEDING;
             x = "0.5 * safeZoneW + safeZoneX";
-            y = "0.465 * safeZoneH + safeZoneY";
+            y = "0.375 * safeZoneH + safeZoneY";
             w = "0.04 * safeZoneH";
+            h = "0.04 * safeZoneH";
+        };
+        // KAT-only (no ACE equivalent) - ctrlShow toggled in fnc_injuryEditor_init.sqf based on the
+        // active backend, not just always visible.
+        class FractureLabel: RscText
+        {
+            idc = IDC_AFCM_SIM_IE_FRACTURE_LABEL;
+            text = "Fracture (KAT)";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.425 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            colorText[] = {1, 1, 1, 1};
+        };
+        class Fracture: RscCombo
+        {
+            idc = IDC_AFCM_SIM_IE_FRACTURE;
+            x = "0.5 * safeZoneW + safeZoneX";
+            y = "0.425 * safeZoneH + safeZoneY";
+            w = "0.18 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class PneumoLabel: RscText
+        {
+            idc = IDC_AFCM_SIM_IE_PNEUMO_LABEL;
+            text = "Pneumothorax (KAT)";
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.475 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            colorText[] = {1, 1, 1, 1};
+        };
+        class Pneumothorax: RscCombo
+        {
+            idc = IDC_AFCM_SIM_IE_PNEUMO;
+            x = "0.5 * safeZoneW + safeZoneX";
+            y = "0.475 * safeZoneH + safeZoneY";
+            w = "0.18 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
         // Live medical state (afcm_sim_fnc_backend_getState), refreshed on a per-frame handler
@@ -361,7 +413,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_STATUS;
             text = "";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.515 * safeZoneH + safeZoneY";
+            y = "0.53 * safeZoneH + safeZoneY";
             w = "0.36 * safeZoneW";
             h = "0.065 * safeZoneH";
             sizeEx = "0.02 * safeZoneH";
@@ -372,7 +424,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_APPLY;
             text = "Apply";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.59 * safeZoneH + safeZoneY";
+            y = "0.605 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -381,7 +433,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_CANCEL;
             text = "Cancel";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.59 * safeZoneH + safeZoneY";
+            y = "0.605 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -392,7 +444,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_RESET;
             text = "Reset Patient";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.645 * safeZoneH + safeZoneY";
+            y = "0.66 * safeZoneH + safeZoneY";
             w = "0.36 * safeZoneW";
             h = "0.045 * safeZoneH";
             colorBackground[] = {0.5, 0.15, 0.13, 1};

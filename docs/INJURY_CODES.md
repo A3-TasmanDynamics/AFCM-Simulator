@@ -205,22 +205,27 @@ they're shareable outside the mission file).
 
 ---
 
-## 6. KAT-Specific Coding (Confirmed, Not Yet Wired)
+## 6. KAT-Specific Coding
 
 KAT tracks some state that has no equivalent in the backend-agnostic `Injury` object at all —
-confirmed real, but not part of §1–§4's shared vocabulary since it's KAT-internal state, not
-something `afcm_sim_scenario`'s randomizer or a future preset currently produces. `kat_compat`'s
-`applyInjury` is real now (§5 above), but doesn't touch any of this yet — it's the natural next
-layer once that baseline is proven working (full context:
+real, KAT-internal state, not something `afcm_sim_scenario`'s randomizer or a future preset
+produces. **Wired up now**: the injury editor UI shows real Fracture/Pneumothorax controls when
+KAT is the active backend (hidden for plain ACE), applied via two dedicated request paths
+(`afcm_sim_scenario_fnc_serverApplyKatFracture`/`serverApplyKatPneumothorax` → `afcm_sim_kat_compat`
+directly) rather than the generic `Injury`/backend-interface dispatch, since neither of these has
+any meaning under plain ACE or AFCM (full context:
 [KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables)).
 
 **Fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb — and each
 entry is a **severity/treatment-stage scale, not a boolean**. Note this array's own index order is
 **KAT/ACE's** 6 body parts (`head, torso, leftArm, rightArm, leftLeg, rightLeg`) — **not**
 AFCM-Simulator's 13-value `LimbId` from §1, since KAT sits directly on ACE's 6 real body parts
-underneath. A future `kat_compat` would need to fold `LimbId`'s `leftUpperArm`/`leftForearm` (etc.)
-onto this same single `leftArm` slot, exactly like `ace_compat` already does for damage
-([ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part)):
+underneath. `afcm_sim_kat_fnc_applyFracture` folds `LimbId`'s `leftUpperArm`/`leftForearm` (etc.)
+onto this same single `leftArm` slot, exactly like `ace_compat`/`kat_compat`'s `applyInjury` already
+does for damage ([ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part)). The UI's
+Fracture combo only offers the four base severities below (`0`–`3`), not the `.1`/`.2`/`.5`
+treatment-progress sub-stages — those represent surgical progress on an existing fracture, not an
+initial injury to author:
 
 ```sqf
 /*
@@ -250,6 +255,11 @@ The `.1`/`.2`/`.5` suffixes read as treatment-progress stages layered on top of 
 **Pneumothorax** (`kat_breathing_pneumothorax`) is a `Number` (severity), alongside two booleans
 (`kat_breathing_Hemopneumothorax`, `kat_breathing_Tensionpneumothorax`) — all three set via
 `setVariable`, then `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state.
+`afcm_sim_kat_fnc_applyPneumothorax` exposes this as a single UI choice — None / Simple
+Pneumothorax / Hemopneumothorax / Tension Pneumothorax — rather than three independent controls,
+since the real combinations that make clinical sense are limited. Unlike Fracture, this isn't
+per-limb — it's a torso-wide condition, so the UI offers it regardless of which limb the editor was
+opened for.
 
 ---
 
