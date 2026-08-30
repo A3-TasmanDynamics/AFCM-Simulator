@@ -193,6 +193,12 @@ and import (`fnc_importPreset.sqf`, `call compile` + shape validation, always as
 rather than trusting the pasted one) are both real, wired into the Preset Library UI's shared
 `RscEdit` text field — Export also copies straight to the OS clipboard (`copyToClipboard`).
 
+**MCI presets are a separate, second library** — `[id, name, author, description, patientSpecs]`,
+where `patientSpecs` is an Array of *these* Preset ids (or the literal string `"random"`), one per
+patient in a whole incident, e.g. "HE Shell — 3 Casualties." Same shape, same
+built-in/`profileNamespace`/export-import pattern, just one layer up — full detail:
+[DESIGN.md § MCI Creator](DESIGN.md#5-features).
+
 ---
 
 ## 5. Per-Backend Coding Status

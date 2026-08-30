@@ -63,6 +63,7 @@ class CfgFunctions
             // Options > AFCM Medical Simulator" in-game). preInit per CBA's own recommendation, so
             // settings are available in the Eden Editor too, not just in-game.
             class settings_preInit { file = "\afcm_sim\addons\main\functions\fnc_settings_preInit.sqf"; preInit = 1; };
+            class registerMciCreatorKeybind { file = "\afcm_sim\addons\main\functions\fnc_registerMciCreatorKeybind.sqf"; preInit = 1; };
             // Not yet wired into backend_registerBackend/backend_selectBackend — those are already
             // verified working in-game and left untouched to avoid reintroducing risk; available
             // for new call sites (zeus/eden/spawner) going forward.

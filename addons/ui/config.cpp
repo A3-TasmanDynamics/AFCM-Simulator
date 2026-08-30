@@ -75,6 +75,55 @@ class CfgFunctions
             class presetSave_init { file = "\afcm_sim\addons\ui\functions\fnc_presetSave_init.sqf"; };
             class presetSave_onSave { file = "\afcm_sim\addons\ui\functions\fnc_presetSave_onSave.sqf"; };
         };
+        // MCI Creator - a standalone, on-demand tool (DESIGN.md § MCI Creator): pick a patient
+        // count, assign each patient its own Preset (or "random") independently, pick a spot on
+        // the real map, spawn the whole incident in one request. Entry point:
+        // afcm_sim_ui_fnc_mciCreator_open (also bound to a CBA keybind, afcm_sim_main).
+        class MciCreator
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class mciCreator_open { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_open.sqf"; };
+            class mciCreator_init { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_init.sqf"; };
+            class mciCreator_populatePatientList { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_populatePatientList.sqf"; };
+            class mciCreator_populatePresetList { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_populatePresetList.sqf"; };
+            class mciCreator_refreshLocationStatus { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_refreshLocationStatus.sqf"; };
+            class mciCreator_onPatientCountChanged { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onPatientCountChanged.sqf"; };
+            class mciCreator_onAssign { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onAssign.sqf"; };
+            class mciCreator_onRandomizeAll { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onRandomizeAll.sqf"; };
+            class mciCreator_onChooseLocation { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onChooseLocation.sqf"; };
+            class mciCreator_onSpawn { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onSpawn.sqf"; };
+            class mciCreator_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onSavePreset.sqf"; };
+            class mciCreator_onLoadPreset { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onLoadPreset.sqf"; };
+        };
+        // Real interactive map-click position picker (RscMapControl-based) - see
+        // ui/config.cpp's RscDisplayAFCM_SIM_MapPicker for the full explanation.
+        class MapPicker
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class mapPicker_init { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_init.sqf"; };
+            class mapPicker_onClick { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_onClick.sqf"; };
+            class mapPicker_onConfirm { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_onConfirm.sqf"; };
+        };
+        // MCI Preset library (INJURY_CODES.md §4/DESIGN.md § MCI Creator) - same shape as
+        // PresetLibrary above, for whole incidents instead of single injuries. "Load" replaces the
+        // MCI Creator's patient list rather than applying to a unit.
+        class MciPresetLibrary
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class mciPresetLibrary_init { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetLibrary_init.sqf"; };
+            class mciPresetLibrary_populateList { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetLibrary_populateList.sqf"; };
+            class mciPresetLibrary_onSelect { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetLibrary_onSelect.sqf"; };
+            class mciPresetLibrary_onLoad { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetLibrary_onLoad.sqf"; };
+            class mciPresetLibrary_onDelete { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetLibrary_onDelete.sqf"; };
+            class mciPresetLibrary_onExport { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetLibrary_onExport.sqf"; };
+            class mciPresetLibrary_onImport { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetLibrary_onImport.sqf"; };
+        };
+        class MciPresetSave
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class mciPresetSave_init { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetSave_init.sqf"; };
+            class mciPresetSave_onSave { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetSave_onSave.sqf"; };
+        };
     };
 };
 
@@ -101,6 +150,7 @@ class RscCombo;
 class RscCheckBox;
 class RscListBox;
 class RscEdit;
+class RscMapControl;
 
 // Shared component kit, built on the three real base classes above (already proven working in
 // this file) rather than an unverified "RscBackground" class — RscText's own colorBackground[]
@@ -823,6 +873,523 @@ class RscDisplayAFCM_SIM_PresetSave
         class Cancel: AFCM_SIM_RscButton
         {
             idc = IDC_AFCM_SIM_PSV_CANCEL;
+            text = "Cancel";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.545 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            action = "closeDialog 0;";
+        };
+    };
+};
+
+// ---------------------------------------------------------------------------------------------
+// MCI (Mass Casualty Incident) Creator - a standalone, on-demand tool (not tied to placing a Zeus/
+// Eden module first): pick a patient count, assign each patient its own Preset (or "random")
+// independently, pick a spot on the real map by clicking it, then spawn the whole incident in one
+// request. Callable directly (`call afcm_sim_ui_fnc_mciCreator_open;`) and bound to a real CBA
+// keybind (default Ctrl+Shift+M, main/functions/fnc_registerMciCreatorKeybind.sqf) so it doesn't
+// need the debug console in practice. Complements, doesn't replace, the module-based MCI Spawners
+// (RscDisplayAFCM_SIM_LimbSelect's Presets flow / zeus+eden's AFCM_SIM_ModuleMciSpawner*) - those
+// give every patient in a batch the SAME preset; this tool is for when they need to differ, per
+// the "a HE shell hit a section, 3 are down, but with different injuries" case.
+// ---------------------------------------------------------------------------------------------
+
+#define IDD_AFCM_SIM_MCICREATOR 25605
+
+#define IDC_AFCM_SIM_MC_TITLE           1
+#define IDC_AFCM_SIM_MC_PATIENTCOUNT    10
+#define IDC_AFCM_SIM_MC_CASUALTYTYPE    11
+#define IDC_AFCM_SIM_MC_PATIENTLIST     12
+#define IDC_AFCM_SIM_MC_PRESETLIST      13
+#define IDC_AFCM_SIM_MC_ASSIGN          14
+#define IDC_AFCM_SIM_MC_RANDOMIZEALL    15
+#define IDC_AFCM_SIM_MC_LOCATIONSTATUS  16
+#define IDC_AFCM_SIM_MC_CHOOSELOCATION  17
+#define IDC_AFCM_SIM_MC_SAVEPRESET      18
+#define IDC_AFCM_SIM_MC_LOADPRESET      19
+#define IDC_AFCM_SIM_MC_SPAWN           20
+#define IDC_AFCM_SIM_MC_CLOSE           21
+
+// Two side-by-side listboxes: PatientList shows "Patient N — <spec>" rows (fnc_mciCreator_init.sqf
+// populates it from AFCM_SIM_UI_mciPatientSpecs, a plain missionNamespace Array of spec strings,
+// one per patient, "random" or a real Preset id — the actual working state of the incident being
+// built); PresetList shows every available Preset ("Random" first, then built-in, then user).
+// Assign applies PresetList's current selection onto PatientList's current selection
+// (fnc_mciCreator_onAssign.sqf), re-populating just that one row's text.
+class RscDisplayAFCM_SIM_MciCreator
+{
+    idd = IDD_AFCM_SIM_MCICREATOR;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_mciCreator_init;";
+
+    class controls
+    {
+        class Panel: AFCM_SIM_Panel
+        {
+            x = "0.2 * safeZoneW + safeZoneX";
+            y = "0.155 * safeZoneH + safeZoneY";
+            w = "0.6 * safeZoneW";
+            h = "0.69 * safeZoneH";
+        };
+        class Title: AFCM_SIM_RscTitle
+        {
+            idc = IDC_AFCM_SIM_MC_TITLE;
+            text = "MCI Creator";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.175 * safeZoneH + safeZoneY";
+            w = "0.56 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            sizeEx = "0.032 * safeZoneH";
+        };
+        class Subtitle: AFCM_SIM_RscSubtitle
+        {
+            idc = -1;
+            text = "Build a mass-casualty incident, then spawn it wherever you click on the map";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.22 * safeZoneH + safeZoneY";
+            w = "0.56 * safeZoneW";
+            h = "0.025 * safeZoneH";
+            sizeEx = "0.017 * safeZoneH";
+        };
+        class AccentBar: AFCM_SIM_AccentBar
+        {
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.25 * safeZoneH + safeZoneY";
+            w = "0.56 * safeZoneW";
+            h = "0.0025 * safeZoneH";
+        };
+        class PatientCountLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Patients";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.265 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class PatientCount: RscCombo
+        {
+            idc = IDC_AFCM_SIM_MC_PATIENTCOUNT;
+            x = "0.37 * safeZoneW + safeZoneX";
+            y = "0.265 * safeZoneH + safeZoneY";
+            w = "0.12 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class CasualtyTypeLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Casualty Type";
+            x = "0.52 * safeZoneW + safeZoneX";
+            y = "0.265 * safeZoneH + safeZoneY";
+            w = "0.13 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class CasualtyType: RscCombo
+        {
+            idc = IDC_AFCM_SIM_MC_CASUALTYTYPE;
+            x = "0.65 * safeZoneW + safeZoneX";
+            y = "0.265 * safeZoneH + safeZoneY";
+            w = "0.13 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class PatientListLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Patients (select one)";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.315 * safeZoneH + safeZoneY";
+            w = "0.27 * safeZoneW";
+            h = "0.025 * safeZoneH";
+        };
+        class PresetListLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Available Presets";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.315 * safeZoneH + safeZoneY";
+            w = "0.27 * safeZoneW";
+            h = "0.025 * safeZoneH";
+        };
+        class PatientList: RscListBox
+        {
+            idc = IDC_AFCM_SIM_MC_PATIENTLIST;
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.34 * safeZoneH + safeZoneY";
+            w = "0.27 * safeZoneW";
+            h = "0.22 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+            colorSelect[] = AFCM_SIM_COLOR_TEXT;
+            colorSelectBackground[] = AFCM_SIM_COLOR_ACCENT_HOVER;
+            sizeEx = "0.018 * safeZoneH";
+        };
+        class PresetList: RscListBox
+        {
+            idc = IDC_AFCM_SIM_MC_PRESETLIST;
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.34 * safeZoneH + safeZoneY";
+            w = "0.27 * safeZoneW";
+            h = "0.22 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+            colorSelect[] = AFCM_SIM_COLOR_TEXT;
+            colorSelectBackground[] = AFCM_SIM_COLOR_ACCENT_HOVER;
+            sizeEx = "0.018 * safeZoneH";
+        };
+        class Assign: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_MC_ASSIGN;
+            text = "Assign Selected Preset to Selected Patient";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.57 * safeZoneH + safeZoneY";
+            w = "0.56 * safeZoneW";
+            h = "0.035 * safeZoneH";
+        };
+        class RandomizeAll: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MC_RANDOMIZEALL;
+            text = "Randomize All Patients";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.61 * safeZoneH + safeZoneY";
+            w = "0.56 * safeZoneW";
+            h = "0.035 * safeZoneH";
+        };
+        // Text set dynamically (fnc_mciCreator_init.sqf/onMapConfirm.sqf) - "Location: not set yet"
+        // until Choose Location on Map is used, then shows the picked position.
+        class LocationStatus: RscText
+        {
+            idc = IDC_AFCM_SIM_MC_LOCATIONSTATUS;
+            text = "Location: not set yet";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.655 * safeZoneH + safeZoneY";
+            w = "0.56 * safeZoneW";
+            h = "0.03 * safeZoneH";
+            sizeEx = "0.018 * safeZoneH";
+            colorText[] = AFCM_SIM_COLOR_TEXT_DIM;
+        };
+        class ChooseLocation: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MC_CHOOSELOCATION;
+            text = "Choose Location on Map";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.69 * safeZoneH + safeZoneY";
+            w = "0.56 * safeZoneW";
+            h = "0.035 * safeZoneH";
+        };
+        class SavePreset: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MC_SAVEPRESET;
+            text = "Save as MCI Preset";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.73 * safeZoneH + safeZoneY";
+            w = "0.27 * safeZoneW";
+            h = "0.035 * safeZoneH";
+        };
+        class LoadPreset: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MC_LOADPRESET;
+            text = "Load MCI Preset";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.73 * safeZoneH + safeZoneY";
+            w = "0.27 * safeZoneW";
+            h = "0.035 * safeZoneH";
+        };
+        // Disabled by fnc_mciCreator_init.sqf/fnc_mciCreator_onMapConfirm.sqf until a location has
+        // actually been picked - spawning at objNull/undefined position would silently misplace
+        // the whole incident.
+        class Spawn: AFCM_SIM_RscButtonDanger
+        {
+            idc = IDC_AFCM_SIM_MC_SPAWN;
+            text = "Spawn MCI";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.775 * safeZoneH + safeZoneY";
+            w = "0.27 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        class Close: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MC_CLOSE;
+            text = "Close";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.775 * safeZoneH + safeZoneY";
+            w = "0.27 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            action = "closeDialog 0;";
+        };
+    };
+};
+
+#define IDD_AFCM_SIM_MAPPICKER 25606
+
+#define IDC_AFCM_SIM_MAP_HINT    1
+#define IDC_AFCM_SIM_MAP_MAP     10
+#define IDC_AFCM_SIM_MAP_CONFIRM 11
+#define IDC_AFCM_SIM_MAP_CANCEL  12
+
+// Real interactive map-click position picker - a genuine RscMapControl (the same base class the
+// vanilla in-mission map screen and countless custom marker-placement tools are built on), not a
+// grid of buttons. Clicking it fires MouseButtonDown (real control event,
+// `_this = [_control, _button, _x, _y, _shift, _ctrl, _alt]`); fnc_mapPicker_onClick.sqf converts
+// the click to a world position via the real `ctrlMapScreenToWorld` command and stashes it, then
+// Confirm hands it back to the MCI Creator (fnc_mapPicker_onConfirm.sqf). Deliberately no branded
+// panel behind the map itself - it would just obscure the thing being clicked on - only the hint
+// text and buttons get the usual readability treatment (shadow=1, already on AFCM_SIM_RscLabel).
+class RscDisplayAFCM_SIM_MapPicker
+{
+    idd = IDD_AFCM_SIM_MAPPICKER;
+    movingEnable = 0;
+    onLoad = "call afcm_sim_ui_fnc_mapPicker_init;";
+
+    class controls
+    {
+        class Hint: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_MAP_HINT;
+            text = "Click the map to choose the MCI's location, then Confirm.";
+            x = "0.05 * safeZoneW + safeZoneX";
+            y = "0.02 * safeZoneH + safeZoneY";
+            w = "0.9 * safeZoneW";
+            h = "0.03 * safeZoneH";
+            sizeEx = "0.022 * safeZoneH";
+        };
+        class Map: RscMapControl
+        {
+            idc = IDC_AFCM_SIM_MAP_MAP;
+            x = "0.05 * safeZoneW + safeZoneX";
+            y = "0.06 * safeZoneH + safeZoneY";
+            w = "0.9 * safeZoneW";
+            h = "0.8 * safeZoneH";
+            active = 1;
+        };
+        class Confirm: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_MAP_CONFIRM;
+            text = "Confirm Location";
+            x = "0.35 * safeZoneW + safeZoneX";
+            y = "0.885 * safeZoneH + safeZoneY";
+            w = "0.13 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        class Cancel: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MAP_CANCEL;
+            text = "Cancel";
+            x = "0.52 * safeZoneW + safeZoneX";
+            y = "0.885 * safeZoneH + safeZoneY";
+            w = "0.13 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            action = "closeDialog 0;";
+        };
+    };
+};
+
+#define IDD_AFCM_SIM_MCIPRESETLIBRARY 25607
+
+#define IDC_AFCM_SIM_MPL_TITLE    1
+#define IDC_AFCM_SIM_MPL_LIST     10
+#define IDC_AFCM_SIM_MPL_LOAD     11
+#define IDC_AFCM_SIM_MPL_DELETE   12
+#define IDC_AFCM_SIM_MPL_EXPORT   13
+#define IDC_AFCM_SIM_MPL_TEXT     14
+#define IDC_AFCM_SIM_MPL_IMPORT   15
+#define IDC_AFCM_SIM_MPL_CLOSE    16
+#define IDC_AFCM_SIM_MPL_SUBTITLE 17
+
+// Same shape as RscDisplayAFCM_SIM_PresetLibrary, for MCI presets instead of single-injury ones -
+// "Load" (not "Apply") replaces the MCI Creator's whole patient list with the selected MCI
+// preset's patientSpecs (fnc_mciPresetLibrary_onLoad.sqf), rather than applying anything to a unit
+// directly - MCI presets are a template for the Creator to build from, not something spawned
+// straight from here.
+class RscDisplayAFCM_SIM_MciPresetLibrary
+{
+    idd = IDD_AFCM_SIM_MCIPRESETLIBRARY;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_mciPresetLibrary_init;";
+
+    class controls
+    {
+        class Panel: AFCM_SIM_Panel
+        {
+            x = "0.25 * safeZoneW + safeZoneX";
+            y = "0.21 * safeZoneH + safeZoneY";
+            w = "0.5 * safeZoneW";
+            h = "0.58 * safeZoneH";
+        };
+        class Title: AFCM_SIM_RscTitle
+        {
+            idc = IDC_AFCM_SIM_MPL_TITLE;
+            text = "MCI Preset Library";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.23 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            sizeEx = "0.03 * safeZoneH";
+        };
+        class Subtitle: AFCM_SIM_RscSubtitle
+        {
+            idc = IDC_AFCM_SIM_MPL_SUBTITLE;
+            text = "Load a saved incident into the MCI Creator, or export/import one below";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.268 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.025 * safeZoneH";
+            sizeEx = "0.017 * safeZoneH";
+        };
+        class AccentBar: AFCM_SIM_AccentBar
+        {
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.3 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.0025 * safeZoneH";
+        };
+        class List: RscListBox
+        {
+            idc = IDC_AFCM_SIM_MPL_LIST;
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.31 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.28 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+            colorSelect[] = AFCM_SIM_COLOR_TEXT;
+            colorSelectBackground[] = AFCM_SIM_COLOR_ACCENT_HOVER;
+            sizeEx = "0.019 * safeZoneH";
+        };
+        class Load: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_MPL_LOAD;
+            text = "Load";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.6 * safeZoneH + safeZoneY";
+            w = "0.146 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class Delete: AFCM_SIM_RscButtonDanger
+        {
+            idc = IDC_AFCM_SIM_MPL_DELETE;
+            text = "Delete";
+            x = "0.427 * safeZoneW + safeZoneX";
+            y = "0.6 * safeZoneH + safeZoneY";
+            w = "0.146 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class Export: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MPL_EXPORT;
+            text = "Export ↓";
+            x = "0.584 * safeZoneW + safeZoneX";
+            y = "0.6 * safeZoneH + safeZoneY";
+            w = "0.146 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class TextLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "MCI preset string (select all, Ctrl+C to copy — Ctrl+V to paste, then Import)";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.65 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.025 * safeZoneH";
+            sizeEx = "0.016 * safeZoneH";
+        };
+        class Text: RscEdit
+        {
+            idc = IDC_AFCM_SIM_MPL_TEXT;
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.675 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+        };
+        class Import: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_MPL_IMPORT;
+            text = "Import ↑";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.725 * safeZoneH + safeZoneY";
+            w = "0.22 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class Close: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MPL_CLOSE;
+            text = "Close";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.725 * safeZoneH + safeZoneY";
+            w = "0.22 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            action = "closeDialog 0;";
+        };
+    };
+};
+
+#define IDD_AFCM_SIM_MCIPRESETSAVE 25608
+
+#define IDC_AFCM_SIM_MPS_TITLE  1
+#define IDC_AFCM_SIM_MPS_NAME   10
+#define IDC_AFCM_SIM_MPS_SAVE   11
+#define IDC_AFCM_SIM_MPS_CANCEL 12
+
+// Name prompt for saving the MCI Creator's current patient list as a reusable MCI preset - same
+// shape as RscDisplayAFCM_SIM_PresetSave.
+class RscDisplayAFCM_SIM_MciPresetSave
+{
+    idd = IDD_AFCM_SIM_MCIPRESETSAVE;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_mciPresetSave_init;";
+
+    class controls
+    {
+        class Panel: AFCM_SIM_Panel
+        {
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.39 * safeZoneH + safeZoneY";
+            w = "0.36 * safeZoneW";
+            h = "0.22 * safeZoneH";
+        };
+        class Title: AFCM_SIM_RscTitle
+        {
+            idc = IDC_AFCM_SIM_MPS_TITLE;
+            text = "Save MCI Preset";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.41 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.035 * safeZoneH";
+            sizeEx = "0.025 * safeZoneH";
+        };
+        class NameLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Incident name";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.455 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.03 * safeZoneH";
+        };
+        class Name: RscEdit
+        {
+            idc = IDC_AFCM_SIM_MPS_NAME;
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.49 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+        };
+        class Save: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_MPS_SAVE;
+            text = "Save";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.545 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        class Cancel: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MPS_CANCEL;
             text = "Cancel";
             x = "0.51 * safeZoneW + safeZoneX";
             y = "0.545 * safeZoneH + safeZoneY";

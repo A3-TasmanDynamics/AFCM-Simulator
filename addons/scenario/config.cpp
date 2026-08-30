@@ -46,5 +46,22 @@ class CfgFunctions
             class serverApplyPreset { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyPreset.sqf"; };
             class findPreset { file = "\afcm_sim\addons\scenario\functions\fnc_findPreset.sqf"; };
         };
+        // MCI (Mass Casualty Incident) presets - a named INCIDENT, not a single injury: each
+        // patient slot carries its own Preset id (or "random"), resolved independently per patient
+        // at spawn time (fnc_resolveMciPatientSpec.sqf). Same built-in + profileNamespace user
+        // library / plain-Array export-import pattern as Presets above, separate library/key.
+        class MciPresets
+        {
+            file = "\afcm_sim\addons\scenario\functions";
+            class getBuiltinMciPresets { file = "\afcm_sim\addons\scenario\functions\fnc_getBuiltinMciPresets.sqf"; };
+            class getUserMciPresets { file = "\afcm_sim\addons\scenario\functions\fnc_getUserMciPresets.sqf"; };
+            class saveUserMciPreset { file = "\afcm_sim\addons\scenario\functions\fnc_saveUserMciPreset.sqf"; };
+            class deleteUserMciPreset { file = "\afcm_sim\addons\scenario\functions\fnc_deleteUserMciPreset.sqf"; };
+            class exportMciPreset { file = "\afcm_sim\addons\scenario\functions\fnc_exportMciPreset.sqf"; };
+            class importMciPreset { file = "\afcm_sim\addons\scenario\functions\fnc_importMciPreset.sqf"; };
+            class findMciPreset { file = "\afcm_sim\addons\scenario\functions\fnc_findMciPreset.sqf"; };
+            class resolveMciPatientSpec { file = "\afcm_sim\addons\scenario\functions\fnc_resolveMciPatientSpec.sqf"; };
+            class serverSpawnMci { file = "\afcm_sim\addons\scenario\functions\fnc_serverSpawnMci.sqf"; };
+        };
     };
 };
