@@ -555,6 +555,17 @@ is still the plan, not the state of the repo.
   generated `session_<tickTime>_<random>` id per batch, explicit rather than derived from
   `spawnerNetId` - since the batch spawner itself already knows exactly which patients are its own
   without needing to reconstruct that from the id string.
+  **Custom session names** — every batch spawn path (Zeus/Eden Spawn Patient, Zeus/Eden MASCAL
+  Zone, Zeus/Eden MCI Spawner, and the MCI Creator dialog) now reads an optional free-text label
+  and uses it verbatim in place of the auto-generated one when non-blank, so the Session Manager
+  list can show something meaningful ("Breach team casualties") instead of only "MCI Spawner — 6
+  patients". Zeus/Eden modules expose this as a shared `AFCM_SIM_SessionName` Eden Attribute
+  (`control = "Edit"`, `typeName = "STRING"` — confirmed against the official BI wiki's Eden Editor
+  attribute docs, REFERENCES.md); the MCI Creator dialog exposes the same thing as a plain
+  `RscEdit` field next to Patients/Casualty Type, read in `afcm_sim_ui_fnc_mciCreator_onSpawn` and
+  forwarded to `afcm_sim_scenario_fnc_serverSpawnMci`'s new optional 4th argument. Blank always
+  falls back to the same auto-generated label each path already had — no behaviour change for
+  anyone who leaves the field empty.
 
 ---
 

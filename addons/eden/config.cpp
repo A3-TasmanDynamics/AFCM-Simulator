@@ -71,6 +71,9 @@ class CfgVehicles
     // (C_man_1/B_Soldier_F/O_Soldier_F/I_Soldier_F, all real, base-game classnames) and with
     // afcm_sim_defaultCasualtyType's CBA setting (main/functions/fnc_settings_preInit.sqf) — keep
     // all three in sync if this list ever changes.
+    // Shared attributes common to every AFCM spawn module (not just Casualty Type anymore, despite
+    // the name kept for continuity - renaming would only churn the config, since no placed mission
+    // actually references this intermediate class name, only the final resolved attribute list).
     class AFCM_SIM_CasualtyTypeAttributes
     {
         // scope=0 - this is a plain nested-class template for Attributes inheritance, never a
@@ -92,6 +95,20 @@ class CfgVehicles
                 class MilitaryOpfor { name = "Military (OPFOR)"; value = 2; };
                 class MilitaryIndependent { name = "Military (Independent)"; value = 3; };
             };
+        };
+        // Free-text Spawn Session name (DESIGN.md § Spawn Sessions), optional - blank means the
+        // module function auto-generates a label as before. Real, confirmed control type/shape
+        // from the official BI wiki (Eden Editor: Configuring Attributes[/: Controls]): `control =
+        // "Edit"` is a single-line text input saving a String; `typeName = "STRING"` is required
+        // for Edit controls specifically (defaults to something else otherwise) - this codebase's
+        // existing combo attributes never needed it since NUMBER is the assumed default there.
+        class AFCM_SIM_SessionName
+        {
+            displayName = "Session Name (optional)";
+            property = "AFCM_SIM_sessionName";
+            control = "Edit";
+            defaultValue = "";
+            typeName = "STRING";
         };
     };
 

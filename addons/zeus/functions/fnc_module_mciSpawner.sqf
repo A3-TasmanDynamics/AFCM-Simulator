@@ -45,9 +45,15 @@ private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_de
 private _pos = getPosASL _logic;
 
 // Whole batch shares one Spawn Session (DESIGN.md § Spawn Sessions) - deletable as a group later
-// without touching any other session's patients.
+// without touching any other session's patients. Session Name attribute overrides the
+// auto-generated label if the operator typed one in.
 private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
-private _sessionLabel = format ["MCI Spawner — %1 patients", _patientCount];
+private _customLabel = _logic getVariable ["AFCM_SIM_sessionName", ""];
+private _sessionLabel = if (_customLabel isEqualTo "") then {
+    format ["MCI Spawner — %1 patients", _patientCount]
+} else {
+    _customLabel
+};
 
 private _spawned = [];
 for "_i" from 1 to _patientCount do {

@@ -16,6 +16,8 @@
  * 1: Patient specs <ARRAY of STRING> - see fnc_getBuiltinMciPresets.sqf
  * 2: Casualty Type <NUMBER> (default 0) - same for every patient in this incident, see
  *    fnc_spawnPatient.sqf
+ * 3: Session Name <STRING> (default "") - optional custom label for this Spawn Session, typed into
+ *    the MCI Creator's Session Name field; blank falls back to the auto-generated label below.
  *
  * Return Value:
  * None
@@ -23,7 +25,7 @@
  * Public: No
 */
 
-params ["_pos", "_patientSpecs", ["_casualtyType", 0]];
+params ["_pos", "_patientSpecs", ["_casualtyType", 0], ["_customLabel", ""]];
 
 if !(isServer) exitWith {};
 if (_patientSpecs isEqualTo []) exitWith {};
@@ -31,7 +33,11 @@ if (_patientSpecs isEqualTo []) exitWith {};
 diag_log text format ["[AFCM-Simulator] serverSpawnMci - %1 patient(s) at %2, casualtyType=%3.", count _patientSpecs, _pos, _casualtyType];
 
 private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
-private _sessionLabel = format ["MCI Creator — %1 patients", count _patientSpecs];
+private _sessionLabel = if (_customLabel isEqualTo "") then {
+    format ["MCI Creator — %1 patients", count _patientSpecs]
+} else {
+    _customLabel
+};
 
 {
     private _injuries = [_x] call afcm_sim_scenario_fnc_resolveMciPatientSpec;

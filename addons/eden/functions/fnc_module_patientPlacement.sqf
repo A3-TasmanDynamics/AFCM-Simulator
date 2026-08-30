@@ -33,5 +33,8 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
 _logic setVariable ["AFCM_SIM_moduleFired", true];
 
 private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
+// Optional Session Name attribute (DESIGN.md § Spawn Sessions) - blank means
+// afcm_sim_spawner_fnc_spawnPatient auto-generates one ("Spawn Patient") as before.
+private _sessionLabel = _logic getVariable ["AFCM_SIM_sessionName", ""];
 
-[getPosASL _logic, [], _casualtyType] call afcm_sim_spawner_fnc_spawnPatient;
+[getPosASL _logic, [], _casualtyType, "", _sessionLabel] call afcm_sim_spawner_fnc_spawnPatient;

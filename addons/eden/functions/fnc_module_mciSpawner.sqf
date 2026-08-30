@@ -61,9 +61,15 @@ private _injuries = (_preset select 4) apply {
 };
 
 // Whole batch shares one Spawn Session (DESIGN.md § Spawn Sessions) - deletable as a group later
-// without touching any other session's patients.
+// without touching any other session's patients. Session Name attribute overrides the
+// auto-generated label if the mission maker typed one in.
 private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
-private _sessionLabel = format ["AFCM MCI Spawner — %1 patients (%2)", _patientCount, _preset select 1];
+private _customLabel = _logic getVariable ["AFCM_SIM_sessionName", ""];
+private _sessionLabel = if (_customLabel isEqualTo "") then {
+    format ["AFCM MCI Spawner — %1 patients (%2)", _patientCount, _preset select 1]
+} else {
+    _customLabel
+};
 
 for "_i" from 1 to _patientCount do {
     [_pos, _injuries, _casualtyType, _sessionId, _sessionLabel] call afcm_sim_spawner_fnc_spawnPatient;

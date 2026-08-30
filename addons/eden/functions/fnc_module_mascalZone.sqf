@@ -43,8 +43,16 @@ private _injuryLevel = _logic getVariable ["AFCM_SIM_injuryLevel", afcm_sim_defa
 private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
 private _pos = getPosASL _logic;
 
+// Whole batch shares one Spawn Session (DESIGN.md § Spawn Sessions) - deletable as a group later
+// without touching any other session's patients. Session Name attribute overrides the
+// auto-generated label if the mission maker typed one in.
 private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
-private _sessionLabel = format ["AFCM MASCAL Zone — %1 patients", _patientCount];
+private _customLabel = _logic getVariable ["AFCM_SIM_sessionName", ""];
+private _sessionLabel = if (_customLabel isEqualTo "") then {
+    format ["AFCM MASCAL Zone — %1 patients", _patientCount]
+} else {
+    _customLabel
+};
 
 for "_i" from 1 to _patientCount do {
     [_pos, _injuryLevel, _casualtyType, _sessionId, _sessionLabel] call afcm_sim_spawner_fnc_spawnRandomPatient;

@@ -958,6 +958,7 @@ class RscDisplayAFCM_SIM_PresetSave
 #define IDC_AFCM_SIM_MC_SPAWN           20
 #define IDC_AFCM_SIM_MC_CLOSE           21
 #define IDC_AFCM_SIM_MC_MANAGESESSIONS  22
+#define IDC_AFCM_SIM_MC_SESSIONNAME     23
 
 // Two side-by-side listboxes: PatientList shows "Patient N — <spec>" rows (fnc_mciCreator_init.sqf
 // populates it from AFCM_SIM_UI_mciPatientSpecs, a plain missionNamespace Array of spec strings,
@@ -976,16 +977,16 @@ class RscDisplayAFCM_SIM_MciCreator
         class Panel: AFCM_SIM_Panel
         {
             x = "0.2 * safeZoneW + safeZoneX";
-            y = "0.1325 * safeZoneH + safeZoneY";
+            y = "0.1075 * safeZoneH + safeZoneY";
             w = "0.6 * safeZoneW";
-            h = "0.735 * safeZoneH";
+            h = "0.785 * safeZoneH";
         };
         class Title: AFCM_SIM_RscTitle
         {
             idc = IDC_AFCM_SIM_MC_TITLE;
             text = "MCI Creator";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.1525 * safeZoneH + safeZoneY";
+            y = "0.1275 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.04 * safeZoneH";
             sizeEx = "0.032 * safeZoneH";
@@ -995,7 +996,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Build a mass-casualty incident, then spawn it wherever you click on the map";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.1975 * safeZoneH + safeZoneY";
+            y = "0.1725 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.025 * safeZoneH";
             sizeEx = "0.017 * safeZoneH";
@@ -1003,7 +1004,7 @@ class RscDisplayAFCM_SIM_MciCreator
         class AccentBar: AFCM_SIM_AccentBar
         {
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.2275 * safeZoneH + safeZoneY";
+            y = "0.2025 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.0025 * safeZoneH";
         };
@@ -1012,7 +1013,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Patients";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.2425 * safeZoneH + safeZoneY";
+            y = "0.2175 * safeZoneH + safeZoneY";
             w = "0.15 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -1020,7 +1021,7 @@ class RscDisplayAFCM_SIM_MciCreator
         {
             idc = IDC_AFCM_SIM_MC_PATIENTCOUNT;
             x = "0.37 * safeZoneW + safeZoneX";
-            y = "0.2425 * safeZoneH + safeZoneY";
+            y = "0.2175 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -1029,7 +1030,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Casualty Type";
             x = "0.52 * safeZoneW + safeZoneX";
-            y = "0.2425 * safeZoneH + safeZoneY";
+            y = "0.2175 * safeZoneH + safeZoneY";
             w = "0.13 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -1037,16 +1038,38 @@ class RscDisplayAFCM_SIM_MciCreator
         {
             idc = IDC_AFCM_SIM_MC_CASUALTYTYPE;
             x = "0.65 * safeZoneW + safeZoneX";
-            y = "0.2425 * safeZoneH + safeZoneY";
+            y = "0.2175 * safeZoneH + safeZoneY";
             w = "0.13 * safeZoneW";
             h = "0.04 * safeZoneH";
+        };
+        class SessionNameLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Session Name (optional)";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.2675 * safeZoneH + safeZoneY";
+            w = "0.17 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        // Free-text label for this batch's Spawn Session (DESIGN.md § Spawn Sessions) - blank means
+        // fnc_mciCreator_onSpawn.sqf/fnc_serverSpawnMci.sqf fall back to the same auto-generated
+        // label ("AFCM MCI Spawner — N patients") used before this field existed.
+        class SessionName: RscEdit
+        {
+            idc = IDC_AFCM_SIM_MC_SESSIONNAME;
+            x = "0.4 * safeZoneW + safeZoneX";
+            y = "0.2675 * safeZoneH + safeZoneY";
+            w = "0.38 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
         };
         class PatientListLabel: AFCM_SIM_RscLabel
         {
             idc = -1;
             text = "Patients (select one)";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.2925 * safeZoneH + safeZoneY";
+            y = "0.3175 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.025 * safeZoneH";
         };
@@ -1055,7 +1078,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Available Presets";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.2925 * safeZoneH + safeZoneY";
+            y = "0.3175 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.025 * safeZoneH";
         };
@@ -1063,7 +1086,7 @@ class RscDisplayAFCM_SIM_MciCreator
         {
             idc = IDC_AFCM_SIM_MC_PATIENTLIST;
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.3175 * safeZoneH + safeZoneY";
+            y = "0.3425 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.22 * safeZoneH";
             colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
@@ -1076,7 +1099,7 @@ class RscDisplayAFCM_SIM_MciCreator
         {
             idc = IDC_AFCM_SIM_MC_PRESETLIST;
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.3175 * safeZoneH + safeZoneY";
+            y = "0.3425 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.22 * safeZoneH";
             colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
@@ -1090,7 +1113,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_ASSIGN;
             text = "Assign Selected Preset to Selected Patient";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.5475 * safeZoneH + safeZoneY";
+            y = "0.5725 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1099,7 +1122,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_RANDOMIZEALL;
             text = "Randomize All Patients";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.5875 * safeZoneH + safeZoneY";
+            y = "0.6125 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1110,7 +1133,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_LOCATIONSTATUS;
             text = "Location: not set yet";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.6325 * safeZoneH + safeZoneY";
+            y = "0.6575 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.03 * safeZoneH";
             sizeEx = "0.018 * safeZoneH";
@@ -1121,7 +1144,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_CHOOSELOCATION;
             text = "Choose Location on Map";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.6675 * safeZoneH + safeZoneY";
+            y = "0.6925 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1130,7 +1153,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_SAVEPRESET;
             text = "Save as MCI Preset";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.7075 * safeZoneH + safeZoneY";
+            y = "0.7325 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1139,7 +1162,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_LOADPRESET;
             text = "Load MCI Preset";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.7075 * safeZoneH + safeZoneY";
+            y = "0.7325 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1152,7 +1175,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_MANAGESESSIONS;
             text = "Manage Sessions";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.7525 * safeZoneH + safeZoneY";
+            y = "0.7775 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1164,7 +1187,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_SPAWN;
             text = "Spawn MCI";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.7975 * safeZoneH + safeZoneY";
+            y = "0.8225 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -1173,7 +1196,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_CLOSE;
             text = "Close";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.7975 * safeZoneH + safeZoneY";
+            y = "0.8225 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "closeDialog 0;";

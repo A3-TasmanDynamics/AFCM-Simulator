@@ -27,8 +27,10 @@ private _casualtyType = lbCurSel (_display displayCtrl 11);
 if (_casualtyType == -1) then { _casualtyType = 0; };
 AFCM_SIM_UI_mciCasualtyType = _casualtyType;
 
+private _sessionLabel = ctrlText (_display displayCtrl 23);
+
 diag_log text format ["[AFCM-Simulator][UI] Spawning MCI - %1 patient(s) at %2 (casualtyType=%3).", count AFCM_SIM_UI_mciPatientSpecs, _pos, _casualtyType];
 
-[_pos, AFCM_SIM_UI_mciPatientSpecs, _casualtyType] remoteExec ["afcm_sim_scenario_fnc_serverSpawnMci", 2];
+[_pos, AFCM_SIM_UI_mciPatientSpecs, _casualtyType, _sessionLabel] remoteExec ["afcm_sim_scenario_fnc_serverSpawnMci", 2];
 
 closeDialog 0;
