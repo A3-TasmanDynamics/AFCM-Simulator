@@ -368,30 +368,39 @@ is still the plan, not the state of the repo.
   re-asserts it regardless of what might try to wake the unit. This means a patient won't wake up
   even from fully successful real treatment until an instructor explicitly resets it
   (`afcm_sim_fnc_backend_reset`) — accepted as the right trade-off for a training tool where
-  "spontaneously recovers on its own" was never the intended behaviour either way. No
-  randomized identity/loadout yet — spawns a
-  plain `C_man_1` civilian. **Not** randomized anymore despite the module class still being named
+  "spontaneously recovers on its own" was never the intended behaviour either way.
   `AFCM_SIM_ModuleSpawnRandomPatient` internally (display name is now just "Spawn Patient" —
   renaming the class would orphan it in any mission that's already placed one).
   `afcm_sim_spawner_fnc_spawnRandomPatient` (the actual randomizer wrapper) still exists and is
   still used by AFCM MASCAL Zone (§ below) — batch/mass-casualty drills are the one place
-  random-by-design still makes sense.
+  random-by-design still makes sense. Casualty appearance is configurable, not random: a
+  "Casualty Type" module attribute (Civilian/Military BLUFOR/Military OPFOR/Military Independent,
+  real base-game classnames `C_man_1`/`B_Soldier_F`/`O_Soldier_F`/`I_Soldier_F` — no faction mod
+  dependency) picks the spawned classname, falling back to the `afcm_sim_defaultCasualtyType` CBA
+  Addon Option when unset. Whatever's picked, `spawnPatient` always strips the unit down to bare
+  clothing (`removeAllWeapons`/`removeAllItems`/`removeAllAssignedItems`/`removeVest`/
+  `removeBackpack`/`removeHeadgear`/`removeGoggles`) — a patient is a casualty prop, not a
+  combatant, so it never spawns carrying a weapon or gear of its own even when the military
+  classnames' default combat loadout would otherwise include one.
 - **AFCM Patient (Eden)** — design-time patient placement for scripted scenarios: a mission maker
   places the module, and it spawns a clean, unconscious patient on mission start
   (`afcm_sim_eden`) — same "Edit Injuries" selection flow as Zeus's Spawn Patient, not a random
   roll. Distinct from Spawn Patient (Zeus, live) and Map to Spawn Patients (below, in-mission) —
   this is the pre-authoring path. **Implemented**: calls `spawnPatient` directly, no injuries
   argument. The module's old "Injury Level" attribute is gone (eden/config.cpp) — it stopped doing
-  anything once this module stopped auto-randomizing.
+  anything once this module stopped auto-randomizing. It keeps its own "Casualty Type" attribute
+  (same four options as Zeus's, shared `AFCM_SIM_CasualtyTypeAttributes` base class) — purely
+  cosmetic, so it's independent of the injury-randomization pipeline the old attribute controlled.
 - **Stretcher Placement** — selectable stretcher type (class list sourced from whichever backend
   is active, §2.5), ghost-preview placement (surface-snapped, like Zeus placement), spawns synced
   for MP. *Not implemented.*
 - **Map to Spawn Patients** — map-click patient placement/preview, supports batch placement for
   MASCAL scenarios, respects the same spawn pipeline as Spawn Patient. *In-mission map-click tool
   not implemented; the Eden-editor design-time equivalent is* **AFCM MASCAL Zone** *(§7 —
-  `AFCM_SIM_ModuleMascalZone`), which **is** implemented: patient-count + injury-level attributes,
-  spawns that many patients (loosely scattered via `spawnPatient`'s own position jitter) on mission
-  start.*
+  `AFCM_SIM_ModuleMascalZone`), which **is** implemented: patient-count + injury-level + casualty-
+  type attributes, spawns that many patients (loosely scattered via `spawnPatient`'s own position
+  jitter) on mission start — all with the same casualty type, since it's one attribute per zone,
+  not per patient.*
 - **Clear spawned patients** — not in the original feature list; added after reviewing a prior
   working prototype (REFERENCES.md) that needed exactly this. **Implemented**, simplified:
   `afcm_sim_spawner_fnc_clearAllPatients` deletes every patient spawned via `spawnPatient` and

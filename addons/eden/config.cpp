@@ -63,6 +63,31 @@ class CfgVehicles
 {
     class Module_F;
 
+    // Shared "Casualty Type" attribute (clothing/appearance only, DESIGN.md §5) — a plain nested
+    // class, not a Module_F itself, purely so both modules below can inherit the same four options
+    // via `class Attributes: AFCM_SIM_CasualtyTypeAttributes { ... }` instead of repeating them.
+    // Values must line up with the classname array in afcm_sim_spawner_fnc_spawnPatient
+    // (C_man_1/B_Soldier_F/O_Soldier_F/I_Soldier_F, all real, base-game classnames) and with
+    // afcm_sim_defaultCasualtyType's CBA setting (main/functions/fnc_settings_preInit.sqf) — keep
+    // all three in sync if this list ever changes.
+    class AFCM_SIM_CasualtyTypeAttributes
+    {
+        class AFCM_SIM_CasualtyType
+        {
+            displayName = "Casualty Type";
+            property = "AFCM_SIM_casualtyType";
+            control = "combo";
+            defaultValue = "0";
+            class Values
+            {
+                class Civilian { name = "Civilian"; value = 0; default = 1; };
+                class MilitaryBlufor { name = "Military (BLUFOR)"; value = 1; };
+                class MilitaryOpfor { name = "Military (OPFOR)"; value = 2; };
+                class MilitaryIndependent { name = "Military (Independent)"; value = 3; };
+            };
+        };
+    };
+
     class AFCM_SIM_ModulePatientPlacement: Module_F
     {
         scope = 2;
@@ -82,6 +107,11 @@ class CfgVehicles
         // afcm_sim_spawner_fnc_spawnPatient) for real injury selection, same as Zeus's Spawn
         // Patient module. AFCM_SIM_ModuleMascalZone below keeps its own Injury Level attribute -
         // that one's still a randomized batch-spawn tool.
+        //
+        // Casualty Type IS still an attribute here though - purely cosmetic (clothing/appearance),
+        // not tied to the injury-randomization pipeline the Injury Level attribute controlled, so
+        // it makes sense on a manually-treated single patient too.
+        class Attributes: AFCM_SIM_CasualtyTypeAttributes {};
     };
 
     // Design-time counterpart to "Map to Spawn Patients... MASCAL scenarios" (DESIGN.md §5) — a
@@ -101,12 +131,14 @@ class CfgVehicles
         isTriggerActivated = 0;
         curatorCanAttach = 0;
 
-        // Patient count and injury level. Values read back via
-        // `_logic getVariable ["AFCM_SIM_patientCount"/"AFCM_SIM_injuryLevel", default]` in the
-        // module function once spawner logic exists to actually place patients (DESIGN.md §8 open
-        // question #4 — realistic max simultaneous patients still needs a real number; the option
-        // list below is a starting guess, not a validated limit).
-        class Attributes
+        // Patient count, injury level, casualty type. Values read back via
+        // `_logic getVariable ["AFCM_SIM_patientCount"/"AFCM_SIM_injuryLevel"/
+        // "AFCM_SIM_casualtyType", default]` in the module function once spawner logic exists to
+        // actually place patients (DESIGN.md §8 open question #4 — realistic max simultaneous
+        // patients still needs a real number; the option list below is a starting guess, not a
+        // validated limit). Inherits AFCM_SIM_CasualtyType from AFCM_SIM_CasualtyTypeAttributes
+        // above, plus its own two attributes.
+        class Attributes: AFCM_SIM_CasualtyTypeAttributes
         {
             class AFCM_SIM_PatientCount
             {

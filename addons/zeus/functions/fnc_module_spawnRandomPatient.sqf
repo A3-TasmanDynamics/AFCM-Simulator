@@ -29,4 +29,6 @@ params ["_logic", "_units", "_activated"];
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
 
-[getPosASL _logic] call afcm_sim_spawner_fnc_spawnPatient;
+private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
+
+[getPosASL _logic, [], _casualtyType] call afcm_sim_spawner_fnc_spawnPatient;

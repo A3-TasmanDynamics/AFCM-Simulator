@@ -23,3 +23,9 @@
     "AFCM Medical Simulator",
     [[0, 1, 2, 3, 4], ["Easy", "Medium", "Hard", "Extreme", "F*CKED!"], 1]
 ] call CBA_fnc_addSetting;
+
+["afcm_sim_defaultCasualtyType", "LIST",
+    ["Default Casualty Type", "Default clothing/appearance for spawned patients when a placed module doesn't override it via its own Casualty Type attribute. Purely visual — the unit is always stripped of weapons/gear regardless of type (DESIGN.md §5)."],
+    "AFCM Medical Simulator",
+    [[0, 1, 2, 3], ["Civilian", "Military (BLUFOR)", "Military (OPFOR)", "Military (Independent)"], 0]
+] call CBA_fnc_addSetting;

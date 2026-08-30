@@ -11,6 +11,9 @@
  * Arguments:
  * 0: Position <ARRAY> - ASL/ATL position to spawn at (jittered slightly)
  * 1: Injuries <ARRAY> - array of Injury <HASHMAP>, see DESIGN.md §4.2 (default [])
+ * 2: Casualty Type <NUMBER> - 0=Civilian, 1=Military (BLUFOR), 2=Military (OPFOR),
+ *    3=Military (Independent) - purely a clothing/appearance pick (DESIGN.md §5), see
+ *    afcm_sim_defaultCasualtyType (default 0)
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -21,7 +24,14 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuries", []]];
+params ["_pos", ["_injuries", []], ["_casualtyType", 0]];
+
+// Purely cosmetic - all four are real, base-game (no DLC/faction mod) Arma 3 classnames, so this
+// works with nothing but vanilla + CBA installed. Whatever's picked, gear is stripped down to bare
+// clothing below regardless - a military classname's default rifle/vest/backpack loadout doesn't
+// survive spawning here, per the "just clothing" requirement.
+private _casualtyClasses = ["C_man_1", "B_Soldier_F", "O_Soldier_F", "I_Soldier_F"];
+private _class = _casualtyClasses param [_casualtyType, "C_man_1"];
 
 if !(isServer) exitWith { objNull };
 
@@ -42,12 +52,24 @@ private _jitteredPos = [
     0
 ];
 
-private _unit = AFCM_SIM_patientGroup createUnit ["C_man_1", _jitteredPos, [], 0, "NONE"];
+private _unit = AFCM_SIM_patientGroup createUnit [_class, _jitteredPos, [], 0, "NONE"];
 _unit setPosATL _jitteredPos;
 _unit setUnitPos "DOWN";
 _unit setCaptive true;
 _unit setDir (random 360);
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
+
+// Strip down to bare clothing - a patient is a casualty prop, not a combatant, and shouldn't spawn
+// carrying a weapon/mags/medical supplies of its own (irrelevant for the civilian class, but
+// B_Soldier_F/O_Soldier_F/I_Soldier_F above all spawn with a full rifle+vest+backpack loadout by
+// default). Uniform is deliberately left alone - that's the actual "clothing" this is about.
+removeAllWeapons _unit;
+removeAllItems _unit;
+removeAllAssignedItems _unit;
+removeVest _unit;
+removeBackpack _unit;
+removeHeadgear _unit;
+removeGoggles _unit;
 
 // A patient is a static casualty prop, not an autonomous actor - disableAI "ALL" stops every native
 // AI subsystem (movement, targeting, combat FSM). Kept as general hardening, though it turned out
