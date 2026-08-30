@@ -83,7 +83,13 @@ getters, since KAT extends the same underlying state ACE3 tracks rather than rep
 
 ### `afcm_sim_kat_fnc_reset`
 **Real implementation.** Identical to `afcm_sim_ace_fnc_reset` — `ace_medical_fnc_fullHeal` then
-re-lock `setUnconscious true`. Backs the injury editor's Reset Patient button.
+re-lock via `afcm_sim_kat_fnc_setUnconscious`. Backs the injury editor's Reset Patient button.
+
+### `afcm_sim_kat_fnc_setUnconscious`
+**Real implementation.** Identical to `afcm_sim_ace_fnc_setUnconscious` — `[_unit, true] call
+ace_medical_fnc_setUnconscious`, not the engine's own `setUnconscious` command (REFERENCES.md
+"Round 4" — the engine command never sets ACE's own `ACE_isUnconscious` tracking variable, which is
+what `ace_medical_ai`'s state machine actually checks before letting a unit self-treat).
 
 ### `afcm_sim_kat_fnc_removeInjury`
 **Stub.** No real removal call wired up yet — same open question as `ace_compat`'s.

@@ -35,6 +35,7 @@ class CfgFunctions
             class removeInjury { file = "\afcm_sim\addons\ace_compat\functions\fnc_removeInjury.sqf"; };
             class getState { file = "\afcm_sim\addons\ace_compat\functions\fnc_getState.sqf"; };
             class reset { file = "\afcm_sim\addons\ace_compat\functions\fnc_reset.sqf"; };
+            class setUnconscious { file = "\afcm_sim\addons\ace_compat\functions\fnc_setUnconscious.sqf"; };
             class preInit { file = "\afcm_sim\addons\ace_compat\functions\fnc_preInit.sqf"; preInit = 1; };
         };
     };

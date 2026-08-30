@@ -328,8 +328,9 @@ is still the plan, not the state of the repo.
   Refreshed on a 0.5s `CBA_fnc_addPerFrameHandler` while the dialog is open, removed on close. A
   **Reset Patient** button wipes everything done to the patient so far (wounds, bandages, drugs)
   via a new `afcm_sim_fnc_backend_reset` dispatch — `afcm_sim_ace_compat`/`afcm_sim_kat_compat` both
-  implement it as `ace_medical_fnc_fullHeal` (real, confirmed) followed by re-locking the unit back
-  to `setUnconscious true`, so a reset hands back the same "just spawned" baseline rather than a
+  implement it as `ace_medical_fnc_fullHeal` (real, confirmed) followed by re-locking via the
+  `setUnconscious` backend op (`ace_medical_fnc_setUnconscious`, not the engine command — see
+  below), so a reset hands back the same "just spawned" baseline rather than a
   fully awake, healthy unit. Routes through `afcm_sim_scenario_fnc_serverReset`, same
   server-authoritative request pattern as Apply. Unlike Apply/Cancel, Reset leaves the dialog open —
   the live status readout shows the clean state within moments and the instructor can immediately
@@ -355,15 +356,19 @@ is still the plan, not the state of the repo.
   operator then picks the actual injury via the "Edit Injuries" scroll action every spawned patient
   gets (§ Selectable Injuries above), rather than a random roll. **Implemented**:
   `afcm_sim_spawner_fnc_spawnPatient` called directly (no injuries argument), `disableAI "ALL"` set
-  on the unit so it can't do anything autonomously. Two targeted upstream fixes for patients
-  "healing themselves" (`afcm_sim_fnc_disableSpontaneousWakeup`, `main`/`preInit`; `disableAI`
-  above) are both real and grounded in ACE3 source but didn't fully hold up in live testing — see
-  REFERENCES.md for the full investigation. `spawnPatient` now also runs a recurring safeguard
-  directly on the symptom: every 3s, for as long as the specific unit exists, it forces
-  `setUnconscious true` again, regardless of which upstream system caused it to wake. This means a
-  patient won't wake up even from fully successful real treatment until an instructor explicitly
-  resets it (`afcm_sim_fnc_backend_reset`) — accepted as the right trade-off for a training tool
-  where "spontaneously recovers on its own" was never the intended behaviour either way. No
+  on the unit so it can't do anything autonomously. Patients "healing themselves" took four rounds
+  of investigation to actually pin down — see REFERENCES.md for the full history. Root cause
+  (confirmed): the unit was being knocked out with the vanilla `setUnconscious` command, which only
+  changes ragdoll/animation state; ACE tracks consciousness independently via its own
+  `"ACE_isUnconscious"` variable, which `ace_medical_ai`'s state machine (ticks over every
+  locally-known unit, entirely independent of `disableAI`) actually checks before letting a unit
+  self-treat. Fix: a new `setUnconscious` backend op wrapping the real
+  `ace_medical_fnc_setUnconscious`, used both at spawn time and by a recurring
+  `CBA_fnc_addPerFrameHandler` safeguard (every 3s, for as long as the specific unit exists) that
+  re-asserts it regardless of what might try to wake the unit. This means a patient won't wake up
+  even from fully successful real treatment until an instructor explicitly resets it
+  (`afcm_sim_fnc_backend_reset`) — accepted as the right trade-off for a training tool where
+  "spontaneously recovers on its own" was never the intended behaviour either way. No
   randomized identity/loadout yet — spawns a
   plain `C_man_1` civilian. **Not** randomized anymore despite the module class still being named
   `AFCM_SIM_ModuleSpawnRandomPatient` internally (display name is now just "Spawn Patient" —

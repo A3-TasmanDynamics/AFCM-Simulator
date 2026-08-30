@@ -129,8 +129,20 @@ real and confirmed (REFERENCES.md) but explicitly **not** used here for that rea
 ```
 **Real implementation.** Backs the injury editor's Reset Patient button. Calls the real, confirmed
 `ace_medical_fnc_fullHeal` (REFERENCES.md) to wipe all wounds/damage/drugs, then immediately
-re-applies `setUnconscious true` — a reset hands back the same "just spawned" unconscious baseline
-DESIGN.md §5 establishes for every patient, not a fully awake, healthy unit.
+re-locks via `afcm_sim_ace_fnc_setUnconscious` — a reset hands back the same "just spawned"
+unconscious baseline DESIGN.md §5 establishes for every patient, not a fully awake, healthy unit.
+
+### `afcm_sim_ace_fnc_setUnconscious`
+```sqf
+[_unit] call afcm_sim_ace_fnc_setUnconscious
+```
+**Real implementation.** `[_unit, true] call ace_medical_fnc_setUnconscious;` — deliberately **not**
+the engine's own `setUnconscious` command. Confirmed root cause of patients "healing themselves"
+(REFERENCES.md "Round 4"): the engine command only changes ragdoll/animation state and never
+touches ACE's own tracked `"ACE_isUnconscious"` variable, which is what `ace_medical_ai`'s state
+machine actually checks before letting a unit self-treat. Early-exits if already
+ACE-unconscious, so the recurring re-lock safeguard in `afcm_sim_spawner_fnc_spawnPatient` is a
+cheap no-op most ticks.
 
 ---
 

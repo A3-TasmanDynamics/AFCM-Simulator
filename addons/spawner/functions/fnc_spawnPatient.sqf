@@ -50,27 +50,31 @@ _unit setDir (random 360);
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
 
 // A patient is a static casualty prop, not an autonomous actor - disableAI "ALL" stops every native
-// AI subsystem (movement, targeting, combat FSM). Kept as general hardening even after finding the
-// real cause of patients "healing themselves" (afcm_sim_fnc's disableSpontaneousWakeup, main/
-// preInit): ACE's own `ace_medical_statemachine_fnc_handleStateUnconscious` spontaneously wakes
-// stable-vitals unconscious units on a timer regardless of AI subsystem state - this doesn't stop
-// that, but stops the patient doing anything else on its own in the meantime.
+// AI subsystem (movement, targeting, combat FSM). Kept as general hardening, though it turned out
+// to NOT be what was letting patients "heal themselves" - see below.
 _unit disableAI "ALL";
 
-// Patients always spawn unconscious - confirmed native `setUnconscious` (REFERENCES.md), not
-// ACE/KAT-specific, so this holds even with no medical backend registered at all (DESIGN.md §2.5).
-_unit setUnconscious true;
+// Patients always spawn unconscious, via the active backend (DESIGN.md §2.5) rather than the raw
+// engine `setUnconscious` command. This distinction is the real, now-confirmed root cause of
+// patients "healing themselves" (REFERENCES.md): the engine command only changes the
+// ragdoll/animation state. ACE/KAT track their own consciousness independently via a
+// "ACE_isUnconscious" variable (real macro: `IS_UNCONSCIOUS(unit) = (unit getVariable
+// ["ACE_isUnconscious", false])`, addons/medical_engine/script_macros_medical.hpp), which the raw
+// engine command never touches. `ace_medical_ai`'s own CBA state machine
+// (addons/medical_ai/stateMachine.inc.sqf) ticks over every locally-known unit on its own schedule
+// - entirely independent of `disableAI` - and immediately self-treats any unit ACE itself still
+// considers conscious, no matter what the engine/ragdoll state looks like. The correct call is
+// `ace_medical_fnc_setUnconscious`, wrapped here as a backend op (afcm_sim_ace_fnc_setUnconscious/
+// afcm_sim_kat_fnc_setUnconscious) so this stays backend-agnostic. If no backend is active/
+// registered yet, this is a no-op (diag_log only) - there's nothing ACE-specific to set.
+[_unit] call afcm_sim_fnc_backend_setUnconscious;
 
-// Belt-and-suspenders against "healing itself": two targeted upstream fixes
-// (afcm_sim_fnc_disableSpontaneousWakeup, disableAI "ALL" above) were each grounded in real ACE3
-// source and still didn't fully hold up in live testing, meaning there's at least one more
-// mechanism (possibly KAT's own vitals/statemachine integration, addons/vitals/functions/
-// fnc_handleUnitVitals.sqf - it visibly replaces ACE's own vitals handler for non-player units)
-// that hasn't been pinned down. Rather than keep guessing at the exact upstream cause, this
-// directly re-locks the symptom: every 3s, for as long as this specific unit exists, force
-// setUnconscious true again. A patient is meant to stay down until an instructor resets it
-// (afcm_sim_fnc_backend_reset) - "spontaneously wakes up on its own" is never the intended
-// behaviour for this mod regardless of which system causes it.
+// Belt-and-suspenders: keeps re-asserting the correct backend-tracked unconsciousness every 3s for
+// as long as this specific unit exists, in case anything (spontaneous wake-up chance, KAT's own
+// vitals handling, a future backend) tries to wake it. A patient is meant to stay down until an
+// instructor resets it (afcm_sim_fnc_backend_reset) - "spontaneously wakes up on its own" is never
+// the intended behaviour for this mod. fnc_setUnconscious.sqf early-exits if already
+// ACE-unconscious, so this is a cheap no-op on every tick where nothing actually needs re-locking.
 [
     {
         params ["_args", "_handle"];
@@ -78,7 +82,7 @@ _unit setUnconscious true;
         if (isNull _unit || {!alive _unit}) exitWith {
             [_handle] call CBA_fnc_removePerFrameHandler;
         };
-        _unit setUnconscious true;
+        [_unit] call afcm_sim_fnc_backend_setUnconscious;
     },
     3,
     [_unit]

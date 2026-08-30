@@ -43,6 +43,7 @@ class CfgFunctions
             class backend_getActive { file = "\afcm_sim\addons\main\functions\fnc_backend_getActive.sqf"; };
             class backend_getState { file = "\afcm_sim\addons\main\functions\fnc_backend_getState.sqf"; };
             class backend_reset { file = "\afcm_sim\addons\main\functions\fnc_backend_reset.sqf"; };
+            class backend_setUnconscious { file = "\afcm_sim\addons\main\functions\fnc_backend_setUnconscious.sqf"; };
             // postInit, not preInit: the engine guarantees every addon's preInit (where backend
             // registration happens, see fnc_backend_registerBackend.sqf) finishes before ANY
             // addon's postInit runs — a native two-phase guarantee that doesn't need CBA's event

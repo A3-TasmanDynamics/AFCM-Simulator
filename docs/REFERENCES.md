@@ -180,9 +180,9 @@ in-game symptom, not just a theoretical risk).
 
 | Source | Use for |
 |---|---|
-| [setUnconscious](https://community.bistudio.com/wiki/setUnconscious) | `unit setUnconscious set` (Boolean, no return value) — vanilla engine command, not ACE/KAT-specific, confirmed still present in Arma 3. Used in `afcm_sim_spawner_fnc_spawnPatient` so spawned patients are always unconscious even with no medical backend registered at all (DESIGN.md §2.5) |
+| [setUnconscious](https://community.bistudio.com/wiki/setUnconscious) | `unit setUnconscious set` (Boolean, no return value) — vanilla engine command, not ACE/KAT-specific, confirmed still present in Arma 3. **No longer used for patients** (see Round 4 below) — it only changes ragdoll/animation state, not ACE's own tracked consciousness, so it can't actually stop ACE's AI from treating a unit. Kept available for the no-backend-registered fallback case, where there's nothing ACE-specific to set anyway. |
 
-## Why patients were "healing themselves" (confirmed directly from acemod/ACE3, three rounds)
+## Why patients were "healing themselves" (confirmed directly from acemod/ACE3, four rounds)
 
 **Round 1 (incomplete)**: suspected `ace_medical_ai` ("Makes AI units heal themselves and each
 other"). Read its real source and ruled it out with high confidence:
@@ -226,13 +226,42 @@ which is suspicious but doesn't itself implement a recovery/wake mechanic, so it
 a cause, only as a reason `medical_statemachine`'s Round-2 fix might not interact with KAT's
 patients the way it would with plain-ACE ones.
 
-Rather than keep chasing the exact upstream mechanism a third time, `afcm_sim_spawner_fnc_spawnPatient`
-now also runs a direct, symptom-level safeguard: a recurring `CBA_fnc_addPerFrameHandler` (every 3s,
-for as long as that specific unit exists) that re-applies `setUnconscious true` regardless of
-what caused it to wake. This guarantees the symptom is gone even though the precise root cause
-technically still isn't 100% confirmed — at the cost of patients no longer being able to wake up
-from genuinely successful treatment either, only from an explicit instructor reset
-(`afcm_sim_fnc_backend_reset`).
+Round 3 added a direct, symptom-level safeguard on top of the Round 2 fix: a recurring
+`CBA_fnc_addPerFrameHandler` (every 3s, for as long as that specific unit exists) that re-applies
+`setUnconscious true` regardless of what caused it to wake.
+
+**Round 4 (the actual root cause, confirmed)**: the Round 3 safeguard still didn't hold up in live
+testing (`Activity Log` continued showing bandaging/morphine use) — because it, and the original
+spawn-time call, both used the wrong command. ACE tracks its own consciousness completely
+independently of the engine: `addons/medical_engine/script_macros_medical.hpp` defines
+`VAR_UNCON = "ACE_isUnconscious"` and `IS_UNCONSCIOUS(unit) = (unit getVariable ["ACE_isUnconscious", false])`.
+The vanilla `setUnconscious` command changes ragdoll/animation state only — it never sets this
+variable. The only correct way to knock a unit out in a way ACE itself recognizes is the real,
+public function `ace_medical_fnc_setUnconscious` (confirmed source:
+`addons/medical/functions/fnc_setUnconscious.sqf`, `"Public: Yes"`), which routes through a
+`CBA_fnc_localEvent` into ACE's own state machine and correctly sets `ACE_isUnconscious`.
+
+This fully explains every earlier symptom: `ace_medical_ai`'s own CBA state machine
+(`addons/medical_ai/stateMachine.inc.sqf` — `GVAR(stateMachine) = [{call EFUNC(common,getLocalUnits)}, true] call CBA_statemachine_fnc_create;`)
+ticks over *every locally-known unit*, entirely independent of the engine's own AI subsystem — so
+`disableAI "ALL"` (Round 1) was never going to stop it. And because our patients were calling the
+engine command instead of `ace_medical_fnc_setUnconscious`, `ACE_isUnconscious` was `false` for
+them from the moment they spawned — regardless of Round 2's `spontaneousWakeUpChance` fix or Round
+3's recurring re-lock, since neither one ever touched the variable ACE's own AI actually checks.
+The `"Safe" -> "HealSelf"` transition in that state machine has no other condition beyond the unit
+not currently being under fire, so a freshly-spawned, ACE-conscious, empty-inventory patient was
+eligible to "treat" itself immediately and continuously.
+
+Fix: a new `setUnconscious` backend op (`afcm_sim_fnc_backend_setUnconscious`, mirroring
+`fnc_backend_reset.sqf`'s dispatch pattern), implemented in `ace_compat`/`kat_compat` as
+`[_unit, true] call ace_medical_fnc_setUnconscious;` (early-exiting if `ACE_isUnconscious` is
+already `true`, to keep the recurring Round-3 safeguard a cheap no-op most ticks rather than
+spamming ACE's own redundant-call warning). `afcm_sim_spawner_fnc_spawnPatient`'s initial spawn and
+its recurring per-frame safeguard both now dispatch through this instead of the raw engine command;
+`ace_compat`/`kat_compat`'s `reset` implementation does the same after `ace_medical_fnc_fullHeal`.
+The Round-3 recurring-lock structure (and its documented trade-off — a patient won't wake up even
+from fully successful treatment until an instructor explicitly resets it, via
+`afcm_sim_fnc_backend_reset`) is kept as a safety net, now built on the call that actually works.
 
 ---
 

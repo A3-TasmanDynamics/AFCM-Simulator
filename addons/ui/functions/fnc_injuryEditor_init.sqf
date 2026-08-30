@@ -42,9 +42,11 @@ params ["_display"];
 
     if (_backend in ["ace", "kat"]) then {
         _ctrlLimbLabel ctrlSetText format ["Injury — %1", _limbNames getOrDefault [_limb, _limb]];
+        _ctrlLimbLabel ctrlSetTextColor [0.949, 0.937, 0.902, 0.85];
         _ctrlApply ctrlEnable true;
     } else {
         _ctrlLimbLabel ctrlSetText "No medical backend active — install ACE3 or KAT to use this.";
+        _ctrlLimbLabel ctrlSetTextColor [0.85, 0.65, 0.2, 1];
         _ctrlApply ctrlEnable false;
     };
 
