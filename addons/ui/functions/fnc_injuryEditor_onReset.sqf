@@ -1,14 +1,23 @@
 /*
  * Author: Tasman Dynamics
- * ButtonClick handler for the injury editor's Reset button (RscDisplayAFCM_SIM_InjuryEditor).
- * Wipes everything done to the patient so far via afcm_sim_scenario_fnc_serverReset (same
- * request -> server pattern as Apply, DESIGN.md §6) and re-locks it back to the unconscious
- * baseline. Keeps the dialog open afterward (unlike Apply/Cancel) - the live status readout
- * (fnc_injuryEditor_refreshState.sqf, already polling every 0.5s) will show the clean state within
- * a moment, and the instructor can immediately pick a fresh injury to start the exercise over.
+ * ButtonClick handler for the injury editor's "Reset Limb" button (RscDisplayAFCM_SIM_InjuryEditor).
+ * Purely local - clears the wound type/severity/bleeding fields back to their defaults (same
+ * defaults fnc_injuryEditor_init.sqf sets on open: Gunshot / Moderate / unchecked) so an instructor
+ * can reconsider what to apply to this limb, without touching the patient's actual medical state
+ * at all.
+ *
+ * This is deliberately NOT a medical operation - ACE doesn't expose a real, public API to heal
+ * just one body part (`ace_medical_fnc_fullHeal`'s own "Body Part" argument is documented
+ * "(unused)" in ACE3's real source, and the per-limb damage model underneath
+ * (`ace_medical_engine_fnc_damageBodyPart`, itself `Public: No`) tracks left/right arm/leg via
+ * custom internal state, not simple settable native hitpoints - there's no supported, reliable way
+ * to scope a real heal to one limb). The full-patient wipe that used to live on this button moved
+ * to the limb-select ("main") screen's own Reset Patient button
+ * (fnc_limbSelect_onResetPatient.sqf) instead, where it's no longer misleadingly scoped to a
+ * single limb.
  *
  * Arguments (from the ButtonClick event, not called directly):
- * 0: Reset button <CONTROL>
+ * 0: Reset Limb button <CONTROL>
  *
  * Return Value:
  * None
@@ -18,12 +27,11 @@
 
 params ["_ctrlReset"];
 
-private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
+disableSerialization;
+private _display = ctrlParent _ctrlReset;
 
-diag_log text format ["[AFCM-Simulator][UI] Reset clicked - target %1.", _targetUnit];
+(_display displayCtrl 11) lbSetCurSel 0;
+(_display displayCtrl 12) lbSetCurSel 1;
+(_display displayCtrl 13) cbSetChecked false;
 
-if (isNull _targetUnit) exitWith {
-    diag_log text "[AFCM-Simulator][UI] Reset aborted - AFCM_SIM_UI_targetUnit is objNull.";
-};
-
-[_targetUnit] remoteExec ["afcm_sim_scenario_fnc_serverReset", 2];
+diag_log text "[AFCM-Simulator][UI] Reset Limb clicked - injury editor form cleared to defaults.";

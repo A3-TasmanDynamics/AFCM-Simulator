@@ -326,15 +326,25 @@ is still the plan, not the state of the repo.
   it via `ace_medical_fnc_isInjured`/`getOpenWounds` (both safe to call off the unit's owning
   machine, unlike `getBloodLoss` which requires `local _unit` and is deliberately not used here).
   Refreshed on a 0.5s `CBA_fnc_addPerFrameHandler` while the dialog is open, removed on close. A
-  **Reset Patient** button wipes everything done to the patient so far (wounds, bandages, drugs)
-  via a new `afcm_sim_fnc_backend_reset` dispatch — `afcm_sim_ace_compat`/`afcm_sim_kat_compat` both
-  implement it as `ace_medical_fnc_fullHeal` (real, confirmed) followed by re-locking via the
-  `setUnconscious` backend op (`ace_medical_fnc_setUnconscious`, not the engine command — see
-  below), so a reset hands back the same "just spawned" baseline rather than a
-  fully awake, healthy unit. Routes through `afcm_sim_scenario_fnc_serverReset`, same
-  server-authoritative request pattern as Apply. Unlike Apply/Cancel, Reset leaves the dialog open —
-  the live status readout shows the clean state within moments and the instructor can immediately
-  pick a fresh injury. Deliberately **ACE-only selections** — wound type/severity/bleeding, nothing
+  **Reset Limb** button here is purely local — clears the wound type/severity/bleeding fields back
+  to their defaults (`fnc_injuryEditor_onReset.sqf`) without touching the patient's real medical
+  state at all. Deliberately not a medical operation: ACE has no public API to heal just one body
+  part (`ace_medical_fnc_fullHeal`'s own "Body Part" argument is documented "(unused)" in ACE3's
+  real source, and its per-limb damage model tracks left/right arm/leg through custom internal
+  state rather than simple settable native hitpoints — there's no supported, reliable way to scope
+  a real heal to one limb). The real, full-unit reset lives one screen up instead: the limb-select
+  ("main") screen's own **Reset Patient** button wipes everything done to the patient so far
+  (wounds, bandages, drugs) via the `afcm_sim_fnc_backend_reset` dispatch —
+  `afcm_sim_ace_compat`/`afcm_sim_kat_compat` both implement it as `ace_medical_fnc_fullHeal` (real,
+  confirmed) followed by re-locking via the `setUnconscious` backend op
+  (`ace_medical_fnc_setUnconscious`, not the engine command — see below), so a reset hands back the
+  same "just spawned" baseline rather than a fully awake, healthy unit. Routes through
+  `afcm_sim_scenario_fnc_serverReset`, same server-authoritative request pattern as Apply. It moved
+  here (off the injury editor, where it used to live under the same "Reset Patient" label) because a
+  whole-patient wipe read as misleadingly scoped to just the limb being edited. Neither Reset button
+  closes its dialog — the live status readout on the injury editor shows the clean state within
+  moments either way, and the instructor can immediately pick a fresh injury. Deliberately
+  **ACE-only selections** — wound type/severity/bleeding, nothing
   backend-specific beyond that, since ACE and KAT both consume the exact same real calls identically
   underneath (ACE_COMPAT.md §3/KAT_COMPAT.md §3). The only backend-awareness is a check against
   `afcm_sim_fnc_backend_getActive`: if nothing usable is active (nothing registered, or only `afcm`

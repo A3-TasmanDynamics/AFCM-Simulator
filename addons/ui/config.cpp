@@ -37,6 +37,7 @@ class CfgFunctions
             file = "\afcm_sim\addons\ui\functions";
             class limbSelect_open { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_open.sqf"; };
             class limbSelect_onLimbClick { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_onLimbClick.sqf"; };
+            class limbSelect_onResetPatient { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_onResetPatient.sqf"; };
         };
         class InjuryEditor
         {
@@ -145,17 +146,23 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
 #define IDC_AFCM_SIM_LS_LEG_L       14
 #define IDC_AFCM_SIM_LS_LEG_R       15
 #define IDC_AFCM_SIM_LS_CLOSE       16
+#define IDC_AFCM_SIM_LS_RESET       17
 
 // First real screen for "Selectable Body Limbs" (DESIGN.md §5). Still a plain button-per-limb
 // layout, not a clickable body silhouette — a hit-tested silhouette needs a custom texture asset
-// (hit-region image) that doesn't exist yet. Now sits on a branded panel backdrop (AFCM_SIM_Panel
-// + AFCM_SIM_AccentBar) instead of floating bare buttons directly over the game world.
+// (hit-region image) that doesn't exist yet. Sits on a branded panel backdrop (AFCM_SIM_Panel +
+// AFCM_SIM_AccentBar), true-centered on screen — panel width/height are chosen so
+// `x = (1 - w) / 2` and `y = (1 - h) / 2` land the whole thing dead-center of the safe zone
+// regardless of resolution/aspect ratio (safeZoneW/H/X/Y are themselves already resolution-aware).
 //
 // 6 buttons, a direct 1:1 match to ACE3's own real body parts (DESIGN.md §4.1 / INJURY_CODES.md
 // §1) — deliberately kept this simple rather than a finer anatomical breakdown that was built and
 // then reverted. Arranged in a rough body layout: head at top, arms either side of chest, legs
-// at the bottom. Decorative controls (Panel/Subtitle/AccentBar) are idc=-1 and never read by
-// script; only the button/title IDCs above need to stay in sync with fnc_limbSelect_*.sqf.
+// at the bottom, then a full-width Reset Patient button (the real, full-unit
+// afcm_sim_fnc_backend_reset dispatch - moved here from the injury editor, which now has its own
+// much lighter, purely-local "Reset Limb", see RscDisplayAFCM_SIM_InjuryEditor below), then Close.
+// Decorative controls (Panel/Subtitle/AccentBar) are idc=-1 and never read by script; only the
+// button/title IDCs above need to stay in sync with fnc_limbSelect_*.sqf.
 class RscDisplayAFCM_SIM_LimbSelect
 {
     idd = IDD_AFCM_SIM_LIMBSELECT;
@@ -167,16 +174,16 @@ class RscDisplayAFCM_SIM_LimbSelect
         class Panel: AFCM_SIM_Panel
         {
             x = "0.28 * safeZoneW + safeZoneX";
-            y = "0.065 * safeZoneH + safeZoneY";
+            y = "0.30 * safeZoneH + safeZoneY";
             w = "0.44 * safeZoneW";
-            h = "0.34 * safeZoneH";
+            h = "0.395 * safeZoneH";
         };
         class Title: AFCM_SIM_RscTitle
         {
             idc = IDC_AFCM_SIM_LS_TITLE;
             text = "Select Injured Region";
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.085 * safeZoneH + safeZoneY";
+            y = "0.32 * safeZoneH + safeZoneY";
             w = "0.40 * safeZoneW";
             h = "0.04 * safeZoneH";
             sizeEx = "0.032 * safeZoneH";
@@ -186,7 +193,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = -1;
             text = "Click a body region to begin treatment";
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.123 * safeZoneH + safeZoneY";
+            y = "0.358 * safeZoneH + safeZoneY";
             w = "0.40 * safeZoneW";
             h = "0.025 * safeZoneH";
             sizeEx = "0.017 * safeZoneH";
@@ -194,7 +201,7 @@ class RscDisplayAFCM_SIM_LimbSelect
         class AccentBar: AFCM_SIM_AccentBar
         {
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.153 * safeZoneH + safeZoneY";
+            y = "0.39 * safeZoneH + safeZoneY";
             w = "0.40 * safeZoneW";
             h = "0.0025 * safeZoneH";
         };
@@ -203,7 +210,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_HEAD;
             text = "Head";
             x = "0.44 * safeZoneW + safeZoneX";
-            y = "0.175 * safeZoneH + safeZoneY";
+            y = "0.415 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""head""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -213,7 +220,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_ARM_L;
             text = "Left Arm";
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.23 * safeZoneH + safeZoneY";
+            y = "0.47 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""leftArm""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -223,7 +230,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_CHEST;
             text = "Chest";
             x = "0.44 * safeZoneW + safeZoneX";
-            y = "0.23 * safeZoneH + safeZoneY";
+            y = "0.47 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""chest""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -233,7 +240,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_ARM_R;
             text = "Right Arm";
             x = "0.58 * safeZoneW + safeZoneX";
-            y = "0.23 * safeZoneH + safeZoneY";
+            y = "0.47 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""rightArm""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -243,7 +250,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_LEG_L;
             text = "Left Leg";
             x = "0.38 * safeZoneW + safeZoneX";
-            y = "0.285 * safeZoneH + safeZoneY";
+            y = "0.525 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""leftLeg""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -253,17 +260,31 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_LEG_R;
             text = "Right Leg";
             x = "0.50 * safeZoneW + safeZoneX";
-            y = "0.285 * safeZoneH + safeZoneY";
+            y = "0.525 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""rightLeg""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+        };
+        // Full-unit reset (fullHeal + re-lock unconscious) - the real destructive action, so it
+        // gets the danger style here rather than the injury editor's now-local, non-destructive
+        // "Reset Limb". Doesn't close the dialog - an instructor may want to immediately pick a
+        // limb and start treating again right after wiping the patient.
+        class Reset: AFCM_SIM_RscButtonDanger
+        {
+            idc = IDC_AFCM_SIM_LS_RESET;
+            text = "Reset Patient";
+            x = "0.30 * safeZoneW + safeZoneX";
+            y = "0.58 * safeZoneH + safeZoneY";
+            w = "0.40 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            action = "call afcm_sim_ui_fnc_limbSelect_onResetPatient;";
         };
         class Close: AFCM_SIM_RscButton
         {
             idc = IDC_AFCM_SIM_LS_CLOSE;
             text = "Close";
             x = "0.44 * safeZoneW + safeZoneX";
-            y = "0.34 * safeZoneH + safeZoneY";
+            y = "0.63 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.038 * safeZoneH";
             colorBackground[] = {0.1, 0.1, 0.11, 0.75};
@@ -288,8 +309,10 @@ class RscDisplayAFCM_SIM_LimbSelect
 // toggle, per limb, plus a live medical-status readout (afcm_sim_fnc_backend_getState) refreshed
 // on a per-frame handler while the dialog is open. Opened by fnc_limbSelect_onLimbClick.sqf right
 // after a limb is picked; Apply remoteExecs to afcm_sim_scenario_fnc_serverApplyInjury (DESIGN.md
-// §6 — never applies locally). Reset remoteExecs to afcm_sim_scenario_fnc_serverReset (fullHeal +
-// re-lock unconscious) and keeps the dialog open, unlike Apply/Cancel.
+// §6 — never applies locally). Reset ("Reset Limb") is purely local now - just clears the form
+// back to defaults, see fnc_injuryEditor_onReset.sqf. The real full-unit reset moved to the
+// limb-select ("main") screen's own Reset Patient button (RscDisplayAFCM_SIM_LimbSelect above) -
+// it read as misleadingly scoped to one limb sitting here.
 //
 // Deliberately ACE-only selections: wound type/severity/bleeding, nothing backend-specific beyond
 // that. fnc_injuryEditor_init.sqf still queries afcm_sim_fnc_backend_getActive to disable Apply
@@ -299,10 +322,11 @@ class RscDisplayAFCM_SIM_LimbSelect
 // keeping this simple; the real KAT-only functions it would have used
 // (kat_surgery_fractures/kat_breathing_*) are still documented in INJURY_CODES.md §6 if revisited.
 //
-// Same branded panel/accent-bar/button kit as the limb-select dialog above, plus a dedicated
-// "readout box" (StatusBg) behind the live status text so it reads as a distinct console-style
-// element rather than plain text floating between the form and the buttons. Buttons are
-// role-colored: Apply = primary (accent-tinted), Cancel = neutral, Reset Patient = danger (red).
+// Same branded panel/accent-bar/button kit as the limb-select dialog above, true-centered the same
+// way, plus a dedicated "readout box" (StatusBg) behind the live status text so it reads as a
+// distinct console-style element rather than plain text floating between the form and the buttons.
+// Buttons are role-colored: Apply = primary (accent-tinted), Cancel/Reset Limb = neutral (neither
+// touches real patient state - Cancel discards the form, Reset Limb clears it).
 //
 // IDCs here are hardcoded 1/10-17 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
 // fnc_injuryEditor_onReset.sqf/fnc_injuryEditor_refreshState.sqf read via `_display displayCtrl <n>`
@@ -320,7 +344,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         class Panel: AFCM_SIM_Panel
         {
             x = "0.29 * safeZoneW + safeZoneX";
-            y = "0.165 * safeZoneH + safeZoneY";
+            y = "0.265 * safeZoneH + safeZoneY";
             w = "0.42 * safeZoneW";
             h = "0.465 * safeZoneH";
         };
@@ -329,7 +353,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_TITLE;
             text = "AFCM-Simulator — Injury Editor";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.185 * safeZoneH + safeZoneY";
+            y = "0.285 * safeZoneH + safeZoneY";
             w = "0.38 * safeZoneW";
             h = "0.035 * safeZoneH";
             sizeEx = "0.027 * safeZoneH";
@@ -342,7 +366,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_LIMBLABEL;
             text = "Injury";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.219 * safeZoneH + safeZoneY";
+            y = "0.319 * safeZoneH + safeZoneY";
             w = "0.38 * safeZoneW";
             h = "0.028 * safeZoneH";
             sizeEx = "0.019 * safeZoneH";
@@ -350,7 +374,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         class AccentBar: AFCM_SIM_AccentBar
         {
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.252 * safeZoneH + safeZoneY";
+            y = "0.352 * safeZoneH + safeZoneY";
             w = "0.38 * safeZoneW";
             h = "0.0025 * safeZoneH";
         };
@@ -359,7 +383,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Wound Type";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.27 * safeZoneH + safeZoneY";
+            y = "0.37 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.038 * safeZoneH";
         };
@@ -367,7 +391,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_WOUNDTYPE;
             x = "0.50 * safeZoneW + safeZoneX";
-            y = "0.27 * safeZoneH + safeZoneY";
+            y = "0.37 * safeZoneH + safeZoneY";
             w = "0.19 * safeZoneW";
             h = "0.038 * safeZoneH";
         };
@@ -376,7 +400,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Severity";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.315 * safeZoneH + safeZoneY";
+            y = "0.415 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.038 * safeZoneH";
         };
@@ -384,7 +408,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_SEVERITY;
             x = "0.50 * safeZoneW + safeZoneX";
-            y = "0.315 * safeZoneH + safeZoneY";
+            y = "0.415 * safeZoneH + safeZoneY";
             w = "0.19 * safeZoneW";
             h = "0.038 * safeZoneH";
         };
@@ -393,7 +417,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Bleeding";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.36 * safeZoneH + safeZoneY";
+            y = "0.46 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -401,7 +425,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_BLEEDING;
             x = "0.50 * safeZoneW + safeZoneX";
-            y = "0.36 * safeZoneH + safeZoneY";
+            y = "0.46 * safeZoneH + safeZoneY";
             w = "0.04 * safeZoneH";
             h = "0.04 * safeZoneH";
         };
@@ -410,7 +434,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         class StatusBg: AFCM_SIM_Panel
         {
             x = "0.305 * safeZoneW + safeZoneX";
-            y = "0.408 * safeZoneH + safeZoneY";
+            y = "0.508 * safeZoneH + safeZoneY";
             w = "0.395 * safeZoneW";
             h = "0.08 * safeZoneH";
             colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
@@ -423,7 +447,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_STATUS;
             text = "";
             x = "0.315 * safeZoneW + safeZoneX";
-            y = "0.413 * safeZoneH + safeZoneY";
+            y = "0.513 * safeZoneH + safeZoneY";
             w = "0.375 * safeZoneW";
             h = "0.07 * safeZoneH";
             sizeEx = "0.019 * safeZoneH";
@@ -434,7 +458,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_APPLY;
             text = "Apply";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.5 * safeZoneH + safeZoneY";
+            y = "0.6 * safeZoneH + safeZoneY";
             w = "0.185 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -443,18 +467,19 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_CANCEL;
             text = "Cancel";
             x = "0.505 * safeZoneW + safeZoneX";
-            y = "0.5 * safeZoneH + safeZoneY";
+            y = "0.6 * safeZoneH + safeZoneY";
             w = "0.185 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
-        // Separate row, distinct from Apply/Cancel - wipes everything done to the patient so far
-        // and starts the exercise over, rather than committing/discarding one injury.
-        class Reset: AFCM_SIM_RscButtonDanger
+        // Separate row, distinct from Apply/Cancel - purely local, clears the form back to
+        // defaults (fnc_injuryEditor_onReset.sqf) rather than touching the patient's actual
+        // medical state. Neutral style, not danger red - it's no longer destructive.
+        class Reset: AFCM_SIM_RscButton
         {
             idc = IDC_AFCM_SIM_IE_RESET;
-            text = "Reset Patient";
+            text = "Reset Limb";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.552 * safeZoneH + safeZoneY";
+            y = "0.652 * safeZoneH + safeZoneY";
             w = "0.38 * safeZoneW";
             h = "0.045 * safeZoneH";
         };

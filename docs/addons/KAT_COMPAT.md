@@ -83,7 +83,9 @@ getters, since KAT extends the same underlying state ACE3 tracks rather than rep
 
 ### `afcm_sim_kat_fnc_reset`
 **Real implementation.** Identical to `afcm_sim_ace_fnc_reset` — `ace_medical_fnc_fullHeal` then
-re-lock via `afcm_sim_kat_fnc_setUnconscious`. Backs the injury editor's Reset Patient button.
+re-lock via `afcm_sim_kat_fnc_setUnconscious`. Backs the limb-select ("main") screen's Reset
+Patient button — moved there from the injury editor, which now has its own purely-local
+"Reset Limb" that only clears the form (DESIGN.md §5).
 
 ### `afcm_sim_kat_fnc_setUnconscious`
 **Real implementation.** Identical to `afcm_sim_ace_fnc_setUnconscious` — `[_unit, true] call

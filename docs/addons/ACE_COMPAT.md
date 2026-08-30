@@ -127,10 +127,12 @@ real and confirmed (REFERENCES.md) but explicitly **not** used here for that rea
 ```sqf
 [_unit] call afcm_sim_ace_fnc_reset
 ```
-**Real implementation.** Backs the injury editor's Reset Patient button. Calls the real, confirmed
-`ace_medical_fnc_fullHeal` (REFERENCES.md) to wipe all wounds/damage/drugs, then immediately
-re-locks via `afcm_sim_ace_fnc_setUnconscious` — a reset hands back the same "just spawned"
-unconscious baseline DESIGN.md §5 establishes for every patient, not a fully awake, healthy unit.
+**Real implementation.** Backs the limb-select ("main") screen's Reset Patient button — moved there
+from the injury editor, which now has its own purely-local "Reset Limb" that only clears the form
+(DESIGN.md §5). Calls the real, confirmed `ace_medical_fnc_fullHeal` (REFERENCES.md) to wipe all
+wounds/damage/drugs, then immediately re-locks via `afcm_sim_ace_fnc_setUnconscious` — a reset
+hands back the same "just spawned" unconscious baseline DESIGN.md §5 establishes for every patient,
+not a fully awake, healthy unit.
 
 ### `afcm_sim_ace_fnc_setUnconscious`
 ```sqf
