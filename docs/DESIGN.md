@@ -344,16 +344,25 @@ is still the plan, not the state of the repo.
   whole-patient wipe read as misleadingly scoped to just the limb being edited. Neither Reset button
   closes its dialog — the live status readout on the injury editor shows the clean state within
   moments either way, and the instructor can immediately pick a fresh injury. Deliberately
-  **ACE-only selections** — wound type/severity/bleeding, nothing
-  backend-specific beyond that, since ACE and KAT both consume the exact same real calls identically
-  underneath (ACE_COMPAT.md §3/KAT_COMPAT.md §3). The only backend-awareness is a check against
+  **wound type/severity/bleeding unconditionally** — nothing backend-specific there, since ACE and
+  KAT both consume the exact same real calls identically underneath (ACE_COMPAT.md §3/
+  KAT_COMPAT.md §3). The only backend-awareness for those three is a check against
   `afcm_sim_fnc_backend_getActive`: if nothing usable is active (nothing registered, or only `afcm`
   — not yet supported by this UI, DESIGN.md §2.5), Apply is disabled and the limb label explains why
-  instead of offering controls that would silently no-op. A fuller version of this — real,
-  backend-conditional KAT-only **Fracture**/**Pneumothorax** controls
-  (`kat_surgery_fractures`/`kat_breathing_*`, INJURY_CODES.md §6) shown only when KAT is active —
-  was built and then reverted in favour of this simpler version; the real KAT-only functions it
-  would have used are still documented if revisited.
+  instead of offering controls that would silently no-op.
+  On top of that, real, backend-conditional KAT-only **Fracture**/**Pneumothorax** controls
+  (`kat_surgery_fractures`/`kat_breathing_pneumothorax`/`_hemopneumothorax`/`_tensionpneumothorax`,
+  INJURY_CODES.md §6) are shown only when KAT is the active backend (Pneumothorax also only when the
+  selected limb is "chest" — it's a torso-wide condition, not per-limb). An earlier pass built this,
+  reverted it, then rebuilt it grounded directly against real KAT source
+  (`kat_surgery_fnc_fractureSelectLocal`/`kat_breathing_fnc_handleBreathing`/
+  `fnc_inflictAdvancedPneumothorax`, all fetched from `KAT-Advanced-Medical/KAM`) rather than a
+  prior working prototype's comments — this pass confirmed the real severity scales (0-4 for
+  pneumothorax; "Simple"/"Compound"/"Comminuted" for fracture, not "Stable" as previously
+  documented) in the process. `afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax` are called
+  directly, not through the generic `Injury`/backend-interface dispatch, since neither concept fits
+  that schema — Apply on the injury editor fires them alongside the regular wound application in
+  one click, whenever the corresponding control is actually visible and not set to "None".
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
   *Not implemented.*
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from

@@ -51,6 +51,19 @@ if (count _state > 0) then {
         _state getOrDefault ["limbWoundCount", 0],
         _state getOrDefault ["limbBleeding", false]
     ];
+
+    // KAT-only fields (kat_compat's getState, not ace_compat's - see fnc_getState.sqf) - only
+    // present at all when KAT is the active backend, so their presence alone gates showing this.
+    if ("fracture" in _state) then {
+        private _fractureNames = ["None", "Simple", "Compound", "Comminuted"];
+        private _fractureVal = _state get "fracture";
+        private _fractureName = _fractureNames param [floor _fractureVal, format ["%1", _fractureVal]];
+
+        private _pneumoNames = ["None", "Simple", "Hemopneumothorax", "Tension"];
+        private _pneumoName = _pneumoNames param [_state getOrDefault ["pneumothoraxType", 0], "None"];
+
+        _text = _text + format ["\nFracture (KAT): %1 | Pneumothorax (KAT): %2", _fractureName, _pneumoName];
+    };
 };
 
 (_display displayCtrl 16) ctrlSetText _text;

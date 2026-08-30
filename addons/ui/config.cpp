@@ -304,6 +304,10 @@ class RscDisplayAFCM_SIM_LimbSelect
 #define IDC_AFCM_SIM_IE_CANCEL     15
 #define IDC_AFCM_SIM_IE_STATUS     16
 #define IDC_AFCM_SIM_IE_RESET      17
+#define IDC_AFCM_SIM_IE_FRACTURE       18
+#define IDC_AFCM_SIM_IE_PNEUMOTHORAX   19
+#define IDC_AFCM_SIM_IE_FRACTURELABEL  20
+#define IDC_AFCM_SIM_IE_PNEUMOLABEL    21
 
 // Second real screen for "Selectable Injuries" (DESIGN.md §5) — wound type, severity, bleed
 // toggle, per limb, plus a live medical-status readout (afcm_sim_fnc_backend_getState) refreshed
@@ -314,13 +318,15 @@ class RscDisplayAFCM_SIM_LimbSelect
 // limb-select ("main") screen's own Reset Patient button (RscDisplayAFCM_SIM_LimbSelect above) -
 // it read as misleadingly scoped to one limb sitting here.
 //
-// Deliberately ACE-only selections: wound type/severity/bleeding, nothing backend-specific beyond
-// that. fnc_injuryEditor_init.sqf still queries afcm_sim_fnc_backend_getActive to disable Apply
-// with an explanation if no usable backend is active, but doesn't otherwise branch on which one —
-// ACE and KAT both consume these same real calls identically (ACE_COMPAT.md §3/KAT_COMPAT.md §3).
-// A KAT-specific Fracture/Pneumothorax extension was built and then reverted here in favour of
-// keeping this simple; the real KAT-only functions it would have used
-// (kat_surgery_fractures/kat_breathing_*) are still documented in INJURY_CODES.md §6 if revisited.
+// Wound type/severity/bleeding work identically for ACE and KAT (ACE_COMPAT.md §3/KAT_COMPAT.md
+// §3), so those three stay unconditional. Fracture/Pneumothorax below them are real KAT-specific
+// state with no ACE equivalent at all (INJURY_CODES.md §6) — shown/hidden at runtime by
+// fnc_injuryEditor_init.sqf (`ctrlShow`) based on `afcm_sim_fnc_backend_getActive`: Fracture only
+// when KAT is active, Pneumothorax only when KAT is active AND the selected limb is "chest" (a
+// torso-wide condition, not per-limb). Hidden rows just leave blank space in the panel rather than
+// reflowing it — Arma dialogs are absolute-positioned, not flow-layout — a deliberate simplicity
+// trade-off. fnc_injuryEditor_init.sqf still queries afcm_sim_fnc_backend_getActive to disable
+// Apply entirely with an explanation if no usable backend is active at all.
 //
 // Same branded panel/accent-bar/button kit as the limb-select dialog above, true-centered the same
 // way, plus a dedicated "readout box" (StatusBg) behind the live status text so it reads as a
@@ -328,7 +334,7 @@ class RscDisplayAFCM_SIM_LimbSelect
 // Buttons are role-colored: Apply = primary (accent-tinted), Cancel/Reset Limb = neutral (neither
 // touches real patient state - Cancel discards the form, Reset Limb clears it).
 //
-// IDCs here are hardcoded 1/10-17 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
+// IDCs here are hardcoded 1/10-21 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
 // fnc_injuryEditor_onReset.sqf/fnc_injuryEditor_refreshState.sqf read via `_display displayCtrl <n>`
 // — keep both in sync if either changes. Decorative controls (Panel/AccentBar/StatusBg) are
 // idc=-1 and never read by script.
@@ -344,16 +350,16 @@ class RscDisplayAFCM_SIM_InjuryEditor
         class Panel: AFCM_SIM_Panel
         {
             x = "0.29 * safeZoneW + safeZoneX";
-            y = "0.265 * safeZoneH + safeZoneY";
+            y = "0.215 * safeZoneH + safeZoneY";
             w = "0.42 * safeZoneW";
-            h = "0.465 * safeZoneH";
+            h = "0.57 * safeZoneH";
         };
         class Title: AFCM_SIM_RscTitle
         {
             idc = IDC_AFCM_SIM_IE_TITLE;
             text = "AFCM-Simulator — Injury Editor";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.285 * safeZoneH + safeZoneY";
+            y = "0.235 * safeZoneH + safeZoneY";
             w = "0.38 * safeZoneW";
             h = "0.035 * safeZoneH";
             sizeEx = "0.027 * safeZoneH";
@@ -366,7 +372,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_LIMBLABEL;
             text = "Injury";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.319 * safeZoneH + safeZoneY";
+            y = "0.269 * safeZoneH + safeZoneY";
             w = "0.38 * safeZoneW";
             h = "0.028 * safeZoneH";
             sizeEx = "0.019 * safeZoneH";
@@ -374,7 +380,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         class AccentBar: AFCM_SIM_AccentBar
         {
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.352 * safeZoneH + safeZoneY";
+            y = "0.302 * safeZoneH + safeZoneY";
             w = "0.38 * safeZoneW";
             h = "0.0025 * safeZoneH";
         };
@@ -383,7 +389,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Wound Type";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.37 * safeZoneH + safeZoneY";
+            y = "0.32 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.038 * safeZoneH";
         };
@@ -391,7 +397,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_WOUNDTYPE;
             x = "0.50 * safeZoneW + safeZoneX";
-            y = "0.37 * safeZoneH + safeZoneY";
+            y = "0.32 * safeZoneH + safeZoneY";
             w = "0.19 * safeZoneW";
             h = "0.038 * safeZoneH";
         };
@@ -400,7 +406,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Severity";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.415 * safeZoneH + safeZoneY";
+            y = "0.365 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.038 * safeZoneH";
         };
@@ -408,7 +414,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_SEVERITY;
             x = "0.50 * safeZoneW + safeZoneX";
-            y = "0.415 * safeZoneH + safeZoneY";
+            y = "0.365 * safeZoneH + safeZoneY";
             w = "0.19 * safeZoneW";
             h = "0.038 * safeZoneH";
         };
@@ -417,7 +423,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = -1;
             text = "Bleeding";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.46 * safeZoneH + safeZoneY";
+            y = "0.41 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -425,31 +431,73 @@ class RscDisplayAFCM_SIM_InjuryEditor
         {
             idc = IDC_AFCM_SIM_IE_BLEEDING;
             x = "0.50 * safeZoneW + safeZoneX";
-            y = "0.46 * safeZoneH + safeZoneY";
+            y = "0.41 * safeZoneH + safeZoneY";
             w = "0.04 * safeZoneH";
             h = "0.04 * safeZoneH";
+        };
+        // KAT-only, hidden entirely (ctrlShow false) unless the active backend is "kat" -
+        // fnc_injuryEditor_init.sqf. Fracture severity is per-limb, real KAT state
+        // (kat_surgery_fractures) with no ACE equivalent - see fnc_applyFracture.sqf.
+        class FractureLabel: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_IE_FRACTURELABEL;
+            text = "Fracture (KAT)";
+            x = "0.31 * safeZoneW + safeZoneX";
+            y = "0.455 * safeZoneH + safeZoneY";
+            w = "0.17 * safeZoneW";
+            h = "0.038 * safeZoneH";
+        };
+        class Fracture: RscCombo
+        {
+            idc = IDC_AFCM_SIM_IE_FRACTURE;
+            x = "0.50 * safeZoneW + safeZoneX";
+            y = "0.455 * safeZoneH + safeZoneY";
+            w = "0.19 * safeZoneW";
+            h = "0.038 * safeZoneH";
+        };
+        // KAT-only, hidden unless the active backend is "kat" AND the selected limb is "chest" -
+        // pneumothorax is a torso-wide condition (kat_breathing_pneumothorax/_hemopneumothorax/
+        // _tensionpneumothorax), not per-limb, so it doesn't make sense to offer it while editing
+        // an arm or a leg. See fnc_applyPneumothorax.sqf.
+        class PneumoLabel: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_IE_PNEUMOLABEL;
+            text = "Pneumothorax (KAT)";
+            x = "0.31 * safeZoneW + safeZoneX";
+            y = "0.5 * safeZoneH + safeZoneY";
+            w = "0.17 * safeZoneW";
+            h = "0.038 * safeZoneH";
+        };
+        class Pneumothorax: RscCombo
+        {
+            idc = IDC_AFCM_SIM_IE_PNEUMOTHORAX;
+            x = "0.50 * safeZoneW + safeZoneX";
+            y = "0.5 * safeZoneH + safeZoneY";
+            w = "0.19 * safeZoneW";
+            h = "0.038 * safeZoneH";
         };
         // Nested "readout" backdrop behind StatusText, so the live medical-state text reads as a
         // distinct console-style element rather than plain text floating in the form.
         class StatusBg: AFCM_SIM_Panel
         {
             x = "0.305 * safeZoneW + safeZoneX";
-            y = "0.508 * safeZoneH + safeZoneY";
+            y = "0.548 * safeZoneH + safeZoneY";
             w = "0.395 * safeZoneW";
-            h = "0.08 * safeZoneH";
+            h = "0.095 * safeZoneH";
             colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
         };
         // Live medical state (afcm_sim_fnc_backend_getState), refreshed on a per-frame handler
         // added in fnc_injuryEditor_init.sqf and removed in fnc_injuryEditor_cleanup.sqf while this
-        // dialog is open — genuinely live, not just a snapshot from when the dialog opened.
+        // dialog is open — genuinely live, not just a snapshot from when the dialog opened. Tall
+        // enough for a 4th line (fracture/pneumothorax) when KAT is active.
         class StatusText: RscText
         {
             idc = IDC_AFCM_SIM_IE_STATUS;
             text = "";
             x = "0.315 * safeZoneW + safeZoneX";
-            y = "0.513 * safeZoneH + safeZoneY";
+            y = "0.553 * safeZoneH + safeZoneY";
             w = "0.375 * safeZoneW";
-            h = "0.07 * safeZoneH";
+            h = "0.085 * safeZoneH";
             sizeEx = "0.019 * safeZoneH";
             colorText[] = AFCM_SIM_COLOR_TEXT_DIM;
         };
@@ -458,7 +506,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_APPLY;
             text = "Apply";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.6 * safeZoneH + safeZoneY";
+            y = "0.655 * safeZoneH + safeZoneY";
             w = "0.185 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -467,7 +515,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_CANCEL;
             text = "Cancel";
             x = "0.505 * safeZoneW + safeZoneX";
-            y = "0.6 * safeZoneH + safeZoneY";
+            y = "0.655 * safeZoneH + safeZoneY";
             w = "0.185 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -479,7 +527,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_RESET;
             text = "Reset Limb";
             x = "0.31 * safeZoneW + safeZoneX";
-            y = "0.652 * safeZoneH + safeZoneY";
+            y = "0.707 * safeZoneH + safeZoneY";
             w = "0.38 * safeZoneW";
             h = "0.045 * safeZoneH";
         };

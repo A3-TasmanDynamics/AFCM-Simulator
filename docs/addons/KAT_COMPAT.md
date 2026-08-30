@@ -96,11 +96,26 @@ what `ace_medical_ai`'s state machine actually checks before letting a unit self
 ### `afcm_sim_kat_fnc_removeInjury`
 **Stub.** No real removal call wired up yet — same open question as `ace_compat`'s.
 
-Real `applyFracture`/`applyPneumothorax` functions (KAT-only, no ACE equivalent —
-`kat_surgery_fractures`/`kat_breathing_*`) were built and then reverted along with the UI controls
-that would have used them, in favour of keeping the injury editor ACE-only. Documented as
-still-real, still-confirmed vocabulary in [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding-confirmed-not-wired-into-the-ui)
-if revisited.
+### `afcm_sim_kat_fnc_applyFracture`
+```sqf
+[_unit, _limb, _severity] call afcm_sim_kat_fnc_applyFracture
+```
+**Real implementation.** Sets `kat_surgery_fractures` (confirmed 6-element array,
+`ALL_BODY_PARTS`-indexed — full detail: [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding--fracture--pneumothorax-wired-in)).
+KAT-only, no ACE equivalent — called directly by
+`afcm_sim_scenario_fnc_serverApplyKatFracture`, not through the generic `applyInjury` dispatch.
+
+### `afcm_sim_kat_fnc_applyPneumothorax`
+```sqf
+[_unit, _type] call afcm_sim_kat_fnc_applyPneumothorax
+```
+**Real implementation.** Sets `kat_breathing_pneumothorax`/`_hemopneumothorax`/
+`_tensionpneumothorax` (confirmed 0-4 severity scale + two mutually-exclusive booleans), then calls
+the real `kat_breathing_fnc_handleBreathing` to apply it. Torso-wide, not per-limb. Called directly
+by `afcm_sim_scenario_fnc_serverApplyKatPneumothorax`.
+
+Both are wired into the injury editor UI, shown only when KAT is the active backend (Pneumothorax
+also only for the "chest" limb) — `afcm_sim_ui/functions/fnc_injuryEditor_init.sqf`.
 
 ---
 
@@ -215,13 +230,14 @@ wouldn't need any folding at all, just a direct index lookup.
 
 - **`removeInjury` is still a stub.** `applyInjury`/`getState` are real now (§3); no real ACE3/KAT
   removal call is wired up yet, same open question as `ace_compat`'s.
-- **KAT-specific state (fractures, pneumothorax) not exposed in the UI.** A real implementation
-  (`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`, called directly rather than through the
-  generic `Injury`/backend-interface dispatch) was built and reverted — the injury editor is
-  deliberately ACE-only now (DESIGN.md § Selectable Injuries).
-- **Fracture-*setting* function unconfirmed.** `fnc_fractureCheck.sqf` (§4) only *reads*
-  `kat_surgery_fractures` — the real function that *writes* it (KAT's fracture-infliction entry
-  point) hasn't been found yet.
+- ~~KAT-specific state (fractures, pneumothorax) not exposed in the UI.~~ **Resolved** —
+  `afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax` are real and wired into the injury editor UI
+  (§2, [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding--fracture--pneumothorax-wired-in)).
+- ~~Fracture-*setting* function unconfirmed.~~ **Resolved** — `fnc_fractureSelectLocal.sqf` (KAT's
+  real infliction entry point, fetched directly this pass) confirms the write pattern
+  `afcm_sim_kat_fnc_applyFracture` uses: `_fractureArray set [_part, _severity]; _patient
+  setVariable [QGVAR(fractures), _fractureArray, true]`. It also corrected the severity-1 label —
+  KAT's own source calls it "Simple Fracture," not "Stable" as an earlier pass's documentation had it.
 - **Chemical burn trigger path unconfirmed.** `KAT_chemicalBurn` (§3) is a real registered damage
   type, but what actually calls `addDamageToUnit`/`addWound` with that type (a specific ammo type?
   an area-effect script?) hasn't been traced.

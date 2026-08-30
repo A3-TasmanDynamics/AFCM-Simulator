@@ -193,54 +193,62 @@ they're shareable outside the mission file).
 
 ---
 
-## 6. KAT-Specific Coding (Confirmed, Not Wired Into The UI)
+## 6. KAT-Specific Coding — Fracture / Pneumothorax (Wired In)
 
-KAT tracks some state that has no equivalent in the backend-agnostic `Injury` object at all —
-real, KAT-internal state, not something `afcm_sim_scenario`'s randomizer or a future preset
-produces, and not currently exposed in the injury editor UI (which is deliberately ACE-only —
-DESIGN.md § Selectable Injuries). A real implementation (`afcm_sim_kat_fnc_applyFracture`/
-`applyPneumothorax`, backend-conditional Fracture/Pneumothorax controls) was built and then
-reverted in favour of keeping the UI simple; documented here so it's not lost if revisited (full
-context: [KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables)).
+KAT tracks some state that has no equivalent in the backend-agnostic `Injury` object at all — real,
+KAT-internal state, not something `afcm_sim_scenario`'s randomizer or a future preset produces. An
+earlier pass built this, then reverted it in favour of keeping the UI simple; it's back, this time
+grounded directly against real source fetched from `KAT-Advanced-Medical/KAM` (not the prior
+working prototype's comments) — full context:
+[KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables). Both are exposed in
+the injury editor UI, shown only when KAT is the active backend (Pneumothorax also only when the
+selected limb is "chest" — it's torso-wide, not per-limb) — `afcm_sim_kat_fnc_applyFracture`/
+`applyPneumothorax`, called directly rather than through the generic `Injury`/backend-interface
+dispatch, since neither concept fits that schema.
 
 **Fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb — and each
 entry is a **severity/treatment-stage scale, not a boolean**. This array's own index order is
 **KAT/ACE's** 6 body parts (`head, torso, leftArm, rightArm, leftLeg, rightLeg`) — the exact same 6
-values AFCM-Simulator's own `LimbId` (§1) now uses 1:1, so wiring this in wouldn't need any
-`LimbId` → ACE body-part folding at all, just a direct index lookup:
+values AFCM-Simulator's own `LimbId` (§1) uses 1:1, so `afcm_sim_kat_fnc_applyFracture` is a direct
+index lookup, no `LimbId` → ACE body-part folding needed at all:
 
 ```sqf
 /*
-Fracture severity scale (kat_surgery_fractures per-limb value):
-0 = Unaffected, 1 = Stable Fracture, 2 = Compound Fracture, 3 = Comminuted Fracture,
+Fracture severity scale (kat_surgery_fractures per-limb value) - confirmed directly from
+addons/surgery/functions/fnc_fractureSelectLocal.sqf's own comparison logic:
+0 = None, 1 = Simple Fracture, 2 = Compound Fracture, 3 = Comminuted Fracture,
 2.1/3.1 = Open Fracture, 2.2/3.2 = Prepared Fracture, 2.5 = Irrigated Fracture, 3.5 = Clamped Fracture
+(the `.1`/`.2`/`.5` treatment-progress substages still read as their base severity under
+fractureSelectLocal's own `_liveFracture >= 2 && < 3` style comparisons)
 
 Array index -> limb: [head, torso, leftArm, rightArm, leftLeg, rightLeg]
 */
 
-// Stable fracture, left arm
-_unit setVariable ["kat_surgery_fractures", [0, 0, 1, 0, 0, 0], true];
-
-// Compound fracture, right arm
-_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 2, 0, 0], true];
-
-// Comminuted fracture, left leg
-_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 0, 3, 0], true];
-
-// Open compound fracture, right leg (treatment-progress stage on top of severity 2)
-_unit setVariable ["kat_surgery_fractures", [0, 0, 0, 0, 0, 2.1], true];
+[patientUnit, "leftArm", 1] call afcm_sim_kat_fnc_applyFracture;  // Simple fracture, left arm
+[patientUnit, "rightArm", 2] call afcm_sim_kat_fnc_applyFracture; // Compound fracture, right arm
+[patientUnit, "leftLeg", 3] call afcm_sim_kat_fnc_applyFracture;  // Comminuted fracture, left leg
 ```
 
-The `.1`/`.2`/`.5` suffixes read as treatment-progress stages layered on top of a base severity
-(`2` or `3`), not independent severities — not confirmed beyond the source comment itself.
+The injury editor's own UI combo only offers the 4 base severities (None/Simple/Compound/
+Comminuted) — the `.1`/`.2`/`.5` treatment-progress substages are something KAT's own surgery
+workflow advances a patient *to* during treatment, not a sensible "starting" injury an instructor
+would author.
 
-**Pneumothorax** (`kat_breathing_pneumothorax`) is a `Number` (severity), alongside two booleans
-(`kat_breathing_Hemopneumothorax`, `kat_breathing_Tensionpneumothorax`) — all three set via
-`setVariable`, then `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state.
-A reverted implementation exposed this as a single UI choice — None / Simple Pneumothorax /
-Hemopneumothorax / Tension Pneumothorax — rather than three independent controls, since the real
-combinations that make clinical sense are limited. Unlike Fracture, this isn't per-limb — it's a
-torso-wide condition.
+**Pneumothorax** (`kat_breathing_pneumothorax`) is a `Number` severity on a **confirmed 0-4 scale**
+— fetched directly from `addons/breathing/functions/fnc_handleBreathing.sqf`
+(`_pneumothorax / 4` in its own breathing-rate calculation) and
+`fnc_inflictAdvancedPneumothorax.sqf` (KAT's own real infliction function sets it to exactly `4`
+for any advanced case), alongside two **mutually-exclusive** booleans
+(`kat_breathing_hemopneumothorax`, `kat_breathing_tensionpneumothorax` — confirmed mutually
+exclusive from that same real infliction function). All three set via `setVariable`, then
+`[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state — setting the
+variables alone isn't sufficient. `afcm_sim_kat_fnc_applyPneumothorax` exposes this as a single UI
+choice — None / Simple Pneumothorax / Hemopneumothorax / Tension Pneumothorax — rather than three
+independent controls, since the real combinations that make clinical sense are limited, and is
+deliberately deterministic (severity always `4` for any non-None choice) unlike KAT's own real
+infliction function, which rolls a random chance and a random hemo-vs-tension split — an
+instructor picking a type should get exactly that, not a dice roll. Unlike Fracture, this isn't
+per-limb — it's a torso-wide condition.
 
 ---
 

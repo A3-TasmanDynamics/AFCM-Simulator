@@ -1,10 +1,10 @@
 /*
  * Author: Tasman Dynamics
  * ButtonClick handler for the injury editor's "Reset Limb" button (RscDisplayAFCM_SIM_InjuryEditor).
- * Purely local - clears the wound type/severity/bleeding fields back to their defaults (same
- * defaults fnc_injuryEditor_init.sqf sets on open: Gunshot / Moderate / unchecked) so an instructor
- * can reconsider what to apply to this limb, without touching the patient's actual medical state
- * at all.
+ * Purely local - clears the wound type/severity/bleeding fields, plus Fracture/Pneumothorax if
+ * visible (KAT only), back to their defaults (same defaults fnc_injuryEditor_init.sqf sets on
+ * open: Gunshot / Moderate / unchecked / None / None) so an instructor can reconsider what to
+ * apply to this limb, without touching the patient's actual medical state at all.
  *
  * This is deliberately NOT a medical operation - ACE doesn't expose a real, public API to heal
  * just one body part (`ace_medical_fnc_fullHeal`'s own "Body Part" argument is documented
@@ -33,5 +33,7 @@ private _display = ctrlParent _ctrlReset;
 (_display displayCtrl 11) lbSetCurSel 0;
 (_display displayCtrl 12) lbSetCurSel 1;
 (_display displayCtrl 13) cbSetChecked false;
+(_display displayCtrl 18) lbSetCurSel 0;
+(_display displayCtrl 19) lbSetCurSel 0;
 
 diag_log text "[AFCM-Simulator][UI] Reset Limb clicked - injury editor form cleared to defaults.";

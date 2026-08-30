@@ -7,11 +7,12 @@
  * same reasoning for `disableSerialization`/`CBA_fnc_execNextFrame` below (ensures controls exist
  * before being touched, and the display doesn't fail serialization checks).
  *
- * Deliberately ACE-only selections (ui/config.cpp) — the only backend-awareness here is checking
- * afcm_sim_fnc_backend_getActive to disable Apply with an explanation if nothing usable is active
- * (neither ACE nor KAT loaded, or only AFCM — not supported by this UI yet). ACE and KAT both
- * consume the exact same wound type/severity/bleeding controls identically underneath
- * (ACE_COMPAT.md §3/KAT_COMPAT.md §3), so there's nothing to branch on beyond that.
+ * Wound type/severity/bleeding work identically for ACE and KAT (ACE_COMPAT.md §3/KAT_COMPAT.md
+ * §3) so they're always shown; Apply is disabled with an explanation if nothing usable is active at
+ * all (neither ACE nor KAT loaded, or only AFCM — not supported by this UI yet). Fracture/
+ * Pneumothorax (INJURY_CODES.md §6) are real KAT-only state with no ACE equivalent, so they're
+ * shown/hidden here based on the active backend (and, for Pneumothorax, the selected limb — it's a
+ * torso-wide condition, not per-limb).
  *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_InjuryEditor <DISPLAY>
@@ -69,6 +70,32 @@ params ["_display"];
     _severityLB lbSetCurSel 1;
 
     (_display displayCtrl 13) cbSetChecked false;
+
+    private _fractureLB = _display displayCtrl 18;
+    lbClear _fractureLB;
+    {
+        _x params ["_label", "_value"];
+        _fractureLB lbAdd _label;
+        _fractureLB lbSetValue [_forEachIndex, _value];
+    } forEach [["None", 0], ["Simple Fracture", 1], ["Compound Fracture", 2], ["Comminuted Fracture", 3]];
+    _fractureLB lbSetCurSel 0;
+
+    private _pneumoLB = _display displayCtrl 19;
+    lbClear _pneumoLB;
+    {
+        _x params ["_label", "_value"];
+        _pneumoLB lbAdd _label;
+        _pneumoLB lbSetValue [_forEachIndex, _value];
+    } forEach [["None", 0], ["Simple Pneumothorax", 1], ["Hemopneumothorax", 2], ["Tension Pneumothorax", 3]];
+    _pneumoLB lbSetCurSel 0;
+
+    // Fracture: any limb, KAT only. Pneumothorax: chest only, KAT only (torso-wide condition -
+    // see fnc_applyPneumothorax.sqf/ui/config.cpp comments). Hidden rows just leave blank space in
+    // the panel (Arma dialogs are absolute-positioned, not flow-layout) rather than reflowing it.
+    private _showFracture = _backend == "kat";
+    private _showPneumo = _showFracture && {_limb == "chest"};
+    { (_display displayCtrl _x) ctrlShow _showFracture; } forEach [18, 20];
+    { (_display displayCtrl _x) ctrlShow _showPneumo; } forEach [19, 21];
 
     _ctrlApply ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_injuryEditor_onApply];
     (_display displayCtrl 15) ctrlAddEventHandler ["ButtonClick", { closeDialog 0; }];

@@ -6,6 +6,12 @@
  * locally (DESIGN.md §6, same "request -> server validates/applies" pattern as the prior working
  * prototype, REFERENCES.md).
  *
+ * Also reads the Fracture/Pneumothorax combos and, if either control is actually visible (KAT
+ * active, and for Pneumothorax the limb is "chest" — fnc_injuryEditor_init.sqf) and not set to
+ * "None", remoteExecs those separately (INJURY_CODES.md §6 — no equivalent in the generic Injury
+ * object, so they don't go through afcm_sim_fnc_backend_applyInjury at all). One Apply click
+ * commits everything configured on this limb, not just the wound.
+ *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Apply button <CONTROL>
  *
@@ -40,6 +46,22 @@ if (isNull _targetUnit) then {
 } else {
     [_targetUnit, _limb, _woundType, _severity, _bleeding] remoteExec ["afcm_sim_scenario_fnc_serverApplyInjury", 2];
     ["injury.applied", [_targetUnit, _limb, _woundType, _severity, _bleeding]] call afcm_sim_ui_fnc_publish;
+
+    private _ctrlFracture = _display displayCtrl 18;
+    if (ctrlShown _ctrlFracture) then {
+        private _fracture = lbCurSel _ctrlFracture;
+        if (_fracture > 0) then {
+            [_targetUnit, _limb, _fracture] remoteExec ["afcm_sim_scenario_fnc_serverApplyKatFracture", 2];
+        };
+    };
+
+    private _ctrlPneumo = _display displayCtrl 19;
+    if (ctrlShown _ctrlPneumo) then {
+        private _pneumo = lbCurSel _ctrlPneumo;
+        if (_pneumo > 0) then {
+            [_targetUnit, _pneumo] remoteExec ["afcm_sim_scenario_fnc_serverApplyKatPneumothorax", 2];
+        };
+    };
 };
 
 closeDialog 0;

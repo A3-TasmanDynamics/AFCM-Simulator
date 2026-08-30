@@ -5,12 +5,18 @@
  * replace it, so the same read-only getters apply). Deliberately avoids
  * ace_medical_fnc_getBloodLoss (requires `local _unit`) for the same reason as the ACE backend.
  *
+ * Also reports this limb's real KAT fracture state and the unit's real KAT pneumothorax state
+ * (INJURY_CODES.md §6) - real, confirmed variables (`kat_surgery_fractures`/
+ * `kat_breathing_pneumothorax`/`_hemopneumothorax`/`_tensionpneumothorax`, see
+ * fnc_applyFracture.sqf/fnc_applyPneumothorax.sqf), read directly rather than via any KAT getter
+ * function (none confirmed to exist for these).
+ *
  * Arguments:
  * 0: Target unit <OBJECT>
  * 1: LimbId <STRING> (default "") - if given, includes wound detail for that limb specifically
  *
  * Return Value:
- * State <HASHMAP> - same shape as afcm_sim_ace_fnc_getState, see that file
+ * State <HASHMAP> - same shape as afcm_sim_ace_fnc_getState, plus "fracture"/"pneumothoraxType"
  *
  * Public: No
 */
@@ -39,4 +45,19 @@ _state set ["lifeState", lifeState _unit];
 _state set ["incapacitatedState", incapacitatedState _unit];
 _state set ["limbWoundCount", count _wounds];
 _state set ["limbBleeding", _bleeding];
+
+private _limbIndex = ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"] find _limb;
+if (_limbIndex != -1) then {
+    _state set ["fracture", (_unit getVariable ["kat_surgery_fractures", [0, 0, 0, 0, 0, 0]]) select _limbIndex];
+};
+
+if (_unit getVariable ["kat_breathing_tensionpneumothorax", false]) exitWith {
+    _state set ["pneumothoraxType", 3];
+    _state
+};
+if (_unit getVariable ["kat_breathing_hemopneumothorax", false]) exitWith {
+    _state set ["pneumothoraxType", 2];
+    _state
+};
+_state set ["pneumothoraxType", parseNumber ((_unit getVariable ["kat_breathing_pneumothorax", 0]) > 0)];
 _state
