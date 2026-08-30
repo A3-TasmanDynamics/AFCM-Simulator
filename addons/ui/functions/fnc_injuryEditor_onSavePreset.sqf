@@ -3,8 +3,9 @@
  * ButtonClick handler for the injury editor's Save as Preset button
  * (RscDisplayAFCM_SIM_InjuryEditor). Reads the currently-configured wound (same wound-type/
  * severity/bleeding fields Apply reads, fnc_injuryEditor_onApply.sqf) and stashes it as a
- * one-injury preset-in-progress, then opens RscDisplayAFCM_SIM_PresetSave on top of this dialog to
- * name and save it.
+ * preset-in-progress with one entry per selected limb (AFCM_SIM_UI_targetLimbs — the same wound
+ * applied to every one of them, same as Apply does), then opens RscDisplayAFCM_SIM_PresetSave on
+ * top of this dialog to name and save it.
  *
  * Deliberately does NOT include Fracture/Pneumothorax even if visible/set - the Preset schema
  * (DESIGN.md §4.3) only holds real Injury-shaped entries ([limb, woundType, severity, bleeding]),
@@ -33,9 +34,10 @@ private _severities = [0.25, 0.5, 0.75, 1.0];
 private _woundType = _woundTypes param [lbCurSel (_display displayCtrl 11), "gunshot"];
 private _severity = _severities param [lbCurSel (_display displayCtrl 12), 0.5];
 private _bleeding = cbChecked (_display displayCtrl 13);
-private _limb = missionNamespace getVariable ["AFCM_SIM_UI_targetLimb", "chest"];
+private _limbs = missionNamespace getVariable ["AFCM_SIM_UI_targetLimbs", ["chest"]];
 
-missionNamespace setVariable ["AFCM_SIM_UI_pendingPresetInjuries", [[_limb, _woundType, _severity, _bleeding]]];
+private _injuries = _limbs apply { [_x, _woundType, _severity, _bleeding] };
+missionNamespace setVariable ["AFCM_SIM_UI_pendingPresetInjuries", _injuries];
 
 [{
     createDialog "RscDisplayAFCM_SIM_PresetSave";

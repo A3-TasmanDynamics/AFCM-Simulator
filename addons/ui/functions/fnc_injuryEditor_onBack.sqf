@@ -7,8 +7,10 @@
  * (afcm_sim_ui_fnc_limbSelect_open) for the same target unit (AFCM_SIM_UI_targetUnit, already
  * stashed - never applies anything, so there's nothing else to carry over).
  *
- * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_limbSelect_onLimbClick.sqf - opening a
- * dialog synchronously in the same frame a prior closeDialog ran in can silently fail.
+ * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_limbSelect_onApplyTrauma.sqf - opening
+ * a dialog synchronously in the same frame a prior closeDialog ran in can silently fail. Reopening
+ * limb-select resets its toggle selection to empty (fnc_limbSelect_init.sqf) - a clean slate, not
+ * whatever was selected before.
  *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Back button <CONTROL>

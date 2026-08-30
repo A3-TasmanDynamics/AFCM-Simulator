@@ -11,8 +11,12 @@
  * §3) so they're always shown; Apply is disabled with an explanation if nothing usable is active at
  * all (neither ACE nor KAT loaded, or only AFCM — not supported by this UI yet). Fracture/
  * Pneumothorax (INJURY_CODES.md §6) are real KAT-only state with no ACE equivalent, so they're
- * shown/hidden here based on the active backend (and, for Pneumothorax, the selected limb — it's a
- * torso-wide condition, not per-limb).
+ * shown/hidden here based on the active backend (and, for Pneumothorax, whether "chest" is among
+ * the selected limbs — it's a torso-wide condition, not per-limb, so it's offered as soon as chest
+ * is one of possibly several limbs selected, not only when it's the sole one).
+ *
+ * AFCM_SIM_UI_targetLimbs is an Array now (fnc_limbSelect_onApplyTrauma.sqf lets the operator
+ * toggle more than one limb before continuing here) - the label lists every selected limb by name.
  *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_InjuryEditor <DISPLAY>
@@ -29,7 +33,7 @@ params ["_display"];
     disableSerialization;
     params ["_display"];
 
-    private _limb = missionNamespace getVariable ["AFCM_SIM_UI_targetLimb", "chest"];
+    private _limbs = missionNamespace getVariable ["AFCM_SIM_UI_targetLimbs", ["chest"]];
     private _backend = call afcm_sim_fnc_backend_getActive;
 
     private _limbNames = createHashMapFromArray [
@@ -37,12 +41,13 @@ params ["_display"];
         ["leftArm", "Left Arm"], ["rightArm", "Right Arm"],
         ["leftLeg", "Left Leg"], ["rightLeg", "Right Leg"]
     ];
+    private _limbLabelList = (_limbs apply { _limbNames getOrDefault [_x, _x] }) joinString ", ";
 
     private _ctrlLimbLabel = _display displayCtrl 10;
     private _ctrlApply = _display displayCtrl 14;
 
     if (_backend in ["ace", "kat"]) then {
-        _ctrlLimbLabel ctrlSetText format ["Injury — %1", _limbNames getOrDefault [_limb, _limb]];
+        _ctrlLimbLabel ctrlSetText format ["Injury — %1", _limbLabelList];
         _ctrlLimbLabel ctrlSetTextColor [0.949, 0.937, 0.902, 0.85];
         _ctrlApply ctrlEnable true;
     } else {
@@ -93,7 +98,7 @@ params ["_display"];
     // see fnc_applyPneumothorax.sqf/ui/config.cpp comments). Hidden rows just leave blank space in
     // the panel (Arma dialogs are absolute-positioned, not flow-layout) rather than reflowing it.
     private _showFracture = _backend == "kat";
-    private _showPneumo = _showFracture && {_limb == "chest"};
+    private _showPneumo = _showFracture && {"chest" in _limbs};
     { (_display displayCtrl _x) ctrlShow _showFracture; } forEach [18, 20];
     { (_display displayCtrl _x) ctrlShow _showPneumo; } forEach [19, 21];
 
@@ -112,5 +117,5 @@ params ["_display"];
     ] call CBA_fnc_addPerFrameHandler;
     missionNamespace setVariable ["AFCM_SIM_UI_statePFH", _pfhHandle];
 
-    diag_log text format ["[AFCM-Simulator][UI] Injury editor opened for limb '%1', backend '%2'.", _limb, _backend];
+    diag_log text format ["[AFCM-Simulator][UI] Injury editor opened for limb(s) %1, backend '%2'.", _limbs, _backend];
 }, [_display]] call CBA_fnc_execNextFrame;

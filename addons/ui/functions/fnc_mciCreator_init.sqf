@@ -32,7 +32,7 @@ if (isNil "AFCM_SIM_UI_mciPatientSpecs") then {
     disableSerialization;
     params ["_display"];
 
-    private _counts = [1, 2, 3, 4, 5, 6, 8, 10];
+    private _counts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     private _countLB = _display displayCtrl 10;
     lbClear _countLB;
     { _countLB lbAdd (str _x); _countLB lbSetValue [_forEachIndex, _x]; } forEach _counts;

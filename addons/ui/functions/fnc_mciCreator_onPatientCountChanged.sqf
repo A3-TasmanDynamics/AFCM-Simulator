@@ -20,7 +20,7 @@
 params ["_ctrlCount", "_index"];
 
 private _display = ctrlParent _ctrlCount;
-private _counts = [1, 2, 3, 4, 5, 6, 8, 10];
+private _counts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 private _newCount = _counts param [_index, 3];
 
 if (_newCount > count AFCM_SIM_UI_mciPatientSpecs) then {

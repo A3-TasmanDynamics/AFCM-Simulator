@@ -2,8 +2,11 @@
  * Author: Tasman Dynamics
  * CBA_fnc_addPerFrameHandler callback for RscDisplayAFCM_SIM_InjuryEditor - polls
  * afcm_sim_fnc_backend_getState and updates the Status text control (idc 16) so the dialog shows
- * genuinely live medical state (consciousness, pain, injured, this limb's wound/bleed state) while
- * it's open, not just a one-time snapshot from when it was opened.
+ * genuinely live medical state (consciousness, pain, injured, one limb's wound/bleed state) while
+ * it's open, not just a one-time snapshot from when it was opened. getState is inherently
+ * per-limb (DESIGN.md §4.2's per-limb wound detail), so with multiple limbs selected
+ * (AFCM_SIM_UI_targetLimbs) this reports the first one and says so - consciousness/pain/injured
+ * stay unit-wide and accurate regardless of how many limbs are selected.
  *
  * Self-removes if the dialog is no longer the active display (closed via Apply/Back/Escape) -
  * fnc_injuryEditor_cleanup.sqf (onUnload) is the primary removal path, this is a safety net.
@@ -31,11 +34,20 @@ if (isNull (findDisplay 25602)) exitWith {
 };
 
 private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
-private _limb = missionNamespace getVariable ["AFCM_SIM_UI_targetLimb", ""];
+private _limbs = missionNamespace getVariable ["AFCM_SIM_UI_targetLimbs", [""]];
+private _limb = _limbs param [0, ""];
 
 if (isNull _targetUnit) exitWith {};
 
 private _state = [_targetUnit, _limb] call afcm_sim_fnc_backend_getState;
+
+private _limbNames = createHashMapFromArray [
+    ["head", "Head"], ["chest", "Chest"],
+    ["leftArm", "Left Arm"], ["rightArm", "Right Arm"],
+    ["leftLeg", "Left Leg"], ["rightLeg", "Right Leg"]
+];
+private _limbLine = _limbNames getOrDefault [_limb, _limb];
+if (count _limbs > 1) then { _limbLine = _limbLine + format [" (+%1 more selected)", (count _limbs) - 1]; };
 
 private _text = "No live status available (no medical backend active).";
 if (count _state > 0) then {
@@ -44,10 +56,11 @@ if (count _state > 0) then {
     if (_incap != "") then { _consciousness = _consciousness + format [" (%1)", _incap]; };
 
     _text = format [
-        "Consciousness: %1\nPain: %2 | Injured: %3\nThis limb — open wounds: %4 | Bleeding: %5",
+        "Consciousness: %1\nPain: %2 | Injured: %3\n%4 — open wounds: %5 | Bleeding: %6",
         _consciousness,
         _state getOrDefault ["pain", 0],
         _state getOrDefault ["injured", false],
+        _limbLine,
         _state getOrDefault ["limbWoundCount", 0],
         _state getOrDefault ["limbBleeding", false]
     ];

@@ -313,22 +313,33 @@ is still the plan, not the state of the repo.
 
 - **Selectable Body Limbs** — limb-diagram UI (native dialog, clickable silhouette regions) →
   emits `limb.selected` event on the bus. **Implemented** (§2 button-per-limb version, not a
-  silhouette): picking a limb publishes `limb.selected` and opens the injury editor below for the
-  same limb — `limb.selected` is consumed now, not a dead-end event.
+  silhouette): limb buttons **toggle** on/off (`fnc_limbSelect_onLimbToggle.sqf`, recolored live via
+  the real `ctrlSetBackgroundColor`) rather than navigating away on the first click — one or more
+  can be selected before continuing. A separate "Apply Trauma to Selected Limb(s)" button (disabled
+  with an explanation until at least one is toggled) publishes `limb.selected` with the whole
+  selection and opens the injury editor below for all of them at once — `limb.selected` is
+  consumed now, not a dead-end event.
 - **Selectable Injuries** — per-limb injury editor (wound type, severity, bleed toggle, custom
   variables) → emits `injury.applied`/`injury.removed`. **Implemented, partially**: wound
   type/severity/bleeding are real (`RscDisplayAFCM_SIM_InjuryEditor`, `afcm_sim_ui`); severity is a
   4-band combo (Light/Moderate/Severe/Critical → 0.25/0.5/0.75/1.0), not a continuous slider.
-  `variables` (custom free-form fields) not exposed in the UI. Publishes `injury.applied`; no
-  removal path yet, so no `injury.removed`. Entry point is a vanilla `addAction` ("Edit Injuries")
-  added to every spawned patient — not an ACE interaction-menu entry (REFERENCES.md documents that
-  API as confirmed-but-unused, consistent with §2.4's decision to keep AFCM-Simulator's own UI
-  ACE-independent). Apply routes through `afcm_sim_scenario_fnc_serverApplyInjury` → the same
-  `afcm_sim_fnc_backend_applyInjury` dispatch the randomizer uses (DESIGN.md §6 — server-authoritative,
-  never applied client-side). Also shows **live medical state** while open — a new
-  `afcm_sim_fnc_backend_getState` dispatch (mirrors `applyInjury`'s pattern, read-only, safe from
-  any machine) reports consciousness (`lifeState`/`incapacitatedState`), pain, whether the unit is
-  injured at all, and the selected limb's open-wound/bleeding state; `afcm_sim_ace_compat` implements
+  `variables` (custom free-form fields) not exposed in the UI. One wound configuration applies
+  identically to every limb selected on the previous screen (`AFCM_SIM_UI_targetLimbs`, plural) —
+  a single Apply loops one `serverApplyInjury` request per limb, rather than repeating the whole
+  flow per limb; Fracture (KAT) applies the same way, once per selected limb, while Pneumothorax
+  (KAT, torso-wide) applies once total whenever "chest" is among the selection. Publishes
+  `injury.applied` per limb; no removal path yet, so no `injury.removed`. Entry point is a vanilla
+  `addAction` ("Edit Injuries") added to every spawned patient — not an ACE interaction-menu entry
+  (REFERENCES.md documents that API as confirmed-but-unused, consistent with §2.4's decision to
+  keep AFCM-Simulator's own UI ACE-independent). Apply routes through
+  `afcm_sim_scenario_fnc_serverApplyInjury` → the same `afcm_sim_fnc_backend_applyInjury` dispatch
+  the randomizer uses (DESIGN.md §6 — server-authoritative, never applied client-side). Also shows
+  **live medical state** while open — a new `afcm_sim_fnc_backend_getState` dispatch (mirrors
+  `applyInjury`'s pattern, read-only, safe from any machine) reports consciousness
+  (`lifeState`/`incapacitatedState`), pain, whether the unit is injured at all, and the *first*
+  selected limb's open-wound/bleeding state (getState is inherently per-limb; with more than one
+  limb selected the readout says how many more are selected alongside it — consciousness/pain/
+  injured stay accurate regardless); `afcm_sim_ace_compat` implements
   it via `ace_medical_fnc_isInjured`/`getOpenWounds` (both safe to call off the unit's owning
   machine, unlike `getBloodLoss` which requires `local _unit` and is deliberately not used here).
   Refreshed on a 0.5s `CBA_fnc_addPerFrameHandler` while the dialog is open, removed on close. A
@@ -387,12 +398,14 @@ is still the plan, not the state of the repo.
   `afcm_sim_scenario_fnc_serverApplyPreset` → `serverApplyInjury` per injury, same
   server-authoritative request pattern as manual application (DESIGN.md §6) — reuses
   `serverApplyInjury` directly rather than duplicating its Injury-construction logic. "Save as
-  Preset" (a new button on the injury editor) captures only the currently-configured wound as a
-  one-injury preset — deliberately not Fracture/Pneumothorax, which have no place in this Array
-  shape (INJURY_CODES.md §6, same reason they're applied via a separate direct call). Building a
-  *multi*-injury preset from scratch (combining several limbs before saving) isn't in the UI yet —
-  only the built-in presets currently do that; a real "preset builder" cart flow is a natural next
-  step if this gets more use.
+  Preset" (a button on the injury editor) captures the currently-configured wound as one entry per
+  selected limb (§ Selectable Body Limbs above — the same multi-limb toggle Apply uses), so a
+  *multi*-injury preset built from scratch (several limbs, same wound, saved together) is possible
+  directly from the injury editor now, not just from the 5 built-in presets — deliberately not
+  Fracture/Pneumothorax though, which have no place in this Array shape (INJURY_CODES.md §6, same
+  reason they're applied via a separate direct call). A dedicated "preset builder" cart flow (mixing
+  *different* wounds across limbs into one save, not just one wound broadcast to several) is still a
+  natural next step if this gets more use.
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
   that level's profile → applies via the same `injury.applied` path presets use (one application
   pipeline, three sources: manual, preset, randomized). **Implemented**:

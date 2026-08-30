@@ -9,7 +9,7 @@
  * is only ever set by the "Assign MCI Preset" batch action (fnc_addMciPresetAction.sqf), and must
  * not leak into a normal single-patient Presets click from a previous, unrelated MCI batch.
  *
- * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_limbSelect_onLimbClick.sqf - opening a
+ * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryEditor_onBack.sqf - opening a
  * dialog synchronously in the same frame a prior closeDialog ran in can silently fail.
  *
  * Arguments:

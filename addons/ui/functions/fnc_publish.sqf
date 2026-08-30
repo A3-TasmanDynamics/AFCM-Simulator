@@ -11,7 +11,7 @@
  * None
  *
  * Example:
- * ["limb.selected", ["head"]] call afcm_sim_ui_fnc_publish
+ * ["limb.selected", [["head", "chest"]]] call afcm_sim_ui_fnc_publish
  *
  * Public: Yes
 */

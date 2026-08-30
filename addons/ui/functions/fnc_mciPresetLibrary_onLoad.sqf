@@ -39,7 +39,7 @@ closeDialog 0;
     if !(isNull _mciDisplay) then {
         [_mciDisplay] call afcm_sim_ui_fnc_mciCreator_populatePatientList;
 
-        private _counts = [1, 2, 3, 4, 5, 6, 8, 10];
+        private _counts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         private _countIdx = _counts find (count AFCM_SIM_UI_mciPatientSpecs);
         if (_countIdx != -1) then {
             (_mciDisplay displayCtrl 10) lbSetCurSel _countIdx;

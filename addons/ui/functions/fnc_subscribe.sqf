@@ -13,7 +13,7 @@
  * None
  *
  * Example:
- * ["limb.selected", { params ["_limbId"]; ... }] call afcm_sim_ui_fnc_subscribe
+ * ["limb.selected", { params ["_limbIds"]; ... }] call afcm_sim_ui_fnc_subscribe
  *
  * Public: Yes
 */
