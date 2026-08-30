@@ -258,21 +258,27 @@ Injury = {
 ```
 
 ### 4.3 Injury preset
+
+**Implemented as a plain `Array`, not the `HashMap` this section originally sketched** — a
+`HashMap` has no literal SQF syntax, so `str someHashMap` doesn't produce something `call compile`
+can turn back into a `HashMap`, which export/import (§ Injury Presets below) depends on completely.
+Full detail, real function names, and the built-in preset list: INJURY_CODES.md §4.
+
 ```
-Preset = {
-    id: String,
-    name: String,
-    author: String,
-    description: String,
-    injuries: [Injury],      // one preset = one or more injuries across one or more limbs
-    tags: [String]           // e.g. "GSW", "HE", "training-scenario-3"
-}
+Preset = [id, name, author, description, injuries, tags]
+// injuries: [[limb, woundType, severity, bleeding], ...] - the same 4 primitives
+//           afcm_sim_scenario_fnc_serverApplyInjury already takes, not the full runtime Injury
+//           object (bleedRate/tourniquetable/variables are derived at apply time, not stored)
+// tags: [String], e.g. "GSW", "HE", "training-scenario-3"
 ```
-Presets ship in two tiers: **built-in** (authored by TasDyn, packed in the addon — gunshot wound,
-HE frag pattern, blast-lung, etc.) and **user-saved** (written to the mission/profile namespace so
-mission makers and players can build and re-share their own — this is the "custom ones people have
-made and saved" requirement). User presets need an export/import format (plain-text/JSON-in-SQF-
-readable-string) so they're shareable outside the mission file.
+
+Presets ship in two tiers: **built-in** (`afcm_sim_scenario_fnc_getBuiltinPresets`, packed in the
+addon — gunshot wound, GSW w/ tourniquet, blast casualty, frag wounds, a minor training case) and
+**user-saved** (`profileNamespace`, so mission makers and players build and re-share their own —
+the "custom ones people have made and saved" requirement). User presets export/import as plain text
+(`str _preset` / `call compile`) via a shared text field in the Preset Library UI, so they're
+shareable outside the mission file — pasted into Discord, a text file, or another player's own
+Import box.
 
 ### 4.4 Injury levels (randomization difficulty)
 A named difficulty maps to a randomization *profile*, not a fixed injury set:
@@ -364,13 +370,36 @@ is still the plan, not the state of the repo.
   that schema — Apply on the injury editor fires them alongside the regular wound application in
   one click, whenever the corresponding control is actually visible and not set to "None".
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
-  *Not implemented.*
+  **Implemented**, in `afcm_sim_scenario` (data/logic) + `afcm_sim_ui` (Preset Library/Preset Save
+  dialogs). A Preset is a plain `Array`, not the `HashMap` §4.3 originally sketched — `str _preset`
+  round-trips reliably through `call compile` for export/import; `str` on a `HashMap` doesn't
+  reconstruct one, since HashMaps have no literal SQF syntax — so every preset (built-in and
+  user-saved) is `[id, name, author, description, injuries, tags]`, where `injuries` is an Array of
+  `[limb, woundType, severity, bleeding]` (the same 4 primitives `serverApplyInjury` already takes,
+  DESIGN.md §4.1/§4.2). 5 built-in presets ship with the addon
+  (`afcm_sim_scenario_fnc_getBuiltinPresets`, id prefix `builtin_`); user presets persist per-player
+  in `profileNamespace` (`afcm_sim_scenario_fnc_getUserPresets`/`saveUserPreset`/`deleteUserPreset`,
+  survives mission/game restarts, real `saveProfileNamespace` flush). Export/Import
+  (`fnc_exportPreset.sqf`/`fnc_importPreset.sqf`) share one `RscEdit` text field in the Preset
+  Library dialog — Export fills it and copies to the OS clipboard (`copyToClipboard`), Import reads
+  whatever's typed/pasted into it (native OS paste, nothing scripted needed for that half) and
+  always assigns a fresh id rather than trusting the pasted one. Apply loops
+  `afcm_sim_scenario_fnc_serverApplyPreset` → `serverApplyInjury` per injury, same
+  server-authoritative request pattern as manual application (DESIGN.md §6) — reuses
+  `serverApplyInjury` directly rather than duplicating its Injury-construction logic. "Save as
+  Preset" (a new button on the injury editor) captures only the currently-configured wound as a
+  one-injury preset — deliberately not Fracture/Pneumothorax, which have no place in this Array
+  shape (INJURY_CODES.md §6, same reason they're applied via a separate direct call). Building a
+  *multi*-injury preset from scratch (combining several limbs before saving) isn't in the UI yet —
+  only the built-in presets currently do that; a real "preset builder" cart flow is a natural next
+  step if this gets more use.
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
   that level's profile → applies via the same `injury.applied` path presets use (one application
   pipeline, three sources: manual, preset, randomized). **Implemented**:
   `afcm_sim_scenario_fnc_randomizeInjuries` rolls a real Injury array per the §4.4 profile table.
-  The "one pipeline, three sources" framing is aspirational until manual/preset paths exist — right
-  now randomization is the only source feeding the backend.
+  All three sources in the "one pipeline, three sources" framing are real now: manual (the injury
+  editor), preset (just above), randomized (this one) — each ultimately reaches the same
+  `afcm_sim_fnc_backend_applyInjury` dispatch.
 - **Spawn Patient (Zeus)** — spawns a clean, unconscious patient at the module's position; the Zeus
   operator then picks the actual injury via the "Edit Injuries" scroll action every spawned patient
   gets (§ Selectable Injuries above), rather than a random roll. **Implemented**:
@@ -455,10 +484,12 @@ desync, validation on an authority machine):
   AFCM-Simulator does not need to invent its own state-sync layer either way, only the
   request→authority→domain-call path for *scenario-specific* actions (preset application, spawn
   placement, randomization) that neither backend knows about on its own.
-- **JIP**: preset library (built-in) is static per-addon-version, so no JIP concern. User-saved
-  presets and any in-progress MASCAL spawn batches need to be re-sendable to late-joiners — likely
-  via a `publicVariable`d small state table on the server, or a JIP event handler, scoped small
-  since it's just metadata (preset defs), not per-frame state.
+- **JIP**: preset library (built-in) is static per-addon-version, so no JIP concern — and, now that
+  it's actually implemented, this turned out to apply to user presets too: they live in each
+  player's own `profileNamespace`, computed locally from a function call rather than synced state,
+  so there's genuinely nothing to re-send a late-joiner at all (DESIGN.md § Injury Presets). Any
+  in-progress MASCAL spawn batches are the one thing here that would still need a JIP path if
+  that ever becomes stateful beyond "spawn N patients once on mission start."
 - **Validation**: since this is a training/scenario tool (trusted-user context, typically run by
   instructors/zeus), request validation can be lighter than a PvP-integrity system — but should
   still reject malformed requests (unknown preset id, out-of-range severity) rather than trust
@@ -498,7 +529,8 @@ AFCM-Simulator/
                     # name isn't confirmed yet (§8); config-only, doesn't register as a backend yet
   docs/
     DESIGN.md      # this file
-    PRESET_FORMAT.md   # (future) user preset export/import spec
+    INJURY_CODES.md    # §4 - the real preset export/import format (turned out small enough
+                       # not to need its own doc file after all)
 ```
 
 Folder names on disk are bare (`ui`, `scenario`, ...) per standard HEMTT/ACE3-style convention —
@@ -572,11 +604,14 @@ rather than one hard-required with the others bolted on.
   backend, priority 15) — its actual wound-application call is the remaining piece, tracked
   alongside `afcm_sim_ace_compat`'s. `afcm_sim_acm_compat` lands once its real `requiredAddons`
   target is confirmed (§8 #1).
-- **v2** — injury presets (built-in + user save/load); randomization levels; Random Patient (incl.
-  making the `afcm_sim_zeus` module real); stretcher placement — implemented once against the
-  backend interface, so every active backend gets them simultaneously rather than one at a time.
-- **v3** — map spawn tool, MASCAL batch placement, preset import/export/sharing, making the
-  `afcm_sim_eden` module real.
+- **v2** — ~~injury presets (built-in + user save/load)~~ **done** (DESIGN.md § Injury Presets,
+  incl. export/import — pulled forward from v3 below once it turned out `str`/`call compile` on a
+  plain Array made that nearly free); randomization levels (done); Random Patient (incl. making the
+  `afcm_sim_zeus` module real — done); stretcher placement — implemented once against the backend
+  interface, so every active backend gets them simultaneously rather than one at a time.
+- **v3** — map spawn tool, MASCAL batch placement, ~~preset import/export/sharing~~ (done early,
+  see v2), making the `afcm_sim_eden` module real (done — `AFCM_SIM_ModulePatientPlacement`/
+  `AFCM_SIM_ModuleMascalZone`).
 - **Phase-2 spike (parallel, inside AFCM-Simulator)** — overlay-window proof of concept, evaluated
   independently; only promoted to "supported" if the hard problems in §2.3 are actually solved.
 

@@ -30,5 +30,20 @@ class CfgFunctions
             class serverApplyKatFracture { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatFracture.sqf"; };
             class serverApplyKatPneumothorax { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatPneumothorax.sqf"; };
         };
+        // Injury Presets (DESIGN.md §4.3/§ Injury Presets) - built-in library + a per-player
+        // profileNamespace-backed user library, plain-Array export/import, and the server-side
+        // batch-apply handler. Separate class purely for readability; same tag/file path.
+        class Presets
+        {
+            file = "\afcm_sim\addons\scenario\functions";
+            class getBuiltinPresets { file = "\afcm_sim\addons\scenario\functions\fnc_getBuiltinPresets.sqf"; };
+            class getUserPresets { file = "\afcm_sim\addons\scenario\functions\fnc_getUserPresets.sqf"; };
+            class saveUserPreset { file = "\afcm_sim\addons\scenario\functions\fnc_saveUserPreset.sqf"; };
+            class deleteUserPreset { file = "\afcm_sim\addons\scenario\functions\fnc_deleteUserPreset.sqf"; };
+            class exportPreset { file = "\afcm_sim\addons\scenario\functions\fnc_exportPreset.sqf"; };
+            class importPreset { file = "\afcm_sim\addons\scenario\functions\fnc_importPreset.sqf"; };
+            class serverApplyPreset { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyPreset.sqf"; };
+            class findPreset { file = "\afcm_sim\addons\scenario\functions\fnc_findPreset.sqf"; };
+        };
     };
 };

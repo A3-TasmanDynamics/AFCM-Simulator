@@ -38,6 +38,7 @@ class CfgFunctions
             class limbSelect_open { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_open.sqf"; };
             class limbSelect_onLimbClick { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_onLimbClick.sqf"; };
             class limbSelect_onResetPatient { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_onResetPatient.sqf"; };
+            class limbSelect_onOpenPresets { file = "\afcm_sim\addons\ui\functions\fnc_limbSelect_onOpenPresets.sqf"; };
         };
         class InjuryEditor
         {
@@ -48,7 +49,25 @@ class CfgFunctions
             class injuryEditor_onApply { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onApply.sqf"; };
             class injuryEditor_onReset { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onReset.sqf"; };
             class injuryEditor_refreshState { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_refreshState.sqf"; };
+            class injuryEditor_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onSavePreset.sqf"; };
             class addInjuryEditorAction { file = "\afcm_sim\addons\ui\functions\fnc_addInjuryEditorAction.sqf"; };
+        };
+        class PresetLibrary
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class presetLibrary_init { file = "\afcm_sim\addons\ui\functions\fnc_presetLibrary_init.sqf"; };
+            class presetLibrary_populateList { file = "\afcm_sim\addons\ui\functions\fnc_presetLibrary_populateList.sqf"; };
+            class presetLibrary_onSelect { file = "\afcm_sim\addons\ui\functions\fnc_presetLibrary_onSelect.sqf"; };
+            class presetLibrary_onApply { file = "\afcm_sim\addons\ui\functions\fnc_presetLibrary_onApply.sqf"; };
+            class presetLibrary_onDelete { file = "\afcm_sim\addons\ui\functions\fnc_presetLibrary_onDelete.sqf"; };
+            class presetLibrary_onExport { file = "\afcm_sim\addons\ui\functions\fnc_presetLibrary_onExport.sqf"; };
+            class presetLibrary_onImport { file = "\afcm_sim\addons\ui\functions\fnc_presetLibrary_onImport.sqf"; };
+        };
+        class PresetSave
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class presetSave_init { file = "\afcm_sim\addons\ui\functions\fnc_presetSave_init.sqf"; };
+            class presetSave_onSave { file = "\afcm_sim\addons\ui\functions\fnc_presetSave_onSave.sqf"; };
         };
     };
 };
@@ -74,6 +93,8 @@ class RscText;
 class RscButton;
 class RscCombo;
 class RscCheckBox;
+class RscListBox;
+class RscEdit;
 
 // Shared component kit, built on the three real base classes above (already proven working in
 // this file) rather than an unverified "RscBackground" class — RscText's own colorBackground[]
@@ -147,6 +168,7 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
 #define IDC_AFCM_SIM_LS_LEG_R       15
 #define IDC_AFCM_SIM_LS_CLOSE       16
 #define IDC_AFCM_SIM_LS_RESET       17
+#define IDC_AFCM_SIM_LS_PRESETS     18
 
 // First real screen for "Selectable Body Limbs" (DESIGN.md §5). Still a plain button-per-limb
 // layout, not a clickable body silhouette — a hit-tested silhouette needs a custom texture asset
@@ -158,11 +180,12 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
 // 6 buttons, a direct 1:1 match to ACE3's own real body parts (DESIGN.md §4.1 / INJURY_CODES.md
 // §1) — deliberately kept this simple rather than a finer anatomical breakdown that was built and
 // then reverted. Arranged in a rough body layout: head at top, arms either side of chest, legs
-// at the bottom, then a full-width Reset Patient button (the real, full-unit
-// afcm_sim_fnc_backend_reset dispatch - moved here from the injury editor, which now has its own
-// much lighter, purely-local "Reset Limb", see RscDisplayAFCM_SIM_InjuryEditor below), then Close.
-// Decorative controls (Panel/Subtitle/AccentBar) are idc=-1 and never read by script; only the
-// button/title IDCs above need to stay in sync with fnc_limbSelect_*.sqf.
+// at the bottom, then a full-width Presets button (opens RscDisplayAFCM_SIM_PresetLibrary below),
+// then a full-width Reset Patient button (the real, full-unit afcm_sim_fnc_backend_reset dispatch
+// - moved here from the injury editor, which now has its own much lighter, purely-local
+// "Reset Limb", see RscDisplayAFCM_SIM_InjuryEditor below), then Close. Decorative controls
+// (Panel/Subtitle/AccentBar) are idc=-1 and never read by script; only the button/title IDCs above
+// need to stay in sync with fnc_limbSelect_*.sqf.
 class RscDisplayAFCM_SIM_LimbSelect
 {
     idd = IDD_AFCM_SIM_LIMBSELECT;
@@ -174,16 +197,16 @@ class RscDisplayAFCM_SIM_LimbSelect
         class Panel: AFCM_SIM_Panel
         {
             x = "0.28 * safeZoneW + safeZoneX";
-            y = "0.30 * safeZoneH + safeZoneY";
+            y = "0.275 * safeZoneH + safeZoneY";
             w = "0.44 * safeZoneW";
-            h = "0.395 * safeZoneH";
+            h = "0.45 * safeZoneH";
         };
         class Title: AFCM_SIM_RscTitle
         {
             idc = IDC_AFCM_SIM_LS_TITLE;
             text = "Select Injured Region";
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.32 * safeZoneH + safeZoneY";
+            y = "0.295 * safeZoneH + safeZoneY";
             w = "0.40 * safeZoneW";
             h = "0.04 * safeZoneH";
             sizeEx = "0.032 * safeZoneH";
@@ -193,7 +216,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = -1;
             text = "Click a body region to begin treatment";
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.358 * safeZoneH + safeZoneY";
+            y = "0.333 * safeZoneH + safeZoneY";
             w = "0.40 * safeZoneW";
             h = "0.025 * safeZoneH";
             sizeEx = "0.017 * safeZoneH";
@@ -201,7 +224,7 @@ class RscDisplayAFCM_SIM_LimbSelect
         class AccentBar: AFCM_SIM_AccentBar
         {
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.39 * safeZoneH + safeZoneY";
+            y = "0.365 * safeZoneH + safeZoneY";
             w = "0.40 * safeZoneW";
             h = "0.0025 * safeZoneH";
         };
@@ -210,7 +233,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_HEAD;
             text = "Head";
             x = "0.44 * safeZoneW + safeZoneX";
-            y = "0.415 * safeZoneH + safeZoneY";
+            y = "0.39 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""head""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -220,7 +243,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_ARM_L;
             text = "Left Arm";
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.47 * safeZoneH + safeZoneY";
+            y = "0.445 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""leftArm""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -230,7 +253,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_CHEST;
             text = "Chest";
             x = "0.44 * safeZoneW + safeZoneX";
-            y = "0.47 * safeZoneH + safeZoneY";
+            y = "0.445 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""chest""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -240,7 +263,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_ARM_R;
             text = "Right Arm";
             x = "0.58 * safeZoneW + safeZoneX";
-            y = "0.47 * safeZoneH + safeZoneY";
+            y = "0.445 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""rightArm""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -250,7 +273,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_LEG_L;
             text = "Left Leg";
             x = "0.38 * safeZoneW + safeZoneX";
-            y = "0.525 * safeZoneH + safeZoneY";
+            y = "0.50 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""leftLeg""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
@@ -260,10 +283,23 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_LEG_R;
             text = "Right Leg";
             x = "0.50 * safeZoneW + safeZoneX";
-            y = "0.525 * safeZoneH + safeZoneY";
+            y = "0.50 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "[""rightLeg""] call afcm_sim_ui_fnc_limbSelect_onLimbClick;";
+        };
+        // Opens the Preset Library (RscDisplayAFCM_SIM_PresetLibrary) - apply a built-in or
+        // user-saved multi-injury preset to this patient in one action, or manage/export/import
+        // the user library (DESIGN.md § Injury Presets).
+        class Presets: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_LS_PRESETS;
+            text = "Presets";
+            x = "0.30 * safeZoneW + safeZoneX";
+            y = "0.555 * safeZoneH + safeZoneY";
+            w = "0.40 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            action = "call afcm_sim_ui_fnc_limbSelect_onOpenPresets;";
         };
         // Full-unit reset (fullHeal + re-lock unconscious) - the real destructive action, so it
         // gets the danger style here rather than the injury editor's now-local, non-destructive
@@ -274,7 +310,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_RESET;
             text = "Reset Patient";
             x = "0.30 * safeZoneW + safeZoneX";
-            y = "0.58 * safeZoneH + safeZoneY";
+            y = "0.605 * safeZoneH + safeZoneY";
             w = "0.40 * safeZoneW";
             h = "0.04 * safeZoneH";
             action = "call afcm_sim_ui_fnc_limbSelect_onResetPatient;";
@@ -284,7 +320,7 @@ class RscDisplayAFCM_SIM_LimbSelect
             idc = IDC_AFCM_SIM_LS_CLOSE;
             text = "Close";
             x = "0.44 * safeZoneW + safeZoneX";
-            y = "0.63 * safeZoneH + safeZoneY";
+            y = "0.66 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.038 * safeZoneH";
             colorBackground[] = {0.1, 0.1, 0.11, 0.75};
@@ -308,6 +344,7 @@ class RscDisplayAFCM_SIM_LimbSelect
 #define IDC_AFCM_SIM_IE_PNEUMOTHORAX   19
 #define IDC_AFCM_SIM_IE_FRACTURELABEL  20
 #define IDC_AFCM_SIM_IE_PNEUMOLABEL    21
+#define IDC_AFCM_SIM_IE_SAVEPRESET     22
 
 // Second real screen for "Selectable Injuries" (DESIGN.md §5) — wound type, severity, bleed
 // toggle, per limb, plus a live medical-status readout (afcm_sim_fnc_backend_getState) refreshed
@@ -519,17 +556,264 @@ class RscDisplayAFCM_SIM_InjuryEditor
             w = "0.185 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
-        // Separate row, distinct from Apply/Cancel - purely local, clears the form back to
-        // defaults (fnc_injuryEditor_onReset.sqf) rather than touching the patient's actual
-        // medical state. Neutral style, not danger red - it's no longer destructive.
+        // Separate row, distinct from Apply/Cancel - saves the currently-configured wound (and
+        // Fracture/Pneumothorax, if visible) as a new single-injury user preset
+        // (fnc_injuryEditor_onSavePreset.sqf opens RscDisplayAFCM_SIM_PresetSave to name it) rather
+        // than applying it, so an instructor can build a reusable library entry without touching
+        // this patient at all. Paired with Reset Limb below it, sharing the row - both are
+        // form-only actions, neither touches real patient state.
+        class SavePreset: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_IE_SAVEPRESET;
+            text = "Save as Preset";
+            x = "0.31 * safeZoneW + safeZoneX";
+            y = "0.707 * safeZoneH + safeZoneY";
+            w = "0.185 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        // Purely local, clears the form back to defaults (fnc_injuryEditor_onReset.sqf) rather
+        // than touching the patient's actual medical state. Neutral style, not danger red - it's
+        // no longer destructive.
         class Reset: AFCM_SIM_RscButton
         {
             idc = IDC_AFCM_SIM_IE_RESET;
             text = "Reset Limb";
-            x = "0.31 * safeZoneW + safeZoneX";
+            x = "0.505 * safeZoneW + safeZoneX";
             y = "0.707 * safeZoneH + safeZoneY";
-            w = "0.38 * safeZoneW";
+            w = "0.185 * safeZoneW";
             h = "0.045 * safeZoneH";
+        };
+    };
+};
+
+#define IDD_AFCM_SIM_PRESETLIBRARY 25603
+
+#define IDC_AFCM_SIM_PL_TITLE   1
+#define IDC_AFCM_SIM_PL_LIST    10
+#define IDC_AFCM_SIM_PL_APPLY   11
+#define IDC_AFCM_SIM_PL_DELETE  12
+#define IDC_AFCM_SIM_PL_EXPORT  13
+#define IDC_AFCM_SIM_PL_TEXT    14
+#define IDC_AFCM_SIM_PL_IMPORT  15
+#define IDC_AFCM_SIM_PL_CLOSE   16
+
+// Third real screen — Injury Presets (DESIGN.md § Injury Presets/§4.3): a listbox of built-in
+// (id prefix "builtin_", shipped in fnc_getBuiltinPresets.sqf) + user-saved presets (per-player
+// profileNamespace, fnc_getUserPresets.sqf), each row's real preset id stashed via `lbSetData` so
+// fnc_presetLibrary_* handlers can look the exact preset up without re-parsing display text.
+// Opened from the limb-select ("main") screen's own Presets button.
+//
+// Apply applies every injury in the selected preset to the target unit in one request
+// (afcm_sim_scenario_fnc_serverApplyPreset, same server-authoritative pattern as everything else,
+// DESIGN.md §6). Delete only works on user presets (built-in ones are read-only) —
+// fnc_presetLibrary_onDelete.sqf guards this too, not just the UI. Export/Import share one text
+// field (Text, an RscEdit — plain single-line, since the exported string has no embedded
+// newlines): Export fills it with the selected preset's exported string (fnc_exportPreset.sqf) and
+// copies it to the OS clipboard (`copyToClipboard`, real command) for pasting elsewhere; Import
+// reads whatever's typed/pasted into it and adds it as a new user preset
+// (fnc_importPreset.sqf) — pasting into an RscEdit is native OS textbox behaviour (Ctrl+V), nothing
+// scripted needed for that half.
+class RscDisplayAFCM_SIM_PresetLibrary
+{
+    idd = IDD_AFCM_SIM_PRESETLIBRARY;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_presetLibrary_init;";
+
+    class controls
+    {
+        class Panel: AFCM_SIM_Panel
+        {
+            x = "0.25 * safeZoneW + safeZoneX";
+            y = "0.21 * safeZoneH + safeZoneY";
+            w = "0.5 * safeZoneW";
+            h = "0.58 * safeZoneH";
+        };
+        class Title: AFCM_SIM_RscTitle
+        {
+            idc = IDC_AFCM_SIM_PL_TITLE;
+            text = "Injury Preset Library";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.23 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            sizeEx = "0.03 * safeZoneH";
+        };
+        class Subtitle: AFCM_SIM_RscSubtitle
+        {
+            idc = -1;
+            text = "Apply a saved injury set, or export/import one below";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.268 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.025 * safeZoneH";
+            sizeEx = "0.017 * safeZoneH";
+        };
+        class AccentBar: AFCM_SIM_AccentBar
+        {
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.3 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.0025 * safeZoneH";
+        };
+        class List: RscListBox
+        {
+            idc = IDC_AFCM_SIM_PL_LIST;
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.31 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.28 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+            colorSelect[] = AFCM_SIM_COLOR_TEXT;
+            colorSelectBackground[] = AFCM_SIM_COLOR_ACCENT_HOVER;
+            sizeEx = "0.019 * safeZoneH";
+        };
+        class Apply: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_PL_APPLY;
+            text = "Apply";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.6 * safeZoneH + safeZoneY";
+            w = "0.146 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        // Only meaningful for a selected user preset - disabled by fnc_presetLibrary_onSelect.sqf
+        // when a built-in row (id prefix "builtin_") is selected. fnc_deleteUserPreset.sqf guards
+        // this server-side-of-truth too, so this is UX, not the only safeguard.
+        class Delete: AFCM_SIM_RscButtonDanger
+        {
+            idc = IDC_AFCM_SIM_PL_DELETE;
+            text = "Delete";
+            x = "0.427 * safeZoneW + safeZoneX";
+            y = "0.6 * safeZoneH + safeZoneY";
+            w = "0.146 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class Export: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_PL_EXPORT;
+            text = "Export ↓";
+            x = "0.584 * safeZoneW + safeZoneX";
+            y = "0.6 * safeZoneH + safeZoneY";
+            w = "0.146 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class TextLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Preset string (select all, Ctrl+C to copy — Ctrl+V to paste, then Import)";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.65 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.025 * safeZoneH";
+            sizeEx = "0.016 * safeZoneH";
+        };
+        class Text: RscEdit
+        {
+            idc = IDC_AFCM_SIM_PL_TEXT;
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.675 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+        };
+        class Import: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_PL_IMPORT;
+            text = "Import ↑";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.725 * safeZoneH + safeZoneY";
+            w = "0.22 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class Close: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_PL_CLOSE;
+            text = "Close";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.725 * safeZoneH + safeZoneY";
+            w = "0.22 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            action = "closeDialog 0;";
+        };
+    };
+};
+
+#define IDD_AFCM_SIM_PRESETSAVE 25604
+
+#define IDC_AFCM_SIM_PSV_TITLE  1
+#define IDC_AFCM_SIM_PSV_NAME   10
+#define IDC_AFCM_SIM_PSV_SAVE   11
+#define IDC_AFCM_SIM_PSV_CANCEL 12
+
+// Tiny fourth screen - just a name prompt, opened by the injury editor's Save as Preset button
+// (fnc_injuryEditor_onSavePreset.sqf, which stashes the currently-configured injury into
+// AFCM_SIM_UI_pendingPresetInjuries before opening this). Save reads the name and calls
+// afcm_sim_scenario_fnc_saveUserPreset directly (client-side, profileNamespace - not a server
+// request, since this never touches a patient, DESIGN.md § Injury Presets).
+class RscDisplayAFCM_SIM_PresetSave
+{
+    idd = IDD_AFCM_SIM_PRESETSAVE;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_presetSave_init;";
+
+    class controls
+    {
+        class Panel: AFCM_SIM_Panel
+        {
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.39 * safeZoneH + safeZoneY";
+            w = "0.36 * safeZoneW";
+            h = "0.22 * safeZoneH";
+        };
+        class Title: AFCM_SIM_RscTitle
+        {
+            idc = IDC_AFCM_SIM_PSV_TITLE;
+            text = "Save Injury Preset";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.41 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.035 * safeZoneH";
+            sizeEx = "0.025 * safeZoneH";
+        };
+        class NameLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Preset name";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.455 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.03 * safeZoneH";
+        };
+        class Name: RscEdit
+        {
+            idc = IDC_AFCM_SIM_PSV_NAME;
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.49 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+        };
+        class Save: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_PSV_SAVE;
+            text = "Save";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.545 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        class Cancel: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_PSV_CANCEL;
+            text = "Cancel";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.545 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            action = "closeDialog 0;";
         };
     };
 };

@@ -159,26 +159,39 @@ model once that backend exists.
 
 ---
 
-## 4. Injury Preset Schema (Planned)
+## 4. Injury Preset Schema (Implemented)
 
-Defined in [DESIGN.md §4.3](DESIGN.md#43-injury-preset) — **not implemented yet**
-(`afcm_sim_scenario` only has the randomizer; no preset library exists). Documented here so the
-shape is settled before it's built:
+Originally sketched in [DESIGN.md §4.3](DESIGN.md#43-injury-preset) as a `HashMap`; built as a
+plain **`Array`** instead — a `HashMap` has no literal SQF syntax, so `str someHashMap` doesn't
+produce something `call compile` can turn back into a `HashMap`. A plain `Array` of primitives
+round-trips through `str`/`call compile` exactly, which is what makes copy-paste export/import work
+at all:
 
 ```
-Preset = {
-    id: String,
-    name: String,
-    author: String,
-    description: String,
-    injuries: [Injury],      // one preset = one or more injuries across one or more limbs
-    tags: [String]           // e.g. "GSW", "HE", "training-scenario-3"
-}
+Preset = [
+    id,           // String
+    name,         // String
+    author,       // String
+    description,  // String
+    injuries,     // [[limb, woundType, severity, bleeding], ...] - one preset = one or more of
+                  // the same 4 primitives afcm_sim_scenario_fnc_serverApplyInjury already takes
+    tags          // [String], e.g. "GSW", "HE", "training-scenario-3"
+]
 ```
 
-Two tiers planned: **built-in** (shipped in the addon — gunshot wound, HE frag pattern, blast-lung)
-and **user-saved** (written to mission/profile namespace, exportable/importable as plain text so
-they're shareable outside the mission file).
+`injuries` deliberately stays at this lighter shape rather than the full runtime `Injury` object
+(§2) — `bleedRate`/`tourniquetable`/`variables` are all derived, not authored, and get recomputed
+by `serverApplyInjury` at apply time (`afcm_sim_scenario_fnc_serverApplyPreset` just loops that
+same function once per injury) rather than baked into the stored preset.
+
+Two tiers, both real: **built-in** (`afcm_sim_scenario_fnc_getBuiltinPresets`, id prefix
+`builtin_`, 5 presets shipped in the addon — GSW chest, GSW limb w/ tourniquet, blast casualty,
+multiple frag wounds, a minor training laceration) and **user-saved**
+(`afcm_sim_scenario_fnc_getUserPresets`/`saveUserPreset`/`deleteUserPreset`, in `profileNamespace`
+— per-player, survives mission/game restarts). Export (`fnc_exportPreset.sqf`, just `str _preset`)
+and import (`fnc_importPreset.sqf`, `call compile` + shape validation, always assigns a fresh id
+rather than trusting the pasted one) are both real, wired into the Preset Library UI's shared
+`RscEdit` text field — Export also copies straight to the OS clipboard (`copyToClipboard`).
 
 ---
 
