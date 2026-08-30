@@ -255,10 +255,6 @@ class RscDisplayAFCM_SIM_LimbSelect
 #define IDC_AFCM_SIM_IE_CANCEL     15
 #define IDC_AFCM_SIM_IE_STATUS     16
 #define IDC_AFCM_SIM_IE_RESET      17
-#define IDC_AFCM_SIM_IE_FRACTURE   18
-#define IDC_AFCM_SIM_IE_PNEUMO     19
-#define IDC_AFCM_SIM_IE_FRACTURE_LABEL  20
-#define IDC_AFCM_SIM_IE_PNEUMO_LABEL    21
 
 class RscCombo;
 class RscCheckBox;
@@ -270,14 +266,15 @@ class RscCheckBox;
 // §6 — never applies locally). Reset remoteExecs to afcm_sim_scenario_fnc_serverReset (fullHeal +
 // re-lock unconscious) and keeps the dialog open, unlike Apply/Cancel.
 //
-// Backend-aware (fnc_injuryEditor_init.sqf queries afcm_sim_fnc_backend_getActive on open): the
-// Fracture/Pneumothorax controls (KAT-only real state, no ACE equivalent — INJURY_CODES.md §6) are
-// shown only when KAT is confirmed active, hidden otherwise; if no backend is active at all, Apply
-// is disabled and the limb label explains why instead of offering controls that would silently
-// no-op. Wound type/severity/bleeding stay visible for both ACE and KAT since both consume the same
-// real calls under the hood (ACE_COMPAT.md §3/KAT_COMPAT.md §3).
+// Deliberately ACE-only selections: wound type/severity/bleeding, nothing backend-specific beyond
+// that. fnc_injuryEditor_init.sqf still queries afcm_sim_fnc_backend_getActive to disable Apply
+// with an explanation if no usable backend is active, but doesn't otherwise branch on which one —
+// ACE and KAT both consume these same real calls identically (ACE_COMPAT.md §3/KAT_COMPAT.md §3).
+// A KAT-specific Fracture/Pneumothorax extension was built and then reverted here in favour of
+// keeping this simple; the real KAT-only functions it would have used
+// (kat_surgery_fractures/kat_breathing_*) are still documented in INJURY_CODES.md §6 if revisited.
 //
-// IDCs here are hardcoded 1/10-21 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
+// IDCs here are hardcoded 1/10-17 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
 // fnc_injuryEditor_onReset.sqf/fnc_injuryEditor_refreshState.sqf read via `_display displayCtrl <n>`
 // — keep both in sync if either changes.
 class RscDisplayAFCM_SIM_InjuryEditor
@@ -300,8 +297,8 @@ class RscDisplayAFCM_SIM_InjuryEditor
             sizeEx = "0.025 * safeZoneH";
             colorText[] = {1, 1, 1, 1};
         };
-        // Text set dynamically in fnc_injuryEditor_init.sqf — shows the limb name AND the active
-        // backend ("Injury — Left Arm (KAT Advanced Medical)"), or a "no backend active" message.
+        // Text set dynamically in fnc_injuryEditor_init.sqf — shows the limb name, or a "no backend
+        // active" message if neither ACE nor KAT is actually loaded.
         class LimbLabel: RscText
         {
             idc = IDC_AFCM_SIM_IE_LIMBLABEL;
@@ -367,44 +364,6 @@ class RscDisplayAFCM_SIM_InjuryEditor
             w = "0.04 * safeZoneH";
             h = "0.04 * safeZoneH";
         };
-        // KAT-only (no ACE equivalent) - ctrlShow toggled in fnc_injuryEditor_init.sqf based on the
-        // active backend, not just always visible.
-        class FractureLabel: RscText
-        {
-            idc = IDC_AFCM_SIM_IE_FRACTURE_LABEL;
-            text = "Fracture (KAT)";
-            x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.425 * safeZoneH + safeZoneY";
-            w = "0.16 * safeZoneW";
-            h = "0.04 * safeZoneH";
-            colorText[] = {1, 1, 1, 1};
-        };
-        class Fracture: RscCombo
-        {
-            idc = IDC_AFCM_SIM_IE_FRACTURE;
-            x = "0.5 * safeZoneW + safeZoneX";
-            y = "0.425 * safeZoneH + safeZoneY";
-            w = "0.18 * safeZoneW";
-            h = "0.04 * safeZoneH";
-        };
-        class PneumoLabel: RscText
-        {
-            idc = IDC_AFCM_SIM_IE_PNEUMO_LABEL;
-            text = "Pneumothorax (KAT)";
-            x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.475 * safeZoneH + safeZoneY";
-            w = "0.16 * safeZoneW";
-            h = "0.04 * safeZoneH";
-            colorText[] = {1, 1, 1, 1};
-        };
-        class Pneumothorax: RscCombo
-        {
-            idc = IDC_AFCM_SIM_IE_PNEUMO;
-            x = "0.5 * safeZoneW + safeZoneX";
-            y = "0.475 * safeZoneH + safeZoneY";
-            w = "0.18 * safeZoneW";
-            h = "0.04 * safeZoneH";
-        };
         // Live medical state (afcm_sim_fnc_backend_getState), refreshed on a per-frame handler
         // added in fnc_injuryEditor_init.sqf and removed in fnc_injuryEditor_cleanup.sqf while this
         // dialog is open — genuinely live, not just a snapshot from when the dialog opened.
@@ -413,7 +372,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_STATUS;
             text = "";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.53 * safeZoneH + safeZoneY";
+            y = "0.43 * safeZoneH + safeZoneY";
             w = "0.36 * safeZoneW";
             h = "0.065 * safeZoneH";
             sizeEx = "0.02 * safeZoneH";
@@ -424,7 +383,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_APPLY;
             text = "Apply";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.605 * safeZoneH + safeZoneY";
+            y = "0.505 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -433,7 +392,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_CANCEL;
             text = "Cancel";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.605 * safeZoneH + safeZoneY";
+            y = "0.505 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -444,7 +403,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
             idc = IDC_AFCM_SIM_IE_RESET;
             text = "Reset Patient";
             x = "0.32 * safeZoneW + safeZoneX";
-            y = "0.66 * safeZoneH + safeZoneY";
+            y = "0.56 * safeZoneH + safeZoneY";
             w = "0.36 * safeZoneW";
             h = "0.045 * safeZoneH";
             colorBackground[] = {0.5, 0.15, 0.13, 1};

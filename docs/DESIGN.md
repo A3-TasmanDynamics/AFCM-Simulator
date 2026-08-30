@@ -340,17 +340,16 @@ is still the plan, not the state of the repo.
   fully awake, healthy unit. Routes through `afcm_sim_scenario_fnc_serverReset`, same
   server-authoritative request pattern as Apply. Unlike Apply/Cancel, Reset leaves the dialog open —
   the live status readout shows the clean state within moments and the instructor can immediately
-  pick a fresh injury. The dialog is **backend-aware**: it queries `afcm_sim_fnc_backend_getActive`
-  on open and adapts — wound type/severity/bleeding show for both `ace`/`kat` (labeled with the real
-  backend name, since both consume the same real ACE3 calls underneath); KAT additionally gets real
-  **Fracture** and **Pneumothorax** controls with no ACE equivalent (`kat_surgery_fractures`,
-  `kat_breathing_pneumothorax`/`Hemopneumothorax`/`Tensionpneumothorax` — INJURY_CODES.md §6),
-  applied via two new KAT-specific request paths
-  (`afcm_sim_scenario_fnc_serverApplyKatFracture`/`serverApplyKatPneumothorax`) that call
-  `afcm_sim_kat_compat` directly rather than going through the generic Injury/backend-interface
-  dispatch, since this state has no meaning under plain ACE or AFCM. If no usable backend is active
-  (nothing registered, or only `afcm` — not yet supported by this UI, DESIGN.md §2.5), Apply is
-  disabled and the limb label explains why instead of offering controls that would silently no-op.
+  pick a fresh injury. Deliberately **ACE-only selections** — wound type/severity/bleeding, nothing
+  backend-specific beyond that, since ACE and KAT both consume the exact same real calls identically
+  underneath (ACE_COMPAT.md §3/KAT_COMPAT.md §3). The only backend-awareness is a check against
+  `afcm_sim_fnc_backend_getActive`: if nothing usable is active (nothing registered, or only `afcm`
+  — not yet supported by this UI, DESIGN.md §2.5), Apply is disabled and the limb label explains why
+  instead of offering controls that would silently no-op. A fuller version of this — real,
+  backend-conditional KAT-only **Fracture**/**Pneumothorax** controls
+  (`kat_surgery_fractures`/`kat_breathing_*`, INJURY_CODES.md §6) shown only when KAT is active —
+  was built and then reverted in favour of this simpler version; the real KAT-only functions it
+  would have used are still documented if revisited.
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
   *Not implemented.*
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
@@ -363,10 +362,15 @@ is still the plan, not the state of the repo.
   operator then picks the actual injury via the "Edit Injuries" scroll action every spawned patient
   gets (§ Selectable Injuries above), rather than a random roll. **Implemented**:
   `afcm_sim_spawner_fnc_spawnPatient` called directly (no injuries argument), `disableAI "ALL"` set
-  on the unit so it can't do anything autonomously. What actually stops a spawned patient from
-  visibly recovering/"healing itself" is a separate, real ACE3 mechanic in a different addon than
-  first suspected — see REFERENCES.md's "Why patients were healing themselves" for the full
-  two-round investigation and `afcm_sim_fnc_disableSpontaneousWakeup` (`main`, `preInit`). No
+  on the unit so it can't do anything autonomously. Two targeted upstream fixes for patients
+  "healing themselves" (`afcm_sim_fnc_disableSpontaneousWakeup`, `main`/`preInit`; `disableAI`
+  above) are both real and grounded in ACE3 source but didn't fully hold up in live testing — see
+  REFERENCES.md for the full investigation. `spawnPatient` now also runs a recurring safeguard
+  directly on the symptom: every 3s, for as long as the specific unit exists, it forces
+  `setUnconscious true` again, regardless of which upstream system caused it to wake. This means a
+  patient won't wake up even from fully successful real treatment until an instructor explicitly
+  resets it (`afcm_sim_fnc_backend_reset`) — accepted as the right trade-off for a training tool
+  where "spontaneously recovers on its own" was never the intended behaviour either way. No
   randomized identity/loadout yet — spawns a
   plain `C_man_1` civilian. **Not** randomized anymore despite the module class still being named
   `AFCM_SIM_ModuleSpawnRandomPatient` internally (display name is now just "Spawn Patient" —

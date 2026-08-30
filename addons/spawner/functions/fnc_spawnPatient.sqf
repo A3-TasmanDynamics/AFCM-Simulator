@@ -61,6 +61,29 @@ _unit disableAI "ALL";
 // ACE/KAT-specific, so this holds even with no medical backend registered at all (DESIGN.md §2.5).
 _unit setUnconscious true;
 
+// Belt-and-suspenders against "healing itself": two targeted upstream fixes
+// (afcm_sim_fnc_disableSpontaneousWakeup, disableAI "ALL" above) were each grounded in real ACE3
+// source and still didn't fully hold up in live testing, meaning there's at least one more
+// mechanism (possibly KAT's own vitals/statemachine integration, addons/vitals/functions/
+// fnc_handleUnitVitals.sqf - it visibly replaces ACE's own vitals handler for non-player units)
+// that hasn't been pinned down. Rather than keep guessing at the exact upstream cause, this
+// directly re-locks the symptom: every 3s, for as long as this specific unit exists, force
+// setUnconscious true again. A patient is meant to stay down until an instructor resets it
+// (afcm_sim_fnc_backend_reset) - "spontaneously wakes up on its own" is never the intended
+// behaviour for this mod regardless of which system causes it.
+[
+    {
+        params ["_args", "_handle"];
+        _args params ["_unit"];
+        if (isNull _unit || {!alive _unit}) exitWith {
+            [_handle] call CBA_fnc_removePerFrameHandler;
+        };
+        _unit setUnconscious true;
+    },
+    3,
+    [_unit]
+] call CBA_fnc_addPerFrameHandler;
+
 AFCM_SIM_spawnedPatients pushBack _unit;
 publicVariable "AFCM_SIM_spawnedPatients";
 

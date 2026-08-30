@@ -88,27 +88,11 @@ re-lock `setUnconscious true`. Backs the injury editor's Reset Patient button.
 ### `afcm_sim_kat_fnc_removeInjury`
 **Stub.** No real removal call wired up yet — same open question as `ace_compat`'s.
 
-### `afcm_sim_kat_fnc_applyFracture`
-```sqf
-[_unit, _limb, _severity] call afcm_sim_kat_fnc_applyFracture
-```
-**Real implementation, KAT-only (no ACE equivalent).** Sets one limb's entry in the real
-`kat_surgery_fractures` array — folds the 13-value `LimbId` onto KAT's 6 real body parts the same
-way `applyInjury` does, reads the existing array first so setting one limb doesn't clobber another
-already-set fracture. `_severity`: `0`=Unaffected, `1`=Stable, `2`=Compound, `3`=Comminuted
-(INJURY_CODES.md §6). Not part of the backend interface — called directly by
-`afcm_sim_scenario_fnc_serverApplyKatFracture`, itself only reachable from the injury editor UI
-once KAT is confirmed the active backend.
-
-### `afcm_sim_kat_fnc_applyPneumothorax`
-```sqf
-[_unit, _state] call afcm_sim_kat_fnc_applyPneumothorax
-```
-**Real implementation, KAT-only (no ACE equivalent).** Sets `kat_breathing_pneumothorax`/
-`Hemopneumothorax`/`Tensionpneumothorax` then calls the real `kat_breathing_fnc_handleBreathing` to
-apply the state (setting the variables alone isn't sufficient — REFERENCES.md). `_state`: `0`=None,
-`1`=Simple Pneumothorax, `2`=Hemopneumothorax, `3`=Tension Pneumothorax. Not per-limb (pneumothorax
-is torso-wide). Called directly by `afcm_sim_scenario_fnc_serverApplyKatPneumothorax`.
+Real `applyFracture`/`applyPneumothorax` functions (KAT-only, no ACE equivalent —
+`kat_surgery_fractures`/`kat_breathing_*`) were built and then reverted along with the UI controls
+that would have used them, in favour of keeping the injury editor ACE-only. Documented as
+still-real, still-confirmed vocabulary in [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding-confirmed-not-wired-into-the-ui)
+if revisited.
 
 ---
 
@@ -224,10 +208,10 @@ same `LimbId` → ACE body-part fold `applyInjury` already uses for damage
 
 - **`removeInjury` is still a stub.** `applyInjury`/`getState` are real now (§3); no real ACE3/KAT
   removal call is wired up yet, same open question as `ace_compat`'s.
-- **KAT-specific state (fractures, pneumothorax) is wired up, but not through `applyInjury`.**
-  `afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax` are real, separate functions the injury
-  editor UI calls directly when KAT is the active backend — not part of the generic `Injury`
-  object/backend-interface dispatch, since neither has any meaning under plain ACE or AFCM.
+- **KAT-specific state (fractures, pneumothorax) not exposed in the UI.** A real implementation
+  (`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`, called directly rather than through the
+  generic `Injury`/backend-interface dispatch) was built and reverted — the injury editor is
+  deliberately ACE-only now (DESIGN.md § Selectable Injuries).
 - **Fracture-*setting* function unconfirmed.** `fnc_fractureCheck.sqf` (§4) only *reads*
   `kat_surgery_fractures` — the real function that *writes* it (KAT's fracture-infliction entry
   point) hasn't been found yet.

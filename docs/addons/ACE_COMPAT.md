@@ -216,10 +216,10 @@ All six values above are real, confirmed `ACE_Medical_Injuries.hpp` classes — 
   this backend specifically.
 - **No fracture/airway/breathing handling.** `ace_medical_engine` supports fractures and airway
   state; nothing in `ace_compat` touches either yet, even though DESIGN.md's Extreme/F\*CKED!
-  profiles mention "airway/breathing involvement." The injury editor UI's Fracture/Pneumothorax
-  controls are deliberately KAT-only for this reason — they're real `kat_compat` functions
-  (`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`, [KAT_COMPAT.md §2](KAT_COMPAT.md#2-function-reference)),
-  not generic ACE features this backend could also implement by copying them.
+  profiles mention "airway/breathing involvement." A real, KAT-only implementation of this
+  (`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`) was built and reverted — see
+  [KAT_COMPAT.md §5](KAT_COMPAT.md#5-known-gaps) — since this kind of state has no ACE equivalent
+  to give `ace_compat` in the first place.
 
 ---
 

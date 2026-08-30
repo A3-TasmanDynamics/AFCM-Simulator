@@ -27,8 +27,6 @@ class CfgFunctions
             class randomizeInjuries { file = "\afcm_sim\addons\scenario\functions\fnc_randomizeInjuries.sqf"; };
             class serverApplyInjury { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyInjury.sqf"; };
             class serverReset { file = "\afcm_sim\addons\scenario\functions\fnc_serverReset.sqf"; };
-            class serverApplyKatFracture { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatFracture.sqf"; };
-            class serverApplyKatPneumothorax { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatPneumothorax.sqf"; };
         };
     };
 };

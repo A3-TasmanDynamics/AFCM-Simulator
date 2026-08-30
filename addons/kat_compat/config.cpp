@@ -37,11 +37,6 @@ class CfgFunctions
             class getState { file = "\afcm_sim\addons\kat_compat\functions\fnc_getState.sqf"; };
             class reset { file = "\afcm_sim\addons\kat_compat\functions\fnc_reset.sqf"; };
             class preInit { file = "\afcm_sim\addons\kat_compat\functions\fnc_preInit.sqf"; preInit = 1; };
-            // KAT-specific, no ACE equivalent - not part of the backend interface HashMap (unlike
-            // applyInjury/removeInjury/getState/reset above), called directly, only reachable from
-            // the injury editor UI once it's confirmed KAT is the active backend.
-            class applyFracture { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyFracture.sqf"; };
-            class applyPneumothorax { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyPneumothorax.sqf"; };
         };
     };
 };
