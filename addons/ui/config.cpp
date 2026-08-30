@@ -47,10 +47,16 @@ class CfgFunctions
             class injuryEditor_init { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_init.sqf"; };
             class injuryEditor_cleanup { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_cleanup.sqf"; };
             class injuryEditor_onApply { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onApply.sqf"; };
+            class injuryEditor_onBack { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onBack.sqf"; };
             class injuryEditor_onReset { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onReset.sqf"; };
             class injuryEditor_refreshState { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_refreshState.sqf"; };
             class injuryEditor_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onSavePreset.sqf"; };
             class addInjuryEditorAction { file = "\afcm_sim\addons\ui\functions\fnc_addInjuryEditorAction.sqf"; };
+        };
+        class Mci
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class addMciPresetAction { file = "\afcm_sim\addons\ui\functions\fnc_addMciPresetAction.sqf"; };
         };
         class PresetLibrary
         {
@@ -337,7 +343,7 @@ class RscDisplayAFCM_SIM_LimbSelect
 #define IDC_AFCM_SIM_IE_SEVERITY   12
 #define IDC_AFCM_SIM_IE_BLEEDING   13
 #define IDC_AFCM_SIM_IE_APPLY      14
-#define IDC_AFCM_SIM_IE_CANCEL     15
+#define IDC_AFCM_SIM_IE_BACK       15
 #define IDC_AFCM_SIM_IE_STATUS     16
 #define IDC_AFCM_SIM_IE_RESET      17
 #define IDC_AFCM_SIM_IE_FRACTURE       18
@@ -368,8 +374,9 @@ class RscDisplayAFCM_SIM_LimbSelect
 // Same branded panel/accent-bar/button kit as the limb-select dialog above, true-centered the same
 // way, plus a dedicated "readout box" (StatusBg) behind the live status text so it reads as a
 // distinct console-style element rather than plain text floating between the form and the buttons.
-// Buttons are role-colored: Apply = primary (accent-tinted), Cancel/Reset Limb = neutral (neither
-// touches real patient state - Cancel discards the form, Reset Limb clears it).
+// Buttons are role-colored: Apply = primary (accent-tinted), Back/Reset Limb = neutral (neither
+// touches real patient state - Back discards the form and returns to limb-select, Reset Limb
+// clears it in place).
 //
 // IDCs here are hardcoded 1/10-21 to match what fnc_injuryEditor_init.sqf/fnc_injuryEditor_onApply.sqf/
 // fnc_injuryEditor_onReset.sqf/fnc_injuryEditor_refreshState.sqf read via `_display displayCtrl <n>`
@@ -547,16 +554,21 @@ class RscDisplayAFCM_SIM_InjuryEditor
             w = "0.185 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
-        class Cancel: AFCM_SIM_RscButton
+        // Was "Cancel" (plain closeDialog) - changed to "Back" since closing this dialog outright
+        // dropped the instructor out of the whole flow with no way back to picking a different
+        // limb without re-triggering the "Edit Injuries" scroll action from scratch.
+        // fnc_injuryEditor_onBack.sqf closes this dialog and reopens the limb-select ("main")
+        // screen for the same target unit instead.
+        class Back: AFCM_SIM_RscButton
         {
-            idc = IDC_AFCM_SIM_IE_CANCEL;
-            text = "Cancel";
+            idc = IDC_AFCM_SIM_IE_BACK;
+            text = "Back";
             x = "0.505 * safeZoneW + safeZoneX";
             y = "0.655 * safeZoneH + safeZoneY";
             w = "0.185 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
-        // Separate row, distinct from Apply/Cancel - saves the currently-configured wound (and
+        // Separate row, distinct from Apply/Back - saves the currently-configured wound (and
         // Fracture/Pneumothorax, if visible) as a new single-injury user preset
         // (fnc_injuryEditor_onSavePreset.sqf opens RscDisplayAFCM_SIM_PresetSave to name it) rather
         // than applying it, so an instructor can build a reusable library entry without touching
@@ -596,6 +608,7 @@ class RscDisplayAFCM_SIM_InjuryEditor
 #define IDC_AFCM_SIM_PL_TEXT    14
 #define IDC_AFCM_SIM_PL_IMPORT  15
 #define IDC_AFCM_SIM_PL_CLOSE   16
+#define IDC_AFCM_SIM_PL_SUBTITLE 17
 
 // Third real screen — Injury Presets (DESIGN.md § Injury Presets/§4.3): a listbox of built-in
 // (id prefix "builtin_", shipped in fnc_getBuiltinPresets.sqf) + user-saved presets (per-player
@@ -638,9 +651,11 @@ class RscDisplayAFCM_SIM_PresetLibrary
             h = "0.04 * safeZoneH";
             sizeEx = "0.03 * safeZoneH";
         };
+        // Text set dynamically in fnc_presetLibrary_populateList.sqf - reads differently in MCI
+        // batch mode (AFCM_SIM_UI_targetUnits set) vs the normal single-patient flow.
         class Subtitle: AFCM_SIM_RscSubtitle
         {
-            idc = -1;
+            idc = IDC_AFCM_SIM_PL_SUBTITLE;
             text = "Apply a saved injury set, or export/import one below";
             x = "0.27 * safeZoneW + safeZoneX";
             y = "0.268 * safeZoneH + safeZoneY";

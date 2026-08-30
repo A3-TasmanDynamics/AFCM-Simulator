@@ -5,7 +5,7 @@
  * genuinely live medical state (consciousness, pain, injured, this limb's wound/bleed state) while
  * it's open, not just a one-time snapshot from when it was opened.
  *
- * Self-removes if the dialog is no longer the active display (closed via Apply/Cancel/Escape) -
+ * Self-removes if the dialog is no longer the active display (closed via Apply/Back/Escape) -
  * fnc_injuryEditor_cleanup.sqf (onUnload) is the primary removal path, this is a safety net.
  *
  * Real CBA_fnc_addPerFrameHandler callback signature (CBA_A3 source, not guessed):

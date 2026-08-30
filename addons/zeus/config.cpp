@@ -2,7 +2,7 @@ class CfgPatches
 {
     class afcm_sim_zeus
     {
-        units[] = {"AFCM_SIM_ModuleSpawnRandomPatient"};
+        units[] = {"AFCM_SIM_ModuleSpawnRandomPatient", "AFCM_SIM_ModuleMciSpawner"};
         weapons[] = {};
         requiredVersion = 2.14;
         requiredAddons[] = {"cba_main", "afcm_sim_main", "afcm_sim_scenario", "afcm_sim_spawner"};
@@ -39,6 +39,7 @@ class CfgFunctions
             // Explicit `file=`, full absolute virtual path — see afcm_sim_main/config.cpp for why
             // both the fnc_ filename AND the absolute-path form are required.
             class module_spawnRandomPatient { file = "\afcm_sim\addons\zeus\functions\fnc_module_spawnRandomPatient.sqf"; };
+            class module_mciSpawner { file = "\afcm_sim\addons\zeus\functions\fnc_module_mciSpawner.sqf"; };
         };
     };
 };
@@ -98,5 +99,47 @@ class CfgVehicles
         // a placed Zeus module opens the same Attributes dialog Eden uses (Module_F is shared
         // infrastructure between the two), so this works identically in-Zeus.
         class Attributes: AFCM_SIM_CasualtyTypeAttributes {};
+    };
+
+    // Live, Zeus-side counterpart to AFCM_SIM_ModuleMciSpawnerPlacement (addons/eden/config.cpp) -
+    // "select a place on the map" is placing this module; "select a preset" happens right after,
+    // via the "Assign MCI Preset" scroll action added to the spawned batch
+    // (afcm_sim_ui_fnc_addMciPresetAction) rather than a static Attribute here, since Zeus placement
+    // is a live, interactive moment that can reach the full real-time preset library (built-in +
+    // the placing operator's own saved presets) - not just the 5 built-in ones Eden's design-time
+    // version is limited to.
+    class AFCM_SIM_ModuleMciSpawner: Module_F
+    {
+        scope = 2;
+        scopeCurator = 2;
+        side = 7;
+        displayName = "MCI Spawner";
+        icon = "\afcm_sim\addons\zeus\data\module_patient.paa";
+        category = "AFCM_SIM_Category";
+        function = "afcm_sim_zeus_fnc_module_mciSpawner";
+        functionPriority = 1;
+        isGlobal = 1;
+        isTriggerActivated = 0;
+        curatorCanAttach = 0;
+
+        // Patient count + casualty type. No Preset attribute here - see the class comment above.
+        class Attributes: AFCM_SIM_CasualtyTypeAttributes
+        {
+            class AFCM_SIM_PatientCount
+            {
+                displayName = "Patient Count";
+                property = "AFCM_SIM_patientCount";
+                control = "combo";
+                defaultValue = "4";
+                class Values
+                {
+                    class Two { name = "2"; value = 2; };
+                    class Four { name = "4"; value = 4; default = 1; };
+                    class Six { name = "6"; value = 6; };
+                    class Eight { name = "8"; value = 8; };
+                    class Ten { name = "10"; value = 10; };
+                };
+            };
+        };
     };
 };

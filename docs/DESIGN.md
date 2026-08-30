@@ -442,13 +442,31 @@ is still the plan, not the state of the repo.
 - **Stretcher Placement** — selectable stretcher type (class list sourced from whichever backend
   is active, §2.5), ghost-preview placement (surface-snapped, like Zeus placement), spawns synced
   for MP. *Not implemented.*
-- **Map to Spawn Patients** — map-click patient placement/preview, supports batch placement for
-  MASCAL scenarios, respects the same spawn pipeline as Spawn Patient. *In-mission map-click tool
-  not implemented; the Eden-editor design-time equivalent is* **AFCM MASCAL Zone** *(§7 —
-  `AFCM_SIM_ModuleMascalZone`), which **is** implemented: patient-count + injury-level + casualty-
-  type attributes, spawns that many patients (loosely scattered via `spawnPatient`'s own position
-  jitter) on mission start — all with the same casualty type, since it's one attribute per zone,
-  not per patient.*
+- **Map to Spawn Patients / MCI Spawner** — pick a place on the map, pick a preset, batch-spawn a
+  Mass Casualty Incident. *A literal interactive map-click-and-preview tool is still not
+  implemented* (that would need a dedicated overlay/map UI, real scope beyond a module) — *but the
+  actual ask this covers ("select the place on the map, select a preset, Zeus or Eden") is real,
+  as a module pair,* **implemented** *on both sides, alongside the existing* **AFCM MASCAL Zone**
+  *(§7 — `AFCM_SIM_ModuleMascalZone`, randomized-by-level batch spawn, unchanged):*
+  - **MCI Spawner (Zeus, `AFCM_SIM_ModuleMciSpawner`)** — placing the module spawns Patient Count
+    clean, unconscious patients at that position (loosely scattered via `spawnPatient`'s own
+    jitter, same as MASCAL Zone), then adds an "Assign MCI Preset" scroll action to the whole
+    batch. Clicking it on any one of them opens the real Preset Library
+    (`RscDisplayAFCM_SIM_PresetLibrary`, § Injury Presets) in batch mode
+    (`AFCM_SIM_UI_targetUnits`, plural) — picking a preset there applies it to every patient in the
+    group at once, in one Apply. Deliberately doesn't try to pop the dialog straight from the
+    module function itself: Module_F functions run with `isGlobal = 1` (broadcast to every
+    connected machine — every module in this addon already needs its own `isServer` guard for
+    exactly that reason), so there's no reliable way to know which one client's curator actually
+    placed it and should see a dialog. The addAction route sidesteps that entirely, reusing the
+    same already-proven, inherently per-client-local mechanism "Edit Injuries" uses — full built-in
+    *and* the placing operator's own saved presets are reachable this way, live.
+  - **AFCM MCI Spawner (Eden, `AFCM_SIM_ModuleMciSpawnerPlacement`)** — same batch spawn, but the
+    preset is picked at design time via a static Attribute (the 5 built-in presets only — a
+    design-time module can't reference a specific player's own future `profileNamespace` user
+    presets, since those are per-player and wouldn't resolve consistently for anyone else running
+    the mission). No interactive dialog needed at mission start, unlike Zeus's version — everything
+    is already fully resolved from config by the time the module function runs.
 - **Clear spawned patients** — not in the original feature list; added after reviewing a prior
   working prototype (REFERENCES.md) that needed exactly this. **Implemented**, simplified:
   `afcm_sim_spawner_fnc_clearAllPatients` deletes every patient spawned via `spawnPatient` and
@@ -609,9 +627,12 @@ rather than one hard-required with the others bolted on.
   plain Array made that nearly free); randomization levels (done); Random Patient (incl. making the
   `afcm_sim_zeus` module real — done); stretcher placement — implemented once against the backend
   interface, so every active backend gets them simultaneously rather than one at a time.
-- **v3** — map spawn tool, MASCAL batch placement, ~~preset import/export/sharing~~ (done early,
-  see v2), making the `afcm_sim_eden` module real (done — `AFCM_SIM_ModulePatientPlacement`/
-  `AFCM_SIM_ModuleMascalZone`).
+- **v3** — ~~map spawn tool~~ (done early, as a Zeus+Eden module pair rather than a literal
+  interactive map-click UI — `AFCM_SIM_ModuleMciSpawner`/`AFCM_SIM_ModuleMciSpawnerPlacement`, see
+  § Map to Spawn Patients / MCI Spawner), MASCAL batch placement (done —
+  `AFCM_SIM_ModuleMascalZone`), ~~preset import/export/sharing~~ (done early, see v2), making the
+  `afcm_sim_eden` module real (done — `AFCM_SIM_ModulePatientPlacement`/`AFCM_SIM_ModuleMascalZone`/
+  `AFCM_SIM_ModuleMciSpawnerPlacement`).
 - **Phase-2 spike (parallel, inside AFCM-Simulator)** — overlay-window proof of concept, evaluated
   independently; only promoted to "supported" if the hard problems in §2.3 are actually solved.
 

@@ -98,7 +98,7 @@ params ["_display"];
     { (_display displayCtrl _x) ctrlShow _showPneumo; } forEach [19, 21];
 
     _ctrlApply ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_injuryEditor_onApply];
-    (_display displayCtrl 15) ctrlAddEventHandler ["ButtonClick", { closeDialog 0; }];
+    (_display displayCtrl 15) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_injuryEditor_onBack];
     (_display displayCtrl 17) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_injuryEditor_onReset];
     (_display displayCtrl 22) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_injuryEditor_onSavePreset];
 

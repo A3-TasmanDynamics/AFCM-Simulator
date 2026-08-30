@@ -5,6 +5,10 @@
  * target unit (AFCM_SIM_UI_targetUnit, already stashed by fnc_limbSelect_open.sqf - presets apply
  * to the whole patient, not a specific limb, so nothing further needs stashing here).
  *
+ * Clears AFCM_SIM_UI_targetUnits (plural) first - single-unit mode always wins here. That variable
+ * is only ever set by the "Assign MCI Preset" batch action (fnc_addMciPresetAction.sqf), and must
+ * not leak into a normal single-patient Presets click from a previous, unrelated MCI batch.
+ *
  * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_limbSelect_onLimbClick.sqf - opening a
  * dialog synchronously in the same frame a prior closeDialog ran in can silently fail.
  *
@@ -16,6 +20,8 @@
  *
  * Public: No
 */
+
+missionNamespace setVariable ["AFCM_SIM_UI_targetUnits", []];
 
 closeDialog 0;
 

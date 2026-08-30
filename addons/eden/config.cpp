@@ -2,7 +2,7 @@ class CfgPatches
 {
     class afcm_sim_eden
     {
-        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleMascalZone"};
+        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleMascalZone", "AFCM_SIM_ModuleMciSpawnerPlacement"};
         weapons[] = {};
         requiredVersion = 2.14;
         requiredAddons[] = {"cba_main", "afcm_sim_main", "afcm_sim_scenario", "afcm_sim_spawner"};
@@ -30,6 +30,7 @@ class CfgFunctions
             // both the fnc_ filename AND the absolute-path form are required.
             class module_patientPlacement { file = "\afcm_sim\addons\eden\functions\fnc_module_patientPlacement.sqf"; };
             class module_mascalZone { file = "\afcm_sim\addons\eden\functions\fnc_module_mascalZone.sqf"; };
+            class module_mciSpawner { file = "\afcm_sim\addons\eden\functions\fnc_module_mciSpawner.sqf"; };
         };
     };
 };
@@ -168,6 +169,65 @@ class CfgVehicles
                     class Hard { name = "Hard"; value = 2; };
                     class Extreme { name = "Extreme"; value = 3; };
                     class Fucked { name = "F*CKED!"; value = 4; };
+                };
+            };
+        };
+    };
+
+    // Design-time counterpart to Zeus's AFCM_SIM_ModuleMciSpawner (addons/zeus/config.cpp) - a
+    // batch of patients all spawned with the exact same real Injury Preset (INJURY_CODES.md §4)
+    // applied, distinct from AFCM_SIM_ModuleMascalZone above (randomized injury level, not a
+    // specific preset). Preset is a static Attribute here, not a live dialog like Zeus's version -
+    // see fnc_module_mciSpawner.sqf's comment for why (a design-time module can't reference a
+    // specific player's own future profileNamespace user presets).
+    class AFCM_SIM_ModuleMciSpawnerPlacement: Module_F
+    {
+        scope = 2;
+        scopeCurator = 2;
+        side = 7;
+        displayName = "AFCM MCI Spawner";
+        icon = "\afcm_sim\addons\eden\data\module_mascal.paa";
+        category = "AFCM_SIM_Category";
+        function = "afcm_sim_eden_fnc_module_mciSpawner";
+        functionPriority = 1;
+        isGlobal = 1;
+        isTriggerActivated = 0;
+        curatorCanAttach = 0;
+
+        // Patient count, casualty type, preset. Preset Values are numeric indices into
+        // afcm_sim_scenario_fnc_getBuiltinPresets's own array order (fnc_module_mciSpawner.sqf
+        // reads it back the same way Casualty Type/Injury Level already do elsewhere in this
+        // addon) - keep both in sync if the built-in preset list ever changes.
+        class Attributes: AFCM_SIM_CasualtyTypeAttributes
+        {
+            class AFCM_SIM_PatientCount
+            {
+                displayName = "Patient Count";
+                property = "AFCM_SIM_patientCount";
+                control = "combo";
+                defaultValue = "4";
+                class Values
+                {
+                    class Two { name = "2"; value = 2; };
+                    class Four { name = "4"; value = 4; default = 1; };
+                    class Six { name = "6"; value = 6; };
+                    class Eight { name = "8"; value = 8; };
+                    class Ten { name = "10"; value = 10; };
+                };
+            };
+            class AFCM_SIM_MciPreset
+            {
+                displayName = "Preset";
+                property = "AFCM_SIM_mciPreset";
+                control = "combo";
+                defaultValue = "0";
+                class Values
+                {
+                    class GswChest { name = "GSW — Chest"; value = 0; default = 1; };
+                    class GswLimbTq { name = "GSW — Limb (Tourniquet Candidate)"; value = 1; };
+                    class BlastCasualty { name = "Blast Casualty"; value = 2; };
+                    class FragMultiple { name = "Frag Wounds (Multiple)"; value = 3; };
+                    class MinorLaceration { name = "Training — Minor Laceration"; value = 4; };
                 };
             };
         };

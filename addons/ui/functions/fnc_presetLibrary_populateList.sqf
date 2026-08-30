@@ -11,6 +11,10 @@
  * listbox row, read back with `lbData`) so later handlers can look the exact preset up without
  * re-parsing the display text.
  *
+ * Also sets the Subtitle to reflect batch (MCI) vs single-patient mode, based on whether
+ * AFCM_SIM_UI_targetUnits (plural) is non-empty - see fnc_presetLibrary_onApply.sqf for how that
+ * variable actually drives which one Apply does.
+ *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_PresetLibrary <DISPLAY>
  *
@@ -42,3 +46,11 @@ private _fnc_addRow = {
 (_display displayCtrl 11) ctrlEnable false;
 (_display displayCtrl 12) ctrlEnable false;
 (_display displayCtrl 13) ctrlEnable false;
+
+private _targetUnits = missionNamespace getVariable ["AFCM_SIM_UI_targetUnits", []];
+private _subtitle = if (_targetUnits isNotEqualTo []) then {
+    format ["MCI batch — select a preset to apply to all %1 patient(s)", count _targetUnits]
+} else {
+    "Apply a saved injury set, or export/import one below"
+};
+(_display displayCtrl 17) ctrlSetText _subtitle;
