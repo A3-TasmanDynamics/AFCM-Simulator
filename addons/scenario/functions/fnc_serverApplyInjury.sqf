@@ -35,12 +35,9 @@ if (isNull _unit) exitWith {
     diag_log text "[AFCM-Simulator] serverApplyInjury aborted - unit is objNull on the server (network sync issue?).";
 };
 
-// Same 8 limb-segment values as afcm_sim_scenario_fnc_randomizeInjuries - only arms/legs are
-// tourniquetable, never head/neck/chest/abdomen/pelvis.
-private _tourniquetableLimbs = [
-    "leftUpperArm", "leftForearm", "rightUpperArm", "rightForearm",
-    "leftThigh", "leftShin", "rightThigh", "rightShin"
-];
+// Same 4 limbs as afcm_sim_scenario_fnc_randomizeInjuries - only arms/legs are tourniquetable,
+// never head/chest.
+private _tourniquetableLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
 
 private _bleedRate = if (_bleeding) then { 0.1 + random 0.3 } else { 0 };
 

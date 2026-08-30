@@ -20,11 +20,12 @@ params ["_unit", ["_limb", ""]];
 if (isNull _unit) exitWith { createHashMap };
 
 private _bodyPartMap = createHashMapFromArray [
-    ["head", "head"], ["neck", "body"], ["chest", "body"], ["abdomen", "body"], ["pelvis", "body"],
-    ["leftUpperArm", "leftarm"], ["leftForearm", "leftarm"],
-    ["rightUpperArm", "rightarm"], ["rightForearm", "rightarm"],
-    ["leftThigh", "leftleg"], ["leftShin", "leftleg"],
-    ["rightThigh", "rightleg"], ["rightShin", "rightleg"]
+    ["head", "head"],
+    ["chest", "body"],
+    ["leftArm", "leftarm"],
+    ["rightArm", "rightarm"],
+    ["leftLeg", "leftleg"],
+    ["rightLeg", "rightleg"]
 ];
 private _bodyPart = _bodyPartMap getOrDefault [_limb, ""];
 

@@ -32,11 +32,9 @@ params ["_display"];
     private _backend = call afcm_sim_fnc_backend_getActive;
 
     private _limbNames = createHashMapFromArray [
-        ["head", "Head"], ["neck", "Neck"], ["chest", "Chest"], ["abdomen", "Abdomen"],
-        ["pelvis", "Pelvis"], ["leftUpperArm", "Left Upper Arm"], ["leftForearm", "Left Forearm"],
-        ["rightUpperArm", "Right Upper Arm"], ["rightForearm", "Right Forearm"],
-        ["leftThigh", "Left Thigh"], ["leftShin", "Left Shin"],
-        ["rightThigh", "Right Thigh"], ["rightShin", "Right Shin"]
+        ["head", "Head"], ["chest", "Chest"],
+        ["leftArm", "Left Arm"], ["rightArm", "Right Arm"],
+        ["leftLeg", "Left Leg"], ["rightLeg", "Right Leg"]
     ];
 
     private _ctrlLimbLabel = _display displayCtrl 10;

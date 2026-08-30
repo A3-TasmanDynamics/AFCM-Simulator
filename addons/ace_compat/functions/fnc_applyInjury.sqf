@@ -35,24 +35,17 @@ params ["_unit", "_injury"];
 
 if (isNull _unit) exitWith {};
 
-// AFCM-Simulator's LimbId has 13 real anatomical values (INJURY_CODES.md §1); ACE3 only has 6 real
-// body parts, so five LimbIds fold onto "body" and each limb's two segments fold onto one ACE arm/
-// leg. Lowercase ACE body part strings - required as-is for addWound, and also valid for
-// addDamageToUnit (which lowercases internally regardless of case passed in).
+// AFCM-Simulator's LimbId is a direct 1:1 match to ACE3's own 6 real body parts (INJURY_CODES.md
+// §1) - deliberately, so there's no folding needed here. Lowercase ACE body part strings -
+// required as-is for addWound, and also valid for addDamageToUnit (which lowercases internally
+// regardless of case passed in).
 private _bodyPartMap = createHashMapFromArray [
     ["head", "head"],
-    ["neck", "body"],
     ["chest", "body"],
-    ["abdomen", "body"],
-    ["pelvis", "body"],
-    ["leftUpperArm", "leftarm"],
-    ["leftForearm", "leftarm"],
-    ["rightUpperArm", "rightarm"],
-    ["rightForearm", "rightarm"],
-    ["leftThigh", "leftleg"],
-    ["leftShin", "leftleg"],
-    ["rightThigh", "rightleg"],
-    ["rightShin", "rightleg"]
+    ["leftArm", "leftarm"],
+    ["rightArm", "rightarm"],
+    ["leftLeg", "leftleg"],
+    ["rightLeg", "rightleg"]
 ];
 private _damageTypeMap = createHashMapFromArray [
     ["gunshot", "bullet"],

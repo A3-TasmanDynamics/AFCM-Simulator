@@ -90,7 +90,7 @@ Builds an interface `HashMap` (`{"applyInjury": ..., "removeInjury": ...}`) and 
 `afcm_sim_fnc_backend_applyInjury` when `"ace"` is the active backend. Takes an `Injury` `HashMap`
 (see [DESIGN.md §4.2](../DESIGN.md#42-injury-object)) and:
 
-1. Maps the backend-agnostic `limb` (13 real anatomical regions — see
+1. Maps the backend-agnostic `limb` (a direct 1:1 match to ACE3's own 6 real body parts — see
    [§4.1](#41-limbid--ace3-body-part)) to ACE3's 6 lowercase body-part strings, and `woundType`
    (`gunshot`/`shrapnel`/`blast`) to a real ACE3 damage-type class (`bullet`/`grenade`/`shell`).
 2. Calls `ace_medical_fnc_addDamageToUnit` with `severity` as the damage amount — this drives ACE's
@@ -171,26 +171,18 @@ Full source citations for all of this are in [REFERENCES.md](../REFERENCES.md#ac
 
 ### 4.1 `LimbId` → ACE3 body part
 
-AFCM-Simulator's `LimbId` has 13 real anatomical values (see
-[INJURY_CODES.md §1](../INJURY_CODES.md#1-body-parts--limbid)); ACE3 itself only has 6 real body
-parts (lowercase, real `ALL_BODY_PARTS` value), so this backend folds several `LimbId`s onto the
-same target:
+AFCM-Simulator's `LimbId` is a direct 1:1 match to ACE3's own 6 real body parts (see
+[INJURY_CODES.md §1](../INJURY_CODES.md#1-body-parts--limbid)) — deliberately, so there's no
+folding needed here (lowercase, real `ALL_BODY_PARTS` value):
 
 | AFCM-Simulator `LimbId` | ACE3 body part |
 |---|---|
 | `head` | `head` |
-| `neck` | `body` |
 | `chest` | `body` |
-| `abdomen` | `body` |
-| `pelvis` | `body` |
-| `leftUpperArm` | `leftarm` |
-| `leftForearm` | `leftarm` |
-| `rightUpperArm` | `rightarm` |
-| `rightForearm` | `rightarm` |
-| `leftThigh` | `leftleg` |
-| `leftShin` | `leftleg` |
-| `rightThigh` | `rightleg` |
-| `rightShin` | `rightleg` |
+| `leftArm` | `leftarm` |
+| `rightArm` | `rightarm` |
+| `leftLeg` | `leftleg` |
+| `rightLeg` | `rightleg` |
 
 ### 4.2 `woundType` → ACE3 damage type / bleeding wound class
 

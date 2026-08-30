@@ -23,25 +23,19 @@ real API, inside its own compat addon.
 
 ## 1. Body Parts — `LimbId`
 
-13 values, defined in [DESIGN.md §4.1](DESIGN.md#41-body-limb-selection) — real anatomical regions,
-not just ACE3's 6 hitpoints, so a casualty assessment can tell chest trauma from abdominal trauma,
-or an upper-arm wound from a forearm one.
+6 values, defined in [DESIGN.md §4.1](DESIGN.md#41-body-limb-selection) — a direct 1:1 match to
+ACE3's own 6 real body parts, deliberately. A finer 13-region anatomical breakdown (splitting chest
+from abdomen, upper arm from forearm, etc.) was built and then reverted in favour of this simpler
+scheme.
 
 | `LimbId` | Real-world region | `afcm_sim_afcm_compat` target | `afcm_sim_ace_compat` target |
 |---|---|---|---|
 | `head` | Head | AFCM head site | `"head"` |
-| `neck` | Neck | AFCM torso site | `"body"` |
-| `chest` | Chest | AFCM torso site | `"body"` |
-| `abdomen` | Abdomen | AFCM torso site | `"body"` |
-| `pelvis` | Pelvis / hips | AFCM torso site | `"body"` |
-| `leftUpperArm` | Left shoulder-to-elbow | AFCM left-arm site | `"leftarm"` |
-| `leftForearm` | Left elbow-to-hand | AFCM left-arm site | `"leftarm"` |
-| `rightUpperArm` | Right shoulder-to-elbow | AFCM right-arm site | `"rightarm"` |
-| `rightForearm` | Right elbow-to-hand | AFCM right-arm site | `"rightarm"` |
-| `leftThigh` | Left hip-to-knee | AFCM left-leg site | `"leftleg"` |
-| `leftShin` | Left knee-to-foot | AFCM left-leg site | `"leftleg"` |
-| `rightThigh` | Right hip-to-knee | AFCM right-leg site | `"rightleg"` |
-| `rightShin` | Right knee-to-foot | AFCM right-leg site | `"rightleg"` |
+| `chest` | Chest/torso | AFCM torso site | `"body"` |
+| `leftArm` | Left arm | AFCM left-arm site | `"leftarm"` |
+| `rightArm` | Right arm | AFCM right-arm site | `"rightarm"` |
+| `leftLeg` | Left leg | AFCM left-leg site | `"leftleg"` |
+| `rightLeg` | Right leg | AFCM right-leg site | `"rightleg"` |
 
 **Status**: `afcm_sim_afcm_compat`'s column is planned, not real yet (§9 — deferred stub, no AFCM
 API to target). `afcm_sim_ace_compat`'s column is real and confirmed — see
@@ -50,14 +44,8 @@ API to target). `afcm_sim_ace_compat`'s column is real and confirmed — see
 — [KAT_COMPAT.md §3](addons/KAT_COMPAT.md#3-the-real-finding-kat-extends-aces-wound-pipeline-it-doesnt-replace-it)).
 `acm_compat` doesn't have a confirmed mapping yet (`applyInjury` is still a stub).
 
-ACE3 itself only tracks 6 real body parts, so five of the 13 `LimbId`s above (`neck`/`chest`/
-`abdomen`/`pelvis`, all folding to `"body"`, plus each limb's two segments folding to one ACE part)
-collapse when `ace_compat` applies them — that granularity is only meaningful to AFCM-Simulator's
-own scenario layer and (once built) AFCM's native backend, not to ACE3.
-
-`tourniquetable` (§2) is only ever `true` for the 8 limb-segment values
-(`leftUpperArm`/`leftForearm`/`rightUpperArm`/`rightForearm`/`leftThigh`/`leftShin`/`rightThigh`/
-`rightShin`) — never for `head`/`neck`/`chest`/`abdomen`/`pelvis`.
+`tourniquetable` (§2) is only ever `true` for `leftArm`/`rightArm`/`leftLeg`/`rightLeg` — never
+`head`/`chest`.
 
 > Note the casing difference from ACE3's own API: `ace_medical_fnc_addDamageToUnit` accepts
 > `"Head"`/`"Body"`/`"LeftArm"`/etc. (it lowercases internally), but
@@ -216,12 +204,10 @@ reverted in favour of keeping the UI simple; documented here so it's not lost if
 context: [KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables)).
 
 **Fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb — and each
-entry is a **severity/treatment-stage scale, not a boolean**. Note this array's own index order is
-**KAT/ACE's** 6 body parts (`head, torso, leftArm, rightArm, leftLeg, rightLeg`) — **not**
-AFCM-Simulator's 13-value `LimbId` from §1, since KAT sits directly on ACE's 6 real body parts
-underneath. Wiring this in would need the same `LimbId` → ACE body-part fold `applyInjury` already
-uses for damage ([ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part)) to collapse
-`leftUpperArm`/`leftForearm` (etc.) onto this array's single `leftArm` slot:
+entry is a **severity/treatment-stage scale, not a boolean**. This array's own index order is
+**KAT/ACE's** 6 body parts (`head, torso, leftArm, rightArm, leftLeg, rightLeg`) — the exact same 6
+values AFCM-Simulator's own `LimbId` (§1) now uses 1:1, so wiring this in wouldn't need any
+`LimbId` → ACE body-part folding at all, just a direct index lookup:
 
 ```sqf
 /*

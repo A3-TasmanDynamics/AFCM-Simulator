@@ -30,22 +30,15 @@ params ["_unit", "_injury"];
 
 if (isNull _unit) exitWith {};
 
-// Same LimbId -> ACE body part fold as afcm_sim_ace_compat's fnc_applyInjury.sqf (KAT sits on the
-// same 6 real ACE body parts underneath - KAT_COMPAT.md §4).
+// Same 1:1 LimbId -> ACE body part map as afcm_sim_ace_compat's fnc_applyInjury.sqf (KAT sits on
+// the same 6 real ACE body parts underneath - KAT_COMPAT.md §4).
 private _bodyPartMap = createHashMapFromArray [
     ["head", "head"],
-    ["neck", "body"],
     ["chest", "body"],
-    ["abdomen", "body"],
-    ["pelvis", "body"],
-    ["leftUpperArm", "leftarm"],
-    ["leftForearm", "leftarm"],
-    ["rightUpperArm", "rightarm"],
-    ["rightForearm", "rightarm"],
-    ["leftThigh", "leftleg"],
-    ["leftShin", "leftleg"],
-    ["rightThigh", "rightleg"],
-    ["rightShin", "rightleg"]
+    ["leftArm", "leftarm"],
+    ["rightArm", "rightarm"],
+    ["leftLeg", "leftleg"],
+    ["rightLeg", "rightleg"]
 ];
 private _damageTypeMap = createHashMapFromArray [
     ["gunshot", "bullet"],

@@ -29,13 +29,14 @@ params ["_unit", ["_limb", ""]];
 
 if (isNull _unit) exitWith { createHashMap };
 
-// Same 13-LimbId -> 6-ACE-body-part fold as fnc_applyInjury.sqf.
+// Same 1:1 LimbId -> ACE body part map as fnc_applyInjury.sqf.
 private _bodyPartMap = createHashMapFromArray [
-    ["head", "head"], ["neck", "body"], ["chest", "body"], ["abdomen", "body"], ["pelvis", "body"],
-    ["leftUpperArm", "leftarm"], ["leftForearm", "leftarm"],
-    ["rightUpperArm", "rightarm"], ["rightForearm", "rightarm"],
-    ["leftThigh", "leftleg"], ["leftShin", "leftleg"],
-    ["rightThigh", "rightleg"], ["rightShin", "rightleg"]
+    ["head", "head"],
+    ["chest", "body"],
+    ["leftArm", "leftarm"],
+    ["rightArm", "rightarm"],
+    ["leftLeg", "leftleg"],
+    ["rightLeg", "rightleg"]
 ];
 private _bodyPart = _bodyPartMap getOrDefault [_limb, ""];
 

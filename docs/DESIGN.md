@@ -221,29 +221,22 @@ by construction (§2.5). The internal split:
 ## 4. Data Model
 
 ### 4.1 Body limb selection
-The `LimbId` set below is the backend-agnostic vocabulary the UI/scenario layer actually uses —
-13 real anatomical regions, not just ACE3's 6 hitpoints, so a casualty assessment can distinguish
-chest from abdominal trauma or an upper-arm wound from a forearm one. Each active backend (§2.5)
-maps it to its own target internally — the scenario layer never sees an AFCM site or an ACE3 body
-part directly, only a `LimbId`:
+The `LimbId` set below is the backend-agnostic vocabulary the UI/scenario layer actually uses — a
+direct 1:1 match to ACE3's own 6 real body parts, deliberately (a finer 13-region anatomical
+breakdown was built and then reverted in favour of keeping this simple and matching ACE exactly).
+Each active backend (§2.5) maps it to its own target internally — the scenario layer never sees an
+AFCM site or an ACE3 body part directly, only a `LimbId`:
 
 | AFCM-Simulator `LimbId` | Real-world region | `afcm_sim_afcm_compat` target | `afcm_sim_ace_compat` target (ACE3 body part) |
 |---|---|---|---|
 | `head` | Head | AFCM head site | `head` |
-| `neck` | Neck | AFCM torso site | `body` |
-| `chest` | Chest | AFCM torso site | `body` |
-| `abdomen` | Abdomen | AFCM torso site | `body` |
-| `pelvis` | Pelvis / hips | AFCM torso site | `body` |
-| `leftUpperArm` / `rightUpperArm` | Shoulder-to-elbow | AFCM left/right arm site | `leftarm` / `rightarm` |
-| `leftForearm` / `rightForearm` | Elbow-to-hand | AFCM left/right arm site | `leftarm` / `rightarm` |
-| `leftThigh` / `rightThigh` | Hip-to-knee | AFCM left/right leg site | `leftleg` / `rightleg` |
-| `leftShin` / `rightShin` | Knee-to-foot | AFCM left/right leg site | `leftleg` / `rightleg` |
+| `chest` | Chest/torso | AFCM torso site | `body` |
+| `leftArm` / `rightArm` | Left/right arm | AFCM left/right arm site | `leftarm` / `rightarm` |
+| `leftLeg` / `rightLeg` | Left/right leg | AFCM left/right leg site | `leftleg` / `rightleg` |
 
-ACE3 only has 6 real body parts (`head`/`body`/`leftarm`/`rightarm`/`leftleg`/`rightleg`, confirmed
-in [ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part)) — `afcm_sim_ace_compat`
-folds all 13 `LimbId`s down to those 6 (five of them collapse onto `body`). `tourniquetable` (§4.2)
-is only ever `true` for the 8 limb-segment values above — never for `head`/`neck`/`chest`/
-`abdomen`/`pelvis`.
+Confirmed in [ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part) that these are
+ACE3's actual real body-part strings, not guessed. `tourniquetable` (§4.2) is only ever `true` for
+`leftArm`/`rightArm`/`leftLeg`/`rightLeg` — never `head`/`chest`.
 
 ### 4.2 Injury object
 This is scenario-authoring input — what a preset or randomizer produces — passed to whichever

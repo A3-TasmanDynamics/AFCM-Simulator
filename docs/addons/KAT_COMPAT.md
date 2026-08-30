@@ -186,11 +186,10 @@ _unit setVariable ["kat_surgery_fractures", [0, 0, 0, 0, 0, 2.1], true];
 The `.1`/`.2`/`.5` suffixes read as *treatment progress* on top of a base severity (`2`/`3`) rather
 than independent severities — e.g. `2` → `2.1` (opened) → `2.2` (prepared) looks like a real
 surgical-progression sequence, not confirmed against KAT's own surgery functions beyond
-`fractureCheck`'s read-only comparison logic. Note this array's index order is KAT/ACE's own 6 body
-parts, **not** AFCM-Simulator's 13-value `LimbId` — wiring this into `applyInjury` would need the
-same `LimbId` → ACE body-part fold `applyInjury` already uses for damage
-([§4.1](ACE_COMPAT.md#41-limbid--ace3-body-part) on the ACE_COMPAT.md doc) to collapse
-`leftUpperArm`/`leftForearm` (etc.) onto this array's single `leftArm` slot.
+`fractureCheck`'s read-only comparison logic. This array's index order is KAT/ACE's own 6 body
+parts — the exact same 6 values AFCM-Simulator's own `LimbId` now uses 1:1
+([§4.1](ACE_COMPAT.md#41-limbid--ace3-body-part) on the ACE_COMPAT.md doc), so wiring this in
+wouldn't need any folding at all, just a direct index lookup.
 
 - **`kat_breathing_pneumothorax`** / **`kat_breathing_Hemopneumothorax`** /
   **`kat_breathing_Tensionpneumothorax`** — set via `setVariable`, then

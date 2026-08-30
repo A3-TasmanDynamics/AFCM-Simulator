@@ -5,9 +5,8 @@
  * editor for the same target unit (stashed by fnc_limbSelect_open.sqf) and this limb.
  *
  * Arguments:
- * 0: LimbId <STRING> - see DESIGN.md §4.1 / INJURY_CODES.md §1 (head / neck / chest / abdomen /
- *    pelvis / leftUpperArm / leftForearm / rightUpperArm / rightForearm / leftThigh / leftShin /
- *    rightThigh / rightShin)
+ * 0: LimbId <STRING> - see DESIGN.md §4.1 / INJURY_CODES.md §1 (head / chest / leftArm / rightArm /
+ *    leftLeg / rightLeg)
  *
  * Return Value:
  * None
