@@ -10,6 +10,10 @@
  * scatter. No dedicated zone-radius attribute yet; worth revisiting if a tighter/looser spread
  * needs to be mission-maker-configurable later.
  *
+ * The whole batch shares one Spawn Session (DESIGN.md § Spawn Sessions) - one id generated up
+ * front, passed to every spawnRandomPatient call, so it can be deleted as a group later without
+ * touching any other session's patients.
+ *
  * Guards against firing more than once per placed module (`AFCM_SIM_moduleFired`, a variable
  * stashed on `_logic` itself) - vanilla Module_F's function has no guaranteed single-fire
  * behaviour (confirmed independently by ACE3's own Modules Framework docs, which built their own
@@ -39,6 +43,9 @@ private _injuryLevel = _logic getVariable ["AFCM_SIM_injuryLevel", afcm_sim_defa
 private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
 private _pos = getPosASL _logic;
 
+private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
+private _sessionLabel = format ["AFCM MASCAL Zone — %1 patients", _patientCount];
+
 for "_i" from 1 to _patientCount do {
-    [_pos, _injuryLevel, _casualtyType] call afcm_sim_spawner_fnc_spawnRandomPatient;
+    [_pos, _injuryLevel, _casualtyType, _sessionId, _sessionLabel] call afcm_sim_spawner_fnc_spawnRandomPatient;
 };

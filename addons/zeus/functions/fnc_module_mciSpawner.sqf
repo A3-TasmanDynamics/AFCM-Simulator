@@ -44,9 +44,14 @@ private _patientCount = _logic getVariable ["AFCM_SIM_patientCount", 4];
 private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
 private _pos = getPosASL _logic;
 
+// Whole batch shares one Spawn Session (DESIGN.md § Spawn Sessions) - deletable as a group later
+// without touching any other session's patients.
+private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
+private _sessionLabel = format ["MCI Spawner — %1 patients", _patientCount];
+
 private _spawned = [];
 for "_i" from 1 to _patientCount do {
-    _spawned pushBack ([_pos, [], _casualtyType] call afcm_sim_spawner_fnc_spawnPatient);
+    _spawned pushBack ([_pos, [], _casualtyType, _sessionId, _sessionLabel] call afcm_sim_spawner_fnc_spawnPatient);
 };
 
 // Same 1s delay afcm_sim_spawner_fnc_spawnPatient itself uses before adding "Edit Injuries" -

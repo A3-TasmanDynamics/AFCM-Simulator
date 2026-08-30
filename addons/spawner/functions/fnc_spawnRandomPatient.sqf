@@ -9,6 +9,8 @@
  * 1: Injury level <NUMBER> - 0=Easy .. 4=F*CKED!, default 1 (Medium)
  * 2: Casualty Type <NUMBER> - 0=Civilian, 1=Military (BLUFOR), 2=Military (OPFOR),
  *    3=Military (Independent), see fnc_spawnPatient.sqf (default 0)
+ * 3: Session Id <STRING> (default "" - see fnc_spawnPatient.sqf)
+ * 4: Session Label <STRING> (default "")
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -16,8 +18,8 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuryLevel", 1], ["_casualtyType", 0]];
+params ["_pos", ["_injuryLevel", 1], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""]];
 
 private _injuries = [_injuryLevel] call afcm_sim_scenario_fnc_randomizeInjuries;
 
-[_pos, _injuries, _casualtyType] call afcm_sim_spawner_fnc_spawnPatient
+[_pos, _injuries, _casualtyType, _sessionId, _sessionLabel] call afcm_sim_spawner_fnc_spawnPatient

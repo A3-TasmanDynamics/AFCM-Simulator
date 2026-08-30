@@ -60,6 +60,11 @@ private _injuries = (_preset select 4) apply {
     [_limb, _woundType, _severity, _bleeding] call afcm_sim_scenario_fnc_buildInjury
 };
 
+// Whole batch shares one Spawn Session (DESIGN.md § Spawn Sessions) - deletable as a group later
+// without touching any other session's patients.
+private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
+private _sessionLabel = format ["AFCM MCI Spawner — %1 patients (%2)", _patientCount, _preset select 1];
+
 for "_i" from 1 to _patientCount do {
-    [_pos, _injuries, _casualtyType] call afcm_sim_spawner_fnc_spawnPatient;
+    [_pos, _injuries, _casualtyType, _sessionId, _sessionLabel] call afcm_sim_spawner_fnc_spawnPatient;
 };

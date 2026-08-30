@@ -525,18 +525,36 @@ is still the plan, not the state of the repo.
     (`afcm_sim_scenario_fnc_resolveMciPatientSpec` → `afcm_sim_scenario_fnc_buildInjury`) and calls
     the same `afcm_sim_spawner_fnc_spawnPatient` every other spawn path already uses — no new
     spawning logic, just a new way to assemble the injuries going into it.
-- **Clear spawned patients** — not in the original feature list; added after reviewing a prior
-  working prototype (REFERENCES.md) that needed exactly this. **Implemented**, simplified:
-  `afcm_sim_spawner_fnc_clearAllPatients` deletes every patient spawned via `spawnPatient` and
-  clears the tracking list. No per-spawner/session-scoped clearing yet (the prototype's pattern —
-  clear only what one specific Zeus placement spawned — isn't built; this is a global "clear all"
-  only). No UI/module trigger for it yet either — callable, not yet exposed.
+- **Clear spawned patients / Spawn Sessions** — not in the original feature list; added after
+  reviewing a prior working prototype (REFERENCES.md) that needed exactly this. **Implemented**,
+  including the per-spawner/session-scoped clearing the prototype had that an earlier pass here
+  didn't yet build: every batch of patients spawned together (a Zeus/Eden MCI Spawner, an MCI
+  Creator incident, an AFCM MASCAL Zone) is grouped into one named **Spawn Session**
+  (`afcm_sim_spawner_fnc_spawnPatient`/`newSessionId`) — `[id, label, spawnTime, units]`, tracked
+  in `AFCM_SIM_spawnSessions` alongside the existing flat `AFCM_SIM_spawnedPatients` list (which
+  still covers every patient regardless of session). Single-patient spawns (Zeus "Spawn Patient",
+  Eden "AFCM Patient") each get their own automatic one-patient session, no caller changes needed -
+  only batch spawners generate one id up front and pass it to every patient in their loop.
+  `afcm_sim_spawner_fnc_serverDeleteSession` deletes one session's patients only, leaving every
+  other session's untouched - the actual ask this covers: two medics can each be working their own
+  MCI at once, and clearing one doesn't touch the other's. The **Session Manager**
+  (`RscDisplayAFCM_SIM_SessionManager`, `afcm_sim_ui_fnc_sessionManager_open` - callable directly,
+  bound to a real CBA keybind default Ctrl+Shift+O, and reachable from the MCI Creator's own
+  "Manage Sessions" button) lists every active session ("label — N patients, spawned Xm ago") and
+  can delete the selected one. `afcm_sim_spawner_fnc_clearAllPatients` (the original global "clear
+  all," now also clearing `AFCM_SIM_spawnSessions`) stays as the Session Manager's own "Clear All
+  Sessions" button - deliberately the *only* destructive action in this whole UI kit gated behind a
+  real Yes/No confirmation (a new generic, reusable `RscDisplayAFCM_SIM_ConfirmDialog`,
+  `afcm_sim_ui_fnc_confirmDialog_open` - any future destructive action can reuse it), since it's
+  the one action with no per-session scoping at all.
   **The prototype's actual technique**, confirmed from its full source (`med_sim.sqf`, REFERENCES.md):
   a `HashMap` keyed by a composite session id string — `"{spawnerNetId}|L{level}|C{count}|{timestamp}"`
   — built fresh per spawn call, with a clear function that filters keys by matching `spawnerNetId`
   prefix, then either clears just the most-recent-timestamp match ("last") or every match ("all")
-  for that specific spawner. Worth reusing directly if per-spawner clearing gets built here —
-  `netId` of the placed Zeus/Eden module logic is the natural `spawnerNetId` equivalent.
+  for that specific spawner. This implementation uses a simpler scheme instead - a freshly
+  generated `session_<tickTime>_<random>` id per batch, explicit rather than derived from
+  `spawnerNetId` - since the batch spawner itself already knows exactly which patients are its own
+  without needing to reconstruct that from the id string.
 
 ---
 

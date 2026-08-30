@@ -97,6 +97,7 @@ class CfgFunctions
             class mciCreator_onSpawn { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onSpawn.sqf"; };
             class mciCreator_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onSavePreset.sqf"; };
             class mciCreator_onLoadPreset { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onLoadPreset.sqf"; };
+            class mciCreator_onManageSessions { file = "\afcm_sim\addons\ui\functions\fnc_mciCreator_onManageSessions.sqf"; };
         };
         // Real interactive map-click position picker (RscMapControl-based) - see
         // ui/config.cpp's RscDisplayAFCM_SIM_MapPicker for the full explanation.
@@ -127,6 +128,27 @@ class CfgFunctions
             file = "\afcm_sim\addons\ui\functions";
             class mciPresetSave_init { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetSave_init.sqf"; };
             class mciPresetSave_onSave { file = "\afcm_sim\addons\ui\functions\fnc_mciPresetSave_onSave.sqf"; };
+        };
+        // Spawn Sessions - see ui/config.cpp's RscDisplayAFCM_SIM_SessionManager for the full
+        // explanation. Entry point: afcm_sim_ui_fnc_sessionManager_open (also bound to a CBA
+        // keybind, afcm_sim_main, and reachable from the MCI Creator's own "Manage Sessions" button).
+        class SessionManager
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class sessionManager_open { file = "\afcm_sim\addons\ui\functions\fnc_sessionManager_open.sqf"; };
+            class sessionManager_init { file = "\afcm_sim\addons\ui\functions\fnc_sessionManager_init.sqf"; };
+            class sessionManager_populateList { file = "\afcm_sim\addons\ui\functions\fnc_sessionManager_populateList.sqf"; };
+            class sessionManager_onSelect { file = "\afcm_sim\addons\ui\functions\fnc_sessionManager_onSelect.sqf"; };
+            class sessionManager_onDeleteSession { file = "\afcm_sim\addons\ui\functions\fnc_sessionManager_onDeleteSession.sqf"; };
+            class sessionManager_onClearAll { file = "\afcm_sim\addons\ui\functions\fnc_sessionManager_onClearAll.sqf"; };
+        };
+        // Generic reusable Yes/No confirmation - see ui/config.cpp's RscDisplayAFCM_SIM_ConfirmDialog.
+        class ConfirmDialog
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class confirmDialog_open { file = "\afcm_sim\addons\ui\functions\fnc_confirmDialog_open.sqf"; };
+            class confirmDialog_init { file = "\afcm_sim\addons\ui\functions\fnc_confirmDialog_init.sqf"; };
+            class confirmDialog_onYes { file = "\afcm_sim\addons\ui\functions\fnc_confirmDialog_onYes.sqf"; };
         };
     };
 };
@@ -935,6 +957,7 @@ class RscDisplayAFCM_SIM_PresetSave
 #define IDC_AFCM_SIM_MC_LOADPRESET      19
 #define IDC_AFCM_SIM_MC_SPAWN           20
 #define IDC_AFCM_SIM_MC_CLOSE           21
+#define IDC_AFCM_SIM_MC_MANAGESESSIONS  22
 
 // Two side-by-side listboxes: PatientList shows "Patient N — <spec>" rows (fnc_mciCreator_init.sqf
 // populates it from AFCM_SIM_UI_mciPatientSpecs, a plain missionNamespace Array of spec strings,
@@ -953,16 +976,16 @@ class RscDisplayAFCM_SIM_MciCreator
         class Panel: AFCM_SIM_Panel
         {
             x = "0.2 * safeZoneW + safeZoneX";
-            y = "0.155 * safeZoneH + safeZoneY";
+            y = "0.1325 * safeZoneH + safeZoneY";
             w = "0.6 * safeZoneW";
-            h = "0.69 * safeZoneH";
+            h = "0.735 * safeZoneH";
         };
         class Title: AFCM_SIM_RscTitle
         {
             idc = IDC_AFCM_SIM_MC_TITLE;
             text = "MCI Creator";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.175 * safeZoneH + safeZoneY";
+            y = "0.1525 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.04 * safeZoneH";
             sizeEx = "0.032 * safeZoneH";
@@ -972,7 +995,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Build a mass-casualty incident, then spawn it wherever you click on the map";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.22 * safeZoneH + safeZoneY";
+            y = "0.1975 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.025 * safeZoneH";
             sizeEx = "0.017 * safeZoneH";
@@ -980,7 +1003,7 @@ class RscDisplayAFCM_SIM_MciCreator
         class AccentBar: AFCM_SIM_AccentBar
         {
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.25 * safeZoneH + safeZoneY";
+            y = "0.2275 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.0025 * safeZoneH";
         };
@@ -989,7 +1012,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Patients";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.265 * safeZoneH + safeZoneY";
+            y = "0.2425 * safeZoneH + safeZoneY";
             w = "0.15 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -997,7 +1020,7 @@ class RscDisplayAFCM_SIM_MciCreator
         {
             idc = IDC_AFCM_SIM_MC_PATIENTCOUNT;
             x = "0.37 * safeZoneW + safeZoneX";
-            y = "0.265 * safeZoneH + safeZoneY";
+            y = "0.2425 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -1006,7 +1029,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Casualty Type";
             x = "0.52 * safeZoneW + safeZoneX";
-            y = "0.265 * safeZoneH + safeZoneY";
+            y = "0.2425 * safeZoneH + safeZoneY";
             w = "0.13 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -1014,7 +1037,7 @@ class RscDisplayAFCM_SIM_MciCreator
         {
             idc = IDC_AFCM_SIM_MC_CASUALTYTYPE;
             x = "0.65 * safeZoneW + safeZoneX";
-            y = "0.265 * safeZoneH + safeZoneY";
+            y = "0.2425 * safeZoneH + safeZoneY";
             w = "0.13 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
@@ -1023,7 +1046,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Patients (select one)";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.315 * safeZoneH + safeZoneY";
+            y = "0.2925 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.025 * safeZoneH";
         };
@@ -1032,7 +1055,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = -1;
             text = "Available Presets";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.315 * safeZoneH + safeZoneY";
+            y = "0.2925 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.025 * safeZoneH";
         };
@@ -1040,7 +1063,7 @@ class RscDisplayAFCM_SIM_MciCreator
         {
             idc = IDC_AFCM_SIM_MC_PATIENTLIST;
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.34 * safeZoneH + safeZoneY";
+            y = "0.3175 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.22 * safeZoneH";
             colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
@@ -1053,7 +1076,7 @@ class RscDisplayAFCM_SIM_MciCreator
         {
             idc = IDC_AFCM_SIM_MC_PRESETLIST;
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.34 * safeZoneH + safeZoneY";
+            y = "0.3175 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.22 * safeZoneH";
             colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
@@ -1067,7 +1090,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_ASSIGN;
             text = "Assign Selected Preset to Selected Patient";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.57 * safeZoneH + safeZoneY";
+            y = "0.5475 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1076,7 +1099,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_RANDOMIZEALL;
             text = "Randomize All Patients";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.61 * safeZoneH + safeZoneY";
+            y = "0.5875 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1087,7 +1110,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_LOCATIONSTATUS;
             text = "Location: not set yet";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.655 * safeZoneH + safeZoneY";
+            y = "0.6325 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.03 * safeZoneH";
             sizeEx = "0.018 * safeZoneH";
@@ -1098,7 +1121,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_CHOOSELOCATION;
             text = "Choose Location on Map";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.69 * safeZoneH + safeZoneY";
+            y = "0.6675 * safeZoneH + safeZoneY";
             w = "0.56 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1107,7 +1130,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_SAVEPRESET;
             text = "Save as MCI Preset";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.73 * safeZoneH + safeZoneY";
+            y = "0.7075 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
@@ -1116,8 +1139,21 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_LOADPRESET;
             text = "Load MCI Preset";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.73 * safeZoneH + safeZoneY";
+            y = "0.7075 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
+            h = "0.035 * safeZoneH";
+        };
+        // Opens the Session Manager (RscDisplayAFCM_SIM_SessionManager) - view/delete individual
+        // Spawn Sessions (this MCI's own or anyone else's), or clear everything behind a
+        // confirmation prompt. Wired via ButtonClick in fnc_mciCreator_init.sqf, same as every
+        // other interactive button on this dialog.
+        class ManageSessions: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_MC_MANAGESESSIONS;
+            text = "Manage Sessions";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.7525 * safeZoneH + safeZoneY";
+            w = "0.56 * safeZoneW";
             h = "0.035 * safeZoneH";
         };
         // Disabled by fnc_mciCreator_init.sqf/fnc_mciCreator_onMapConfirm.sqf until a location has
@@ -1128,7 +1164,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_SPAWN;
             text = "Spawn MCI";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.775 * safeZoneH + safeZoneY";
+            y = "0.7975 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -1137,7 +1173,7 @@ class RscDisplayAFCM_SIM_MciCreator
             idc = IDC_AFCM_SIM_MC_CLOSE;
             text = "Close";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.775 * safeZoneH + safeZoneY";
+            y = "0.7975 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "closeDialog 0;";
@@ -1420,6 +1456,188 @@ class RscDisplayAFCM_SIM_MciPresetSave
         {
             idc = IDC_AFCM_SIM_MPS_CANCEL;
             text = "Cancel";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.545 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            action = "closeDialog 0;";
+        };
+    };
+};
+
+// ---------------------------------------------------------------------------------------------
+// Spawn Sessions - every batch of patients spawned together (a Zeus/Eden MCI Spawner, an MCI
+// Creator incident, an AFCM MASCAL Zone) is grouped into one named session
+// (afcm_sim_spawner_fnc_spawnPatient/newSessionId), separate from single spawns which each get
+// their own one-patient session automatically. The Session Manager lists them and can delete just
+// one - e.g. two medics each working their own MCI at once, one gets cleared, the other's patients
+// stay untouched - as well as "Clear All Sessions" (the old global clearAllPatients, now gated
+// behind a real confirmation prompt since it's the highest-blast-radius action in the mod).
+// ---------------------------------------------------------------------------------------------
+
+#define IDD_AFCM_SIM_SESSIONMANAGER 25609
+
+#define IDC_AFCM_SIM_SM_TITLE      1
+#define IDC_AFCM_SIM_SM_LIST       10
+#define IDC_AFCM_SIM_SM_DELETE     11
+#define IDC_AFCM_SIM_SM_CLEARALL   12
+#define IDC_AFCM_SIM_SM_CLOSE      13
+
+// Lists every active session ("Label — N patients, spawned Xm ago", fnc_sessionManager_populateList.sqf),
+// each row's real session id stashed via `lbSetData` (same pattern as the Preset Library). Delete
+// Session removes just the selected one (afcm_sim_spawner_fnc_serverDeleteSession); Clear All
+// Sessions opens the generic Confirm dialog before actually calling
+// afcm_sim_spawner_fnc_clearAllPatients (fnc_sessionManager_onClearAll.sqf) - deliberately the only
+// destructive action in this whole UI kit that's gated behind a confirmation, since it's the one
+// action with no per-session scoping at all.
+class RscDisplayAFCM_SIM_SessionManager
+{
+    idd = IDD_AFCM_SIM_SESSIONMANAGER;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_sessionManager_init;";
+
+    class controls
+    {
+        class Panel: AFCM_SIM_Panel
+        {
+            x = "0.25 * safeZoneW + safeZoneX";
+            y = "0.23 * safeZoneH + safeZoneY";
+            w = "0.5 * safeZoneW";
+            h = "0.543 * safeZoneH";
+        };
+        class Title: AFCM_SIM_RscTitle
+        {
+            idc = IDC_AFCM_SIM_SM_TITLE;
+            text = "Session Manager";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.25 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            sizeEx = "0.03 * safeZoneH";
+        };
+        class Subtitle: AFCM_SIM_RscSubtitle
+        {
+            idc = -1;
+            text = "Delete removes just one session's patients - Clear All removes every patient";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.288 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.025 * safeZoneH";
+            sizeEx = "0.017 * safeZoneH";
+        };
+        class AccentBar: AFCM_SIM_AccentBar
+        {
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.32 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.0025 * safeZoneH";
+        };
+        class List: RscListBox
+        {
+            idc = IDC_AFCM_SIM_SM_LIST;
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.33 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.28 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
+            colorSelect[] = AFCM_SIM_COLOR_TEXT;
+            colorSelectBackground[] = AFCM_SIM_COLOR_ACCENT_HOVER;
+            sizeEx = "0.019 * safeZoneH";
+        };
+        // Disabled until a session is selected (fnc_sessionManager_onSelect.sqf).
+        class DeleteSession: AFCM_SIM_RscButtonDanger
+        {
+            idc = IDC_AFCM_SIM_SM_DELETE;
+            text = "Delete Selected Session";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.62 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class ClearAll: AFCM_SIM_RscButtonDanger
+        {
+            idc = IDC_AFCM_SIM_SM_CLEARALL;
+            text = "Clear All Sessions";
+            x = "0.27 * safeZoneW + safeZoneX";
+            y = "0.665 * safeZoneH + safeZoneY";
+            w = "0.46 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class Close: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_SM_CLOSE;
+            text = "Close";
+            x = "0.425 * safeZoneW + safeZoneX";
+            y = "0.71 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.038 * safeZoneH";
+            action = "closeDialog 0;";
+        };
+    };
+};
+
+#define IDD_AFCM_SIM_CONFIRM 25610
+
+#define IDC_AFCM_SIM_CONFIRM_TITLE   1
+#define IDC_AFCM_SIM_CONFIRM_MESSAGE 10
+#define IDC_AFCM_SIM_CONFIRM_YES     11
+#define IDC_AFCM_SIM_CONFIRM_NO      12
+
+// Generic reusable Yes/No confirmation, not specific to sessions - any future destructive action
+// in this addon can reuse it via afcm_sim_ui_fnc_confirmDialog_open (message, a Code to run on
+// Yes). Currently only used by the Session Manager's Clear All Sessions button
+// (fnc_sessionManager_onClearAll.sqf). No is a plain `action = "closeDialog 0;"`, same as every
+// other Cancel-style button in this addon.
+class RscDisplayAFCM_SIM_ConfirmDialog
+{
+    idd = IDD_AFCM_SIM_CONFIRM;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_confirmDialog_init;";
+
+    class controls
+    {
+        class Panel: AFCM_SIM_Panel
+        {
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.39 * safeZoneH + safeZoneY";
+            w = "0.36 * safeZoneW";
+            h = "0.22 * safeZoneH";
+        };
+        class Title: AFCM_SIM_RscTitle
+        {
+            idc = IDC_AFCM_SIM_CONFIRM_TITLE;
+            text = "Confirm";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.41 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.035 * safeZoneH";
+            sizeEx = "0.025 * safeZoneH";
+        };
+        // Text set dynamically (fnc_confirmDialog_init.sqf, from AFCM_SIM_UI_confirmMessage).
+        class Message: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_CONFIRM_MESSAGE;
+            text = "";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.455 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.075 * safeZoneH";
+            sizeEx = "0.019 * safeZoneH";
+        };
+        class Yes: AFCM_SIM_RscButtonDanger
+        {
+            idc = IDC_AFCM_SIM_CONFIRM_YES;
+            text = "Yes";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.545 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        class No: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_CONFIRM_NO;
+            text = "No";
             x = "0.51 * safeZoneW + safeZoneX";
             y = "0.545 * safeZoneH + safeZoneY";
             w = "0.15 * safeZoneW";

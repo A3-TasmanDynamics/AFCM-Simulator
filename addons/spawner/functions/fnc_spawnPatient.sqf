@@ -8,12 +8,24 @@
  * requirement confirmed against a prior working prototype (REFERENCES.md): applying damage
  * immediately on creation doesn't reliably take before the unit's medical state has initialized.
  *
+ * Every spawned patient joins a Session (DESIGN.md § Spawn Sessions) - a named group tracked in
+ * `AFCM_SIM_spawnSessions` (separately from the flat `AFCM_SIM_spawnedPatients` list, which still
+ * covers every patient regardless of session) so a whole session's patients can be deleted
+ * together without touching any other session's - e.g. two medics each working their own MCI. If
+ * no `_sessionId` is given, one is generated fresh for just this single unit - single-patient
+ * spawns (Zeus "Spawn Patient"/Eden "AFCM Patient") get their own one-patient session
+ * automatically, with no caller changes needed; batch spawners (MCI Spawner modules, MASCAL Zone,
+ * the MCI Creator) generate one id up front and pass the same one to every patient in the batch.
+ *
  * Arguments:
  * 0: Position <ARRAY> - ASL/ATL position to spawn at (jittered slightly)
  * 1: Injuries <ARRAY> - array of Injury <HASHMAP>, see DESIGN.md §4.2 (default [])
  * 2: Casualty Type <NUMBER> - 0=Civilian, 1=Military (BLUFOR), 2=Military (OPFOR),
  *    3=Military (Independent) - purely a clothing/appearance pick (DESIGN.md §5), see
  *    afcm_sim_defaultCasualtyType (default 0)
+ * 3: Session Id <STRING> (default "" - generates a fresh one for just this unit)
+ * 4: Session Label <STRING> (default "" - falls back to "Spawn Patient" if a fresh id was also
+ *    generated; ignored if joining an existing session)
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -24,7 +36,7 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuries", []], ["_casualtyType", 0]];
+params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""]];
 
 // Purely cosmetic - all four are real, base-game (no DLC/faction mod) Arma 3 classnames, so this
 // works with nothing but vanilla + CBA installed. Whatever's picked, gear is stripped down to bare
@@ -112,6 +124,28 @@ _unit disableAI "ALL";
 
 AFCM_SIM_spawnedPatients pushBack _unit;
 publicVariable "AFCM_SIM_spawnedPatients";
+
+// Session bookkeeping (DESIGN.md § Spawn Sessions) - a fresh id/label per call unless the caller
+// explicitly asked to join an existing one (batch spawners do this so their whole batch lands in
+// one session, not one session per patient).
+if (_sessionId isEqualTo "") then {
+    _sessionId = call afcm_sim_spawner_fnc_newSessionId;
+    if (_sessionLabel isEqualTo "") then { _sessionLabel = "Spawn Patient"; };
+};
+
+if (isNil "AFCM_SIM_spawnSessions") then {
+    AFCM_SIM_spawnSessions = [];
+};
+
+private _sessionIdx = AFCM_SIM_spawnSessions findIf { (_x select 0) == _sessionId };
+if (_sessionIdx == -1) then {
+    AFCM_SIM_spawnSessions pushBack [_sessionId, _sessionLabel, time, [_unit]];
+} else {
+    ((AFCM_SIM_spawnSessions select _sessionIdx) select 3) pushBack _unit;
+};
+publicVariable "AFCM_SIM_spawnSessions";
+
+_unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
 
 [{
     params ["_unit", "_injuries"];

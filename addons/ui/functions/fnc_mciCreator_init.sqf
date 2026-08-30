@@ -59,4 +59,5 @@ if (isNil "AFCM_SIM_UI_mciPatientSpecs") then {
     (_display displayCtrl 18) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_mciCreator_onSavePreset];
     (_display displayCtrl 19) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_mciCreator_onLoadPreset];
     (_display displayCtrl 20) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_mciCreator_onSpawn];
+    (_display displayCtrl 22) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_mciCreator_onManageSessions];
 }, [_display]] call CBA_fnc_execNextFrame;
