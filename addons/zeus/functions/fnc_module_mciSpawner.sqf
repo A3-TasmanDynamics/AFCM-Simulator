@@ -16,6 +16,12 @@
  * this module and should see a dialog pop up. The addAction route sidesteps that entirely - it's
  * the same, already-proven, inherently per-client-local mechanism "Edit Injuries" already uses.
  *
+ * Also guards against firing more than once per placed module (`AFCM_SIM_moduleFired`, a variable
+ * stashed on `_logic` itself) - vanilla Module_F's function has no guaranteed single-fire
+ * behaviour (confirmed independently by ACE3's own Modules Framework docs, which built their own
+ * wrapper specifically because "there is no guarantee" here), and re-firing would otherwise spawn
+ * duplicate patient batches silently.
+ *
  * Arguments:
  * 0: Logic <OBJECT> - the placed module
  * 1: Units <ARRAY> - synced units, if any
@@ -31,6 +37,8 @@ params ["_logic", "_units", "_activated"];
 
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
+if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
+_logic setVariable ["AFCM_SIM_moduleFired", true];
 
 private _patientCount = _logic getVariable ["AFCM_SIM_patientCount", 4];
 private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];

@@ -65,6 +65,12 @@ class CfgVehicles
     // three in sync if this list ever changes.
     class AFCM_SIM_CasualtyTypeAttributes
     {
+        // scope=0 - this is a plain nested-class template for Attributes inheritance, never a
+        // real placeable object, but without an explicit scope the engine still treats any direct
+        // CfgVehicles member as a candidate vehicle/object and logs "No entry ...scope/model/..."
+        // warnings for every standard vehicle property it doesn't have (real, confirmed RPT noise,
+        // harmless but spammy). scope=0 is the standard fix.
+        scope = 0;
         class AFCM_SIM_CasualtyType
         {
             displayName = "Casualty Type";

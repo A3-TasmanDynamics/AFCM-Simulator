@@ -10,6 +10,12 @@
  * scatter. No dedicated zone-radius attribute yet; worth revisiting if a tighter/looser spread
  * needs to be mission-maker-configurable later.
  *
+ * Guards against firing more than once per placed module (`AFCM_SIM_moduleFired`, a variable
+ * stashed on `_logic` itself) - vanilla Module_F's function has no guaranteed single-fire
+ * behaviour (confirmed independently by ACE3's own Modules Framework docs, which built their own
+ * wrapper specifically because "there is no guarantee" here), and re-firing would otherwise spawn
+ * a duplicate batch silently.
+ *
  * Arguments:
  * 0: Logic <OBJECT> - the placed module
  * 1: Units <ARRAY> - synced units, if any
@@ -25,6 +31,8 @@ params ["_logic", "_units", "_activated"];
 
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
+if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
+_logic setVariable ["AFCM_SIM_moduleFired", true];
 
 private _patientCount = _logic getVariable ["AFCM_SIM_patientCount", 4];
 private _injuryLevel = _logic getVariable ["AFCM_SIM_injuryLevel", afcm_sim_defaultInjuryLevel];

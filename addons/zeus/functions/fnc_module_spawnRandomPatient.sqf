@@ -13,6 +13,12 @@
  * class would orphan it in any mission that's already placed one) — the display name
  * ("Spawn Patient", zeus/config.cpp) no longer claims randomization.
  *
+ * Guards against firing more than once per placed module (`AFCM_SIM_moduleFired`, a variable
+ * stashed on `_logic` itself) - vanilla Module_F's function has no guaranteed single-fire
+ * behaviour (confirmed independently by ACE3's own Modules Framework docs, which built their own
+ * wrapper specifically because "there is no guarantee" here), and re-firing would otherwise spawn
+ * a duplicate patient silently.
+ *
  * Arguments:
  * 0: Logic <OBJECT> - the placed module
  * 1: Units <ARRAY> - synced units, if any
@@ -28,6 +34,8 @@ params ["_logic", "_units", "_activated"];
 
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
+if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
+_logic setVariable ["AFCM_SIM_moduleFired", true];
 
 private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
 

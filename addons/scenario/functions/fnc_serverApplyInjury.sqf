@@ -8,8 +8,8 @@
  * REFERENCES.md).
  *
  * Only scalar primitives cross the remoteExec, not a HashMap - the Injury object (DESIGN.md §4.2)
- * is built here, server-side, from those primitives, then handed to the same
- * afcm_sim_fnc_backend_applyInjury dispatch the randomizer already uses.
+ * is built here, server-side, from those primitives (afcm_sim_scenario_fnc_buildInjury), then
+ * handed to the same afcm_sim_fnc_backend_applyInjury dispatch the randomizer already uses.
  *
  * Arguments:
  * 0: Target unit <OBJECT>
@@ -35,19 +35,6 @@ if (isNull _unit) exitWith {
     diag_log text "[AFCM-Simulator] serverApplyInjury aborted - unit is objNull on the server (network sync issue?).";
 };
 
-// Same 4 limbs as afcm_sim_scenario_fnc_randomizeInjuries - only arms/legs are tourniquetable,
-// never head/chest.
-private _tourniquetableLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
-
-private _bleedRate = if (_bleeding) then { 0.1 + random 0.3 } else { 0 };
-
-private _injury = createHashMap;
-_injury set ["limb", _limb];
-_injury set ["woundType", _woundType];
-_injury set ["severity", _severity];
-_injury set ["bleeding", _bleeding];
-_injury set ["bleedRate", _bleedRate];
-_injury set ["tourniquetable", _limb in _tourniquetableLimbs];
-_injury set ["variables", createHashMap];
+private _injury = [_limb, _woundType, _severity, _bleeding] call afcm_sim_scenario_fnc_buildInjury;
 
 [_unit, _injury] call afcm_sim_fnc_backend_applyInjury;

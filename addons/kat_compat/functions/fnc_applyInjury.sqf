@@ -29,6 +29,15 @@
 params ["_unit", "_injury"];
 
 if (isNull _unit) exitWith {};
+// Real, confirmed failure mode (RPT log): a caller handing this the lighter [limb, woundType,
+// severity, bleeding] Array shape (Preset injury entries, INJURY_CODES.md §4) instead of a real
+// Injury HashMap (DESIGN.md §4.2) - `getOrDefault` below requires a HashMap and throws a hard
+// script error otherwise. Every real caller in this addon goes through
+// afcm_sim_scenario_fnc_buildInjury first, so a non-HashMap here means a caller bug - fail
+// gracefully with a diag_log instead of spamming the RPT with the same script error every time.
+if (typeName _injury != "HASHMAP") exitWith {
+    diag_log text format ["[AFCM-Simulator][KAT backend] applyInjury aborted - _injury is %1, not a HashMap (caller bug - see afcm_sim_scenario_fnc_buildInjury).", typeName _injury];
+};
 
 // Same 1:1 LimbId -> ACE body part map as afcm_sim_ace_compat's fnc_applyInjury.sqf (KAT sits on
 // the same 6 real ACE body parts underneath - KAT_COMPAT.md §4).
