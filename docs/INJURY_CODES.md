@@ -220,16 +220,20 @@ earlier pass built this, then reverted it in favour of keeping the UI simple; it
 grounded directly against real source fetched from `KAT-Advanced-Medical/KAM` (not the prior
 working prototype's comments) — full context:
 [KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables). Both are exposed in
-the injury editor UI, shown only when KAT is the active backend (Pneumothorax also only when the
-selected limb is "chest" — it's torso-wide, not per-limb) — `afcm_sim_kat_fnc_applyFracture`/
-`applyPneumothorax`, called directly rather than through the generic `Injury`/backend-interface
-dispatch, since neither concept fits that schema.
+the injury editor UI, shown only when KAT is the active backend — Fracture also only when at least
+one selected limb is an arm or a leg (deliberately excludes head/chest, see below), Pneumothorax
+also only when "chest" is among the selected limbs (it's torso-wide, not per-limb) —
+`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`, called directly rather than through the
+generic `Injury`/backend-interface dispatch, since neither concept fits that schema.
 
 **Fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb — and each
 entry is a **severity/treatment-stage scale, not a boolean**. This array's own index order is
 **KAT/ACE's** 6 body parts (`head, torso, leftArm, rightArm, leftLeg, rightLeg`) — the exact same 6
 values AFCM-Simulator's own `LimbId` (§1) uses 1:1, so `afcm_sim_kat_fnc_applyFracture` is a direct
-index lookup, no `LimbId` → ACE body-part folding needed at all:
+index lookup, no `LimbId` → ACE body-part folding needed at all. **AFCM-Simulator's own UI/server
+dispatch (`fnc_serverApplyKatFracture.sqf`) deliberately only allows arms/legs**, not head/chest,
+even though the real array has a slot for both — a scope choice to keep this UI focused on the
+limb-fracture/tourniquet-and-splint training case, not a limitation of KAT's actual data model:
 
 ```sqf
 /*

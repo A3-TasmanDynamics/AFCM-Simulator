@@ -551,13 +551,15 @@ class RscDisplayAFCM_SIM_InjuryEditor
             w = "0.04 * safeZoneH";
             h = "0.04 * safeZoneH";
         };
-        // KAT-only, hidden entirely (ctrlShow false) unless the active backend is "kat" -
-        // fnc_injuryEditor_init.sqf. Fracture severity is per-limb, real KAT state
-        // (kat_surgery_fractures) with no ACE equivalent - see fnc_applyFracture.sqf.
+        // KAT-only, hidden entirely (ctrlShow false) unless the active backend is "kat" AND at
+        // least one selected limb is an arm or a leg - fnc_injuryEditor_init.sqf. Fracture
+        // severity is per-limb, real KAT state (kat_surgery_fractures) with no ACE equivalent -
+        // see fnc_applyFracture.sqf. Deliberately arms/legs only, not head/chest, even though
+        // KAT's own data model has a slot for both.
         class FractureLabel: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IE_FRACTURELABEL;
-            text = "Fracture (KAT)";
+            text = "Fracture (Arms/Legs)";
             x = "0.31 * safeZoneW + safeZoneX";
             y = "0.455 * safeZoneH + safeZoneY";
             w = "0.17 * safeZoneW";

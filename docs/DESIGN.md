@@ -326,8 +326,11 @@ is still the plan, not the state of the repo.
   `variables` (custom free-form fields) not exposed in the UI. One wound configuration applies
   identically to every limb selected on the previous screen (`AFCM_SIM_UI_targetLimbs`, plural) —
   a single Apply loops one `serverApplyInjury` request per limb, rather than repeating the whole
-  flow per limb; Fracture (KAT) applies the same way, once per selected limb, while Pneumothorax
-  (KAT, torso-wide) applies once total whenever "chest" is among the selection. Publishes
+  flow per limb; Fracture (KAT) applies the same way, once per selected limb that's an arm or a
+  leg specifically (control only shows, and server-side dispatch only accepts, arm/leg limbs —
+  deliberately excludes head/chest even though KAT's own `kat_surgery_fractures` array has a slot
+  for both, INJURY_CODES.md §6), while Pneumothorax (KAT, torso-wide) applies once total whenever
+  "chest" is among the selection. Publishes
   `injury.applied` per limb; no removal path yet, so no `injury.removed`. Entry point is a vanilla
   `addAction` ("Edit Injuries") added to every spawned patient — not an ACE interaction-menu entry
   (REFERENCES.md documents that API as confirmed-but-unused, consistent with §2.4's decision to

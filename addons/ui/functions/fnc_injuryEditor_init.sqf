@@ -11,9 +11,11 @@
  * §3) so they're always shown; Apply is disabled with an explanation if nothing usable is active at
  * all (neither ACE nor KAT loaded, or only AFCM — not supported by this UI yet). Fracture/
  * Pneumothorax (INJURY_CODES.md §6) are real KAT-only state with no ACE equivalent, so they're
- * shown/hidden here based on the active backend (and, for Pneumothorax, whether "chest" is among
- * the selected limbs — it's a torso-wide condition, not per-limb, so it's offered as soon as chest
- * is one of possibly several limbs selected, not only when it's the sole one).
+ * shown/hidden here based on the active backend, AND on which limbs are selected: Fracture only
+ * when at least one selected limb is an arm or a leg (deliberately excludes head/chest, even
+ * though KAT's own data model has a slot for both), Pneumothorax only when "chest" is among the
+ * selected limbs (a torso-wide condition, not per-limb, so it's offered as soon as chest is one of
+ * possibly several limbs selected, not only when it's the sole one).
  *
  * AFCM_SIM_UI_targetLimbs is an Array now (fnc_limbSelect_onApplyTrauma.sqf lets the operator
  * toggle more than one limb before continuing here) - the label lists every selected limb by name.
@@ -94,11 +96,15 @@ params ["_display"];
     } forEach [["None", 0], ["Simple Pneumothorax", 1], ["Hemopneumothorax", 2], ["Tension Pneumothorax", 3]];
     _pneumoLB lbSetCurSel 0;
 
-    // Fracture: any limb, KAT only. Pneumothorax: chest only, KAT only (torso-wide condition -
-    // see fnc_applyPneumothorax.sqf/ui/config.cpp comments). Hidden rows just leave blank space in
-    // the panel (Arma dialogs are absolute-positioned, not flow-layout) rather than reflowing it.
-    private _showFracture = _backend == "kat";
-    private _showPneumo = _showFracture && {"chest" in _limbs};
+    // Fracture: arms/legs only, KAT only - deliberately excludes head/chest even though KAT's own
+    // kat_surgery_fractures array has a slot for both (INJURY_CODES.md §4/§6); this UI narrows it
+    // to the real limb-fracture/tourniquet-and-splint training case on purpose. Pneumothorax:
+    // chest only, KAT only (torso-wide condition - see fnc_applyPneumothorax.sqf/ui/config.cpp
+    // comments). Hidden rows just leave blank space in the panel (Arma dialogs are
+    // absolute-positioned, not flow-layout) rather than reflowing it.
+    private _fractureLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
+    private _showFracture = (_backend == "kat") && {(_limbs findIf { _x in _fractureLimbs }) != -1};
+    private _showPneumo = (_backend == "kat") && {"chest" in _limbs};
     { (_display displayCtrl _x) ctrlShow _showFracture; } forEach [18, 20];
     { (_display displayCtrl _x) ctrlShow _showPneumo; } forEach [19, 21];
 

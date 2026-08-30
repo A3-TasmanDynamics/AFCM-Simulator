@@ -11,9 +11,11 @@
  * active, and for Pneumothorax "chest" is among the selected limbs —
  * fnc_injuryEditor_init.sqf) and not set to "None", remoteExecs those separately (INJURY_CODES.md
  * §6 — no equivalent in the generic Injury object, so they don't go through
- * afcm_sim_fnc_backend_applyInjury at all). Fracture applies once per selected limb (it's a
- * real per-limb condition); Pneumothorax applies once total, not per limb — it's torso-wide. One
- * Apply click commits everything configured, for every limb selected, not just one wound.
+ * afcm_sim_fnc_backend_applyInjury at all). Fracture applies once per selected limb that's an arm
+ * or a leg specifically — skipped for head/chest even if they're also part of the selection, same
+ * arms/legs-only restriction fnc_injuryEditor_init.sqf uses to decide whether to show the control
+ * at all. Pneumothorax applies once total, not per limb — it's torso-wide. One Apply click commits
+ * everything configured, for every limb selected, not just one wound.
  *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Apply button <CONTROL>
@@ -49,12 +51,13 @@ if (isNull _targetUnit) then {
 } else {
     private _ctrlFracture = _display displayCtrl 18;
     private _fracture = if (ctrlShown _ctrlFracture) then { lbCurSel _ctrlFracture } else { -1 };
+    private _fractureLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
 
     {
         [_targetUnit, _x, _woundType, _severity, _bleeding] remoteExec ["afcm_sim_scenario_fnc_serverApplyInjury", 2];
         ["injury.applied", [_targetUnit, _x, _woundType, _severity, _bleeding]] call afcm_sim_ui_fnc_publish;
 
-        if (_fracture > 0) then {
+        if (_fracture > 0 && {_x in _fractureLimbs}) then {
             [_targetUnit, _x, _fracture] remoteExec ["afcm_sim_scenario_fnc_serverApplyKatFracture", 2];
         };
     } forEach _limbs;
