@@ -499,10 +499,13 @@ is still the plan, not the state of the repo.
   - **Real map-click placement** (`RscDisplayAFCM_SIM_MapPicker`) — not a grid of buttons: a
     genuine `RscMapControl` (the same base class the vanilla in-mission map screen and countless
     custom marker-placement tools use), with a real `MouseButtonDown` handler converting the click
-    to a world position via the real `ctrlMapScreenToWorld` command. Shows the picked grid
-    reference (`mapGridPosition`) before committing, so there's confirmation of exactly where
-    Confirm will place the incident. Spawn MCI stays disabled until a location has actually been
-    picked.
+    to a world position via the real `ctrlMapScreenToWorld` command, and drops a real local marker
+    there (`createMarkerLocal`/`setMarkerPosLocal` — client-side only, never synced, purely a UI
+    preview aid; moved on subsequent clicks rather than recreated, cleaned up on close either way
+    via `fnc_mapPicker_cleanup.sqf`'s `onUnload`) so the pick is visible directly on the map, not
+    just as text. Shows the picked grid reference (`mapGridPosition`) too, so there's confirmation
+    of exactly where Confirm will place the incident. Spawn MCI stays disabled until a location has
+    actually been picked.
   - **MCI Presets** (`RscDisplayAFCM_SIM_MciPresetLibrary`/`MciPresetSave`) — a *second*, separate
     preset library from the single-injury one above: an MCI preset is
     `[id, name, author, description, patientSpecs]`, where `patientSpecs` is an Array of Preset

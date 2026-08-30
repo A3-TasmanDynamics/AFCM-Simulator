@@ -106,6 +106,7 @@ class CfgFunctions
             class mapPicker_init { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_init.sqf"; };
             class mapPicker_onClick { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_onClick.sqf"; };
             class mapPicker_onConfirm { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_onConfirm.sqf"; };
+            class mapPicker_cleanup { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_cleanup.sqf"; };
         };
         // MCI Preset library (INJURY_CODES.md §4/DESIGN.md § MCI Creator) - same shape as
         // PresetLibrary above, for whole incidents instead of single injuries. "Load" replaces the
@@ -1155,15 +1156,19 @@ class RscDisplayAFCM_SIM_MciCreator
 // vanilla in-mission map screen and countless custom marker-placement tools are built on), not a
 // grid of buttons. Clicking it fires MouseButtonDown (real control event,
 // `_this = [_control, _button, _x, _y, _shift, _ctrl, _alt]`); fnc_mapPicker_onClick.sqf converts
-// the click to a world position via the real `ctrlMapScreenToWorld` command and stashes it, then
-// Confirm hands it back to the MCI Creator (fnc_mapPicker_onConfirm.sqf). Deliberately no branded
-// panel behind the map itself - it would just obscure the thing being clicked on - only the hint
-// text and buttons get the usual readability treatment (shadow=1, already on AFCM_SIM_RscLabel).
+// the click to a world position via the real `ctrlMapScreenToWorld` command, stashes it, and drops
+// a real local marker (`createMarkerLocal`) there so the pick is visible on the map itself, not
+// just as text - moved on subsequent clicks, not recreated. Confirm hands the position back to the
+// MCI Creator (fnc_mapPicker_onConfirm.sqf); the marker is cleaned up on close either way
+// (fnc_mapPicker_cleanup.sqf, onUnload). Deliberately no branded panel behind the map itself - it
+// would just obscure the thing being clicked on - only the hint text and buttons get the usual
+// readability treatment (shadow=1, already on AFCM_SIM_RscLabel).
 class RscDisplayAFCM_SIM_MapPicker
 {
     idd = IDD_AFCM_SIM_MAPPICKER;
     movingEnable = 0;
     onLoad = "call afcm_sim_ui_fnc_mapPicker_init;";
+    onUnload = "call afcm_sim_ui_fnc_mapPicker_cleanup;";
 
     class controls
     {
