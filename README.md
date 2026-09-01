@@ -5,7 +5,7 @@
 [![License: APL-SA](https://img.shields.io/badge/license-APL--SA-b5563b)](https://www.bohemia.net/community/licenses/arma-public-license-share-alike)
 [![Platform: Arma 3](https://img.shields.io/badge/platform-Arma%203-4b5d3a)](https://arma3.com/)
 [![Backend: AFCM or ACE3/KAT/ACM](https://img.shields.io/badge/backend-AFCM%20or%20ACE3%2FKAT%2FACM-4b5d3a)](https://github.com/A3-TasmanDynamics/AFCM)
-[![Status: Design Phase](https://img.shields.io/badge/status-design%20phase-8a7a3a)](docs/DESIGN.md)
+[![Status: Active Development](https://img.shields.io/badge/status-active%20development-8a7a3a)](docs/changelogs/v0.1.0.md)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/Wt4ahmxVrs)
 
 </div>
@@ -27,12 +27,16 @@ drill.
 | Feature | What it means |
 |---|---|
 | 🧍 **Selectable Body Limbs** | Clickable limb diagram to target where a casualty is hurt |
-| 🩸 **Selectable Injuries** | Wound type, severity, bleed state, and custom variables per limb |
-| 📋 **Injury Presets** | Built-in (GSW, HE frag, blast lung) and user-saved, exportable/shareable presets |
+| 🩸 **Selectable Injuries** | Wound type, severity, bleed state per limb — plus KAT-only Fracture/Pneumothorax when KAT's the active backend |
+| 📋 **Injury Presets** | Built-in (GSW, HE frag, blast lung) and user-saved, exportable/shareable presets — single-injury and whole-incident (MCI) |
 | 🎲 **Injury Levels** | Five randomization profiles — Easy → Medium → Hard → Extreme → **F\*CKED!** |
-| 🧑 **Random Patient** | One action: randomized identity, loadout, and injury set |
-| 🛏️ **Stretcher Placement** | Selectable stretcher type, surface-snapped ghost-preview placement |
-| 🗺️ **Map to Spawn Patients** | Click-to-place patients on the map, including MASCAL batch placement |
+| 🧑 **Casualty Type** | Civilian / Military BLUFOR / OPFOR / Independent — clothing and appearance on every spawn path |
+| 🗺️ **MCI Creator** | Standalone tool: build an incident patient-by-patient, click a real interactive map for the spot, spawn it all at once |
+| 🏥 **MCI Spawner & MASCAL Zone** | Zeus/Eden modules — spawn a whole batch on the spot, one shared preset or randomized by Injury Level |
+| 🗂️ **Spawn Sessions** | Every batch is a named, independently-deletable session — two medics can each run their own MCI without clearing the other's |
+| 🖱️ **Zeus Edit Injuries** | Drag a module directly onto any unit to open the Injury Editor immediately, no scroll action needed |
+| 💻 **Interactive Terminal** | Sync a module to any placed object (a laptop, a table) for a diegetic way into the MCI Creator/Session Manager |
+| ⛺ **Medical Tent** | Session-scoped treatment detection against your own composition's stretchers — notifies when an incident's fully treated |
 
 *Every path above funnels through one application pipeline — manual, preset, or randomized — so
 presets and the randomizer produce exactly what a medic could also build by hand.*
@@ -78,11 +82,20 @@ for how the detection actually works.
 
 ## 🗺️ Status
 
-**Design phase.** Planned build order (full detail in [DESIGN.md §9](docs/DESIGN.md#9-phased-roadmap)):
+**Active development — v0.1.0, no tagged release yet.** The core loop (spawn a patient, select or
+randomize injuries, apply them against whichever backend is active) is real and working, along
+with everything listed in *What It Does* above. Full, dated history:
+[docs/changelogs/v0.1.0.md](docs/changelogs/v0.1.0.md). Longer-range plan:
+[DESIGN.md §9 Phased Roadmap](docs/DESIGN.md#9-phased-roadmap).
 
-`v1` Native-dialog UI + manual limb/injury selection against AFCM's native API →
-`v2` Presets + randomization levels + Random Patient + stretcher placement →
-`v3` Map spawn tool + MASCAL batch placement + preset sharing
+## 🤝 Contributing
+
+Changes land via feature branches and pull requests, not direct pushes to `main`:
+
+1. Branch off `main` — `git checkout -b <type>/<short-description>` (`feat/…`, `fix/…`, `docs/…`,
+   `chore/…`)
+2. Commit there, push the branch, open a PR against `main`
+3. Review and merge happens on the PR, not as a local merge
 
 ## 📜 License
 
