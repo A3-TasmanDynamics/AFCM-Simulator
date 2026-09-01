@@ -27,7 +27,13 @@ params [
 ];
 
 if (_id isEqualTo "") then {
-    _id = format ["user_mci_%1_%2", diag_tickTime, floor (random 100000)];
+    // Real, confirmed collision fixed here - same reasoning as fnc_saveUserPreset.sqf: an
+    // always-incrementing counter guarantees no collision is possible, regardless of timing,
+    // rather than relying on diag_tickTime + random 100000 alone (a collision here would silently
+    // overwrite an unrelated saved MCI preset).
+    if (isNil "AFCM_SIM_mciPresetIdCounter") then { AFCM_SIM_mciPresetIdCounter = 0; };
+    AFCM_SIM_mciPresetIdCounter = AFCM_SIM_mciPresetIdCounter + 1;
+    _id = format ["user_mci_%1_%2", diag_tickTime, AFCM_SIM_mciPresetIdCounter];
 };
 
 private _mciPreset = [_id, _name, _author, _description, _patientSpecs];
