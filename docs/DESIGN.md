@@ -571,6 +571,60 @@ is still the plan, not the state of the repo.
   forwarded to `afcm_sim_scenario_fnc_serverSpawnMci`'s new optional 4th argument. Blank always
   falls back to the same auto-generated label each path already had — no behaviour change for
   anyone who leaves the field empty.
+- **Medical Tent** — not in the original feature list; a session-scoped treatment-completion check
+  built on top of Spawn Sessions, not a spawned/scripted physical object. AFCM deliberately doesn't
+  build or spawn any scenery for this (tent, screens, gear) — the mission maker builds that
+  themselves out of real objects, however elaborate they want (a normal Eden Composition is the
+  recommended way, since it's real classnames + relative positions the mission maker picks visually,
+  with zero classname-guessing risk on AFCM's side either way). All AFCM needs from that scenery is
+  which objects act as stretchers.
+  - **Placement**: `AFCM_SIM_ModuleMedicalTent` (Eden) — sync any stretcher-ish objects to it (naming
+    each one `afcm_stretcher_1`/`afcm_stretcher_2`/etc in Eden's own object Name field first is the
+    recommended convention, purely for the mission maker's/AFCM's own log readability — not parsed
+    by the code, membership comes from the sync line itself, so any classname works). A "Stretcher
+    Radius (m)" attribute (default 2) sets how close a patient must be to count as on one.
+  - **Detection is session-scoped, not tent-scoped**: `afcm_sim_scenario_fnc_registerMedicalTent`
+    adds a module's synced stretchers to one shared global list
+    (`AFCM_SIM_medicalStretchers`) and lazily starts a single shared monitor loop
+    (`afcm_sim_scenario_fnc_startMedicalTentMonitor`, plain server-side `spawn`/`sleep 5` — no
+    per-frame precision needed) the first time any tent registers, rather than one loop per tent.
+    Every 5s it checks every still-live unit in every `AFCM_SIM_spawnSessions` entry against every
+    registered stretcher (from any tent) at once. A session resolves the moment every one of its
+    live patients is simultaneously **treated**
+    (`afcm_sim_scenario_fnc_isPatientTreated`) and **on a stretcher**
+    (`afcm_sim_scenario_fnc_isPatientOnStretcher`) — this is what makes multiple simultaneous tents
+    "free" and independent: two medics' own MCIs (their own Spawn Sessions, already isolated per
+    § Spawn Sessions above) resolve on their own regardless of how many tents exist or which one
+    each medic used.
+  - **"Treated" is both auto-detected and manually overridable** (deliberately "Both", not either
+    alone — auto-detect can't cover every backend/situation, e.g. no medical backend active at all):
+    auto-detect is `lifeState == "ALIVE"` (vanilla engine command) AND no limb reporting
+    `limbBleeding` via the existing `afcm_sim_fnc_backend_getState` (DESIGN.md §4.2's live-status
+    API, looped once per limb since that field is inherently per-limb) — reuses the exact same
+    real getter the Injury Editor's own live status readout already calls, no new backend surface.
+    The manual half is a new "Mark as Treated" addAction every spawned patient gets alongside "Edit
+    Injuries" (`afcm_sim_ui_fnc_addTreatedAction`), remoteExec'ing a server-authoritative setter
+    (`afcm_sim_scenario_fnc_serverMarkTreated`, same DESIGN.md §6 server-authority pattern as every
+    other state change here) that sets `AFCM_SIM_treated` on the unit.
+  - **Notification**: a real, confirmed vanilla non-modal HUD overlay
+    (`RscTitles`/`cutRsc`, `community.bistudio.com/wiki/cutRsc` — deliberately not another
+    `createDialog`-based dialog, since a real interactive display would compete for input focus with
+    the Zeus interface or whatever the viewer already has open), custom AFCM-branded
+    (`RscDisplayAFCM_SIM_Toast`, same colour palette as the rest of the UI kit). Shown via a generic,
+    reusable `afcm_sim_ui_fnc_showToast` helper — any future AFCM event can reuse it, same as
+    `ConfirmDialog` is reused for destructive actions. The resolved-session handler
+    (`afcm_sim_ui_fnc_notifySessionResolved`) also republishes `"session.resolved"` on the existing
+    UI event bus (`afcm_sim_ui_fnc_publish`, same mechanism `injury.applied`/`limb.selected` already
+    use) so a mission's own AAR/scoring logic — or a future scoreboard — can subscribe without AFCM
+    needing to know what "end the scenario" means for that particular mission.
+  - **Explicitly out of scope for this pass** (the user's own stated longer-term goal, not started):
+    a full per-player scoreboard (items used, who treated whom, a score), an external companion mod
+    that exports that data, and a public/private website with APIs for other units to consume it.
+    That's a separate infrastructure project — hosting, auth, a public-facing API surface — that
+    needs its own scoping conversation (stack, hosting, access control) rather than guessed-at
+    choices bolted onto the Arma mod itself. `"session.resolved"` on the event bus above is the
+    intended hook point once that work actually starts: whatever ends up building the export layer
+    subscribes there instead of AFCM needing to know about it in advance.
 
 ---
 

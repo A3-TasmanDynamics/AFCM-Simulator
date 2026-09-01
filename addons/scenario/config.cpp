@@ -63,5 +63,20 @@ class CfgFunctions
             class resolveMciPatientSpec { file = "\afcm_sim\addons\scenario\functions\fnc_resolveMciPatientSpec.sqf"; };
             class serverSpawnMci { file = "\afcm_sim\addons\scenario\functions\fnc_serverSpawnMci.sqf"; };
         };
+        // Medical Tent (DESIGN.md § Medical Tent) - session-scoped treatment detection, not a
+        // spawned object of its own. A Spawn Session (afcm_sim_spawner) is "resolved" once every
+        // live patient in it is both treated (isPatientTreated) and physically on a registered
+        // stretcher (isPatientOnStretcher) - checked by one server-side monitor loop shared across
+        // every placed Medical Tent module, not one loop per tent, so multiple tents/sessions
+        // resolve independently without duplicating the poll.
+        class MedicalTent
+        {
+            file = "\afcm_sim\addons\scenario\functions";
+            class registerMedicalTent { file = "\afcm_sim\addons\scenario\functions\fnc_registerMedicalTent.sqf"; };
+            class startMedicalTentMonitor { file = "\afcm_sim\addons\scenario\functions\fnc_startMedicalTentMonitor.sqf"; };
+            class isPatientTreated { file = "\afcm_sim\addons\scenario\functions\fnc_isPatientTreated.sqf"; };
+            class isPatientOnStretcher { file = "\afcm_sim\addons\scenario\functions\fnc_isPatientOnStretcher.sqf"; };
+            class serverMarkTreated { file = "\afcm_sim\addons\scenario\functions\fnc_serverMarkTreated.sqf"; };
+        };
     };
 };

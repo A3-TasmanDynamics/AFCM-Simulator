@@ -159,6 +159,9 @@ _unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
     // resolves function names at runtime regardless of load-order/dependency declarations, same as
     // the prior working prototype (REFERENCES.md, `remoteExec ["med_casualties", 2]`).
     [_unit] remoteExec ["afcm_sim_ui_fnc_addInjuryEditorAction", 0, true];
+    // "Mark as Treated" - the manual half of the Medical Tent's "Both" treated-detection mode
+    // (afcm_sim_scenario_fnc_isPatientTreated), same local-addAction reasoning as the line above.
+    [_unit] remoteExec ["afcm_sim_ui_fnc_addTreatedAction", 0, true];
 
     { [_unit, _x] call afcm_sim_fnc_backend_applyInjury; } forEach _injuries;
 }, [_unit, _injuries], 1] call CBA_fnc_waitAndExecute;

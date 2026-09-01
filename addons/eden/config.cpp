@@ -2,7 +2,7 @@ class CfgPatches
 {
     class afcm_sim_eden
     {
-        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleMascalZone", "AFCM_SIM_ModuleMciSpawnerPlacement", "AFCM_SIM_ModuleInteractiveTerminal"};
+        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleMascalZone", "AFCM_SIM_ModuleMciSpawnerPlacement", "AFCM_SIM_ModuleInteractiveTerminal", "AFCM_SIM_ModuleMedicalTent"};
         weapons[] = {};
         requiredVersion = 2.14;
         requiredAddons[] = {"cba_main", "afcm_sim_main", "afcm_sim_scenario", "afcm_sim_spawner"};
@@ -32,6 +32,7 @@ class CfgFunctions
             class module_mascalZone { file = "\afcm_sim\addons\eden\functions\fnc_module_mascalZone.sqf"; };
             class module_mciSpawner { file = "\afcm_sim\addons\eden\functions\fnc_module_mciSpawner.sqf"; };
             class module_interactiveTerminal { file = "\afcm_sim\addons\eden\functions\fnc_module_interactiveTerminal.sqf"; };
+            class module_medicalTent { file = "\afcm_sim\addons\eden\functions\fnc_module_medicalTent.sqf"; };
         };
     };
 };
@@ -280,5 +281,54 @@ class CfgVehicles
         isGlobal = 1;
         isTriggerActivated = 0;
         curatorCanAttach = 1;
+    };
+
+    // Session-scoped treatment detection for a physical Medical Tent the mission maker builds
+    // themselves out of real objects (a tent, screens, medical gear - however elaborate they want,
+    // via a normal Eden Composition) - AFCM doesn't spawn or know about any of that scenery, it only
+    // needs to know which placed objects act as stretchers.
+    //
+    // Sync every stretcher-ish object (any classname - a real stretcher prop, a cot, whatever the
+    // composition uses) to this module - naming each one afcm_stretcher_1/afcm_stretcher_2/etc in
+    // Eden's own object Name field first is the recommended convention (not parsed by the code,
+    // purely so multiple stretchers/tents stay identifiable in the editor and in AFCM's own logs).
+    // A Spawn Session (afcm_sim_spawner) counts as resolved once every one of its live patients is
+    // simultaneously treated and within Stretcher Radius of any synced stretcher from ANY placed
+    // Medical Tent - see fnc_module_medicalTent.sqf and afcm_sim_scenario_fnc_
+    // startMedicalTentMonitor for the session-scoped, multi-tent-friendly detection logic.
+    class AFCM_SIM_ModuleMedicalTent: Module_F
+    {
+        scope = 2;
+        scopeCurator = 2;
+        side = 7;
+        displayName = "Medical Tent";
+        icon = "\afcm_sim\addons\eden\data\module_mascal.paa";
+        category = "AFCM_SIM_Category";
+        function = "afcm_sim_eden_fnc_module_medicalTent";
+        functionPriority = 1;
+        isGlobal = 1;
+        isTriggerActivated = 0;
+        curatorCanAttach = 0;
+
+        class Attributes
+        {
+            scope = 0;
+            class AFCM_SIM_StretcherRadius
+            {
+                displayName = "Stretcher Radius (m)";
+                tooltip = "How close a patient must be to a synced stretcher to count as 'on' it";
+                property = "AFCM_SIM_stretcherRadius";
+                control = "combo";
+                defaultValue = "2";
+                class Values
+                {
+                    class One { name = "1"; value = 1; };
+                    class OnePointFive { name = "1.5"; value = 1.5; };
+                    class Two { name = "2"; value = 2; default = 1; };
+                    class Three { name = "3"; value = 3; };
+                    class Four { name = "4"; value = 4; };
+                };
+            };
+        };
     };
 };

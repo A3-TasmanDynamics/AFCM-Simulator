@@ -55,6 +55,7 @@ class CfgFunctions
             class injuryEditor_refreshState { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_refreshState.sqf"; };
             class injuryEditor_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onSavePreset.sqf"; };
             class addInjuryEditorAction { file = "\afcm_sim\addons\ui\functions\fnc_addInjuryEditorAction.sqf"; };
+            class addTreatedAction { file = "\afcm_sim\addons\ui\functions\fnc_addTreatedAction.sqf"; };
         };
         class Mci
         {
@@ -158,6 +159,17 @@ class CfgFunctions
         {
             file = "\afcm_sim\addons\ui\functions";
             class addTerminalAction { file = "\afcm_sim\addons\ui\functions\fnc_addTerminalAction.sqf"; };
+        };
+        // Generic AFCM-branded toast (RscDisplayAFCM_SIM_Toast, cutRsc-based, below) - a passive
+        // HUD overlay, not a dialog, so it never steals input focus from Zeus or whatever else is
+        // open. afcm_sim_scenario_fnc_startMedicalTentMonitor's session-resolved check is its first
+        // real caller (via afcm_sim_ui_fnc_notifySessionResolved).
+        class Toast
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class showToast { file = "\afcm_sim\addons\ui\functions\fnc_showToast.sqf"; };
+            class toast_init { file = "\afcm_sim\addons\ui\functions\fnc_toast_init.sqf"; };
+            class notifySessionResolved { file = "\afcm_sim\addons\ui\functions\fnc_notifySessionResolved.sqf"; };
         };
     };
 };
@@ -1675,6 +1687,71 @@ class RscDisplayAFCM_SIM_ConfirmDialog
             w = "0.15 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "closeDialog 0;";
+        };
+    };
+};
+
+// Custom AFCM-branded toast - a passive, non-interactive HUD overlay (RscTitles, shown via cutRsc),
+// not another RscDisplay dialog. Deliberately NOT createDialog-based: createDialog opens a real
+// interactive display competing for input focus, which would fight with (or outright break) the
+// Zeus interface or whatever dialog the viewer already has open. cutRsc's whole purpose is a
+// non-modal overlay layer that sits on top without stealing focus - real, confirmed vanilla
+// mechanism (community.bistudio.com/wiki/cutRsc): `layer cutRsc [name, effect, speed,
+// drawOverHUD]`, name referencing an RscTitles-defined class exactly like an RscDisplay idd does.
+// `duration` (below) is a real RscTitles-only attribute that auto-hides the layer on its own - no
+// manual close timer needed. Shown by afcm_sim_ui_fnc_showToast (a generic two-line title/body
+// helper); afcm_sim_ui_fnc_notifySessionResolved (Medical Tent completion) is its first caller, but
+// any future AFCM event can reuse it the same way ConfirmDialog is reused for destructive actions.
+#define IDC_AFCM_SIM_TOAST_TITLE 1
+#define IDC_AFCM_SIM_TOAST_BODY  2
+
+class RscTitles
+{
+    class RscDisplayAFCM_SIM_Toast
+    {
+        idd = -1;
+        duration = 8;
+        fadeIn = 0.35;
+        fadeOut = 0.75;
+        onLoad = "(_this select 0) call afcm_sim_ui_fnc_toast_init;";
+        class controls
+        {
+            class Panel: AFCM_SIM_Panel
+            {
+                x = "0.32 * safeZoneW + safeZoneX";
+                y = "0.06 * safeZoneH + safeZoneY";
+                w = "0.36 * safeZoneW";
+                h = "0.09 * safeZoneH";
+            };
+            class AccentBar: AFCM_SIM_AccentBar
+            {
+                x = "0.32 * safeZoneW + safeZoneX";
+                y = "0.06 * safeZoneH + safeZoneY";
+                w = "0.36 * safeZoneW";
+                h = "0.0025 * safeZoneH";
+            };
+            // Text set dynamically (fnc_toast_init.sqf, from AFCM_SIM_UI_toastTitle/Body).
+            class Title: AFCM_SIM_RscTitle
+            {
+                idc = IDC_AFCM_SIM_TOAST_TITLE;
+                text = "";
+                x = "0.335 * safeZoneW + safeZoneX";
+                y = "0.0725 * safeZoneH + safeZoneY";
+                w = "0.35 * safeZoneW";
+                h = "0.03 * safeZoneH";
+                sizeEx = "0.022 * safeZoneH";
+            };
+            class Body: AFCM_SIM_RscLabel
+            {
+                idc = IDC_AFCM_SIM_TOAST_BODY;
+                text = "";
+                x = "0.335 * safeZoneW + safeZoneX";
+                y = "0.1025 * safeZoneH + safeZoneY";
+                w = "0.35 * safeZoneW";
+                h = "0.04 * safeZoneH";
+                sizeEx = "0.018 * safeZoneH";
+                colorText[] = AFCM_SIM_COLOR_TEXT_DIM;
+            };
         };
     };
 };
