@@ -2,7 +2,7 @@ class CfgPatches
 {
     class afcm_sim_zeus
     {
-        units[] = {"AFCM_SIM_ModuleSpawnRandomPatient", "AFCM_SIM_ModuleMciSpawner"};
+        units[] = {"AFCM_SIM_ModuleSpawnRandomPatient", "AFCM_SIM_ModuleMciSpawner", "AFCM_SIM_ModuleEditInjuries"};
         weapons[] = {};
         requiredVersion = 2.14;
         requiredAddons[] = {"cba_main", "afcm_sim_main", "afcm_sim_scenario", "afcm_sim_spawner"};
@@ -40,6 +40,7 @@ class CfgFunctions
             // both the fnc_ filename AND the absolute-path form are required.
             class module_spawnRandomPatient { file = "\afcm_sim\addons\zeus\functions\fnc_module_spawnRandomPatient.sqf"; };
             class module_mciSpawner { file = "\afcm_sim\addons\zeus\functions\fnc_module_mciSpawner.sqf"; };
+            class module_editInjuries { file = "\afcm_sim\addons\zeus\functions\fnc_module_editInjuries.sqf"; };
         };
     };
 };
@@ -164,5 +165,31 @@ class CfgVehicles
                 };
             };
         };
+    };
+
+    // Drag this module directly onto any unit in the Zeus interface to open the Injury Editor for
+    // it immediately - a faster alternative to scrolling to "Edit Injuries" on units that already
+    // have that addAction (AFCM-spawned patients), and the only way to reach it on a unit that
+    // doesn't (any other placed/spawned unit - the scroll action is only ever added by
+    // afcm_sim_spawner_fnc_spawnPatient).
+    //
+    // Real, confirmed "drop directly onto a unit" pattern, grounded in ACE3's own Zeus module
+    // source (acemod/ACE3, addons/zeus/CfgVehicles.hpp + fnc_moduleHeal.sqf - same idea as ACE3's
+    // own "Heal" module): curatorCanAttach = 1 lets the module be dropped straight onto a unit
+    // instead of needing a placement position of its own; fnc_module_editInjuries.sqf reads the
+    // target back via `attachedTo _logic`, not the `_units` (synced units) param.
+    class AFCM_SIM_ModuleEditInjuries: Module_F
+    {
+        scope = 2;
+        scopeCurator = 2;
+        side = 7;
+        displayName = "Edit Injuries";
+        icon = "\afcm_sim\addons\zeus\data\module_patient.paa";
+        category = "AFCM_SIM_Category";
+        function = "afcm_sim_zeus_fnc_module_editInjuries";
+        functionPriority = 1;
+        isGlobal = 1;
+        isTriggerActivated = 0;
+        curatorCanAttach = 1;
     };
 };

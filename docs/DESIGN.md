@@ -325,6 +325,11 @@ is still the plan, not the state of the repo.
   4-band combo (Light/Moderate/Severe/Critical → 0.25/0.5/0.75/1.0), not a continuous slider.
   `variables` (custom free-form fields) not exposed in the UI. One wound configuration applies
   identically to every limb selected on the previous screen (`AFCM_SIM_UI_targetLimbs`, plural) —
+  reachable a second way in Zeus specifically: dragging the "Edit Injuries" module
+  (`AFCM_SIM_ModuleEditInjuries`, `curatorCanAttach = 1`) directly onto any unit opens this same
+  flow immediately, without needing the addAction below to already exist on the target — grounded
+  in ACE3's own "Heal" Zeus module (`attachedTo _logic` for the target, a `local _logic` guard so
+  the dialog opens only on the placing curator's machine, then self-deletes) —
   a single Apply loops one `serverApplyInjury` request per limb, rather than repeating the whole
   flow per limb; Fracture (KAT) applies the same way, once per selected limb that's an arm or a
   leg specifically (control only shows, and server-side dispatch only accepts, arm/leg limbs —
