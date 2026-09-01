@@ -39,10 +39,17 @@ closeDialog 0;
     if !(isNull _mciDisplay) then {
         [_mciDisplay] call afcm_sim_ui_fnc_mciCreator_populatePatientList;
 
+        // Real, confirmed bug fixed here: a loaded MCI preset with more than 10 patients (no hard
+        // cap on preset size) used to leave the Patient Count dropdown showing whatever it last
+        // displayed instead of the real count - same fix as fnc_mciCreator_init.sqf's own combo
+        // population, rebuild the option list to include the real count rather than just skipping
+        // the selection update when it's outside 1-10.
+        private _countLB = _mciDisplay displayCtrl 10;
         private _counts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-        private _countIdx = _counts find (count AFCM_SIM_UI_mciPatientSpecs);
-        if (_countIdx != -1) then {
-            (_mciDisplay displayCtrl 10) lbSetCurSel _countIdx;
-        };
+        private _realCount = count AFCM_SIM_UI_mciPatientSpecs;
+        if !(_realCount in _counts) then { _counts pushBack _realCount; };
+        lbClear _countLB;
+        { _countLB lbAdd (str _x); _countLB lbSetValue [_forEachIndex, _x]; } forEach _counts;
+        _countLB lbSetCurSel (_counts find _realCount);
     };
 }, []] call CBA_fnc_execNextFrame;
