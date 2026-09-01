@@ -2,7 +2,7 @@ class CfgPatches
 {
     class afcm_sim_eden
     {
-        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleMascalZone", "AFCM_SIM_ModuleMciSpawnerPlacement"};
+        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleMascalZone", "AFCM_SIM_ModuleMciSpawnerPlacement", "AFCM_SIM_ModuleInteractiveTerminal"};
         weapons[] = {};
         requiredVersion = 2.14;
         requiredAddons[] = {"cba_main", "afcm_sim_main", "afcm_sim_scenario", "afcm_sim_spawner"};
@@ -31,6 +31,7 @@ class CfgFunctions
             class module_patientPlacement { file = "\afcm_sim\addons\eden\functions\fnc_module_patientPlacement.sqf"; };
             class module_mascalZone { file = "\afcm_sim\addons\eden\functions\fnc_module_mascalZone.sqf"; };
             class module_mciSpawner { file = "\afcm_sim\addons\eden\functions\fnc_module_mciSpawner.sqf"; };
+            class module_interactiveTerminal { file = "\afcm_sim\addons\eden\functions\fnc_module_interactiveTerminal.sqf"; };
         };
     };
 };
@@ -254,5 +255,30 @@ class CfgVehicles
                 };
             };
         };
+    };
+
+    // Diegetic entry point for a training scenario: sync this module (or, in Zeus, drag it
+    // directly onto the object - curatorCanAttach = 1) to any placed object - a Laptop_01_F, a
+    // table, anything - and every player gets two real addActions on it, "AFCM: Open MCI Creator"
+    // and "AFCM: Open Session Manager" (afcm_sim_ui_fnc_addTerminalAction), so a scenario can offer
+    // "walk up to the laptop and build the incident" instead of requiring a keybind or Zeus.
+    //
+    // Target resolution supports both real placement paths at once: `_units` (synced units, Eden's
+    // own mechanism - Ctrl+click sync line from module to object) is checked first, falling back to
+    // `attachedTo _logic` (Zeus's drag-directly-onto-an-object mechanism, same as
+    // AFCM_SIM_ModuleEditInjuries in zeus/config.cpp) if nothing was synced.
+    class AFCM_SIM_ModuleInteractiveTerminal: Module_F
+    {
+        scope = 2;
+        scopeCurator = 2;
+        side = 7;
+        displayName = "Interactive Terminal";
+        icon = "\afcm_sim\addons\eden\data\module_mascal.paa";
+        category = "AFCM_SIM_Category";
+        function = "afcm_sim_eden_fnc_module_interactiveTerminal";
+        functionPriority = 1;
+        isGlobal = 1;
+        isTriggerActivated = 0;
+        curatorCanAttach = 1;
     };
 };

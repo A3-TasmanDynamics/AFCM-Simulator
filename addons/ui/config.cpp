@@ -150,6 +150,15 @@ class CfgFunctions
             class confirmDialog_init { file = "\afcm_sim\addons\ui\functions\fnc_confirmDialog_init.sqf"; };
             class confirmDialog_onYes { file = "\afcm_sim\addons\ui\functions\fnc_confirmDialog_onYes.sqf"; };
         };
+        // Interactive Terminal - see eden/config.cpp's AFCM_SIM_ModuleInteractiveTerminal. Adds two
+        // vanilla addActions ("AFCM: Open MCI Creator" / "AFCM: Open Session Manager") to whatever
+        // object the module is attached to, e.g. a placed Laptop_01_F, so a training scenario can
+        // give players/curators a diegetic way in without needing a keybind or the Zeus interface.
+        class InteractiveTerminal
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class addTerminalAction { file = "\afcm_sim\addons\ui\functions\fnc_addTerminalAction.sqf"; };
+        };
     };
 };
 
