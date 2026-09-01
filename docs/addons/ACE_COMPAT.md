@@ -87,12 +87,25 @@ Builds an interface `HashMap` (`{"applyInjury": ..., "removeInjury": ...}`) and 
 [_unit, _injury] call afcm_sim_ace_fnc_applyInjury
 ```
 **Real implementation.** Never called directly — dispatched to via
-`afcm_sim_fnc_backend_applyInjury` when `"ace"` is the active backend. Takes an `Injury` `HashMap`
+`afcm_sim_fnc_backend_applyInjury` when `"ace"` is the active backend. A thin dispatcher: since
+`ace_medical_fnc_addDamageToUnit` requires `local _unit` (confirmed directly from ACE3's own
+source, REFERENCES.md) and this function is reached from a server-authoritative remoteExec with no
+guarantee the target is actually local to the server, it fires a CBA event
+(`"afcm_sim_applyAceStyleInjuryLocal"`, real `CBA_fnc_targetEvent` mechanism, confirmed from
+CBATeam/CBA_A3's own source) targeting `_unit` rather than doing the work itself — the event runs
+on whichever machine the unit is really local to, same real mechanism KAT's own source uses for the
+same problem (its "...Local"-suffixed treatment functions).
+
+The actual work — shared between `ace_compat` and `kat_compat` rather than duplicated, since KAT
+extends ACE3's own wound pipeline (§3) — lives in `afcm_sim_main_fnc_medical_
+applyAceStyleInjuryLocal` (`addons/main/functions/`), registered once as that event's handler
+(`fnc_medical_registerEvents.sqf`, `afcm_sim_main`'s own `preInit`). It takes an `Injury` `HashMap`
 (see [DESIGN.md §4.2](../DESIGN.md#42-injury-object)) and:
 
 1. Maps the backend-agnostic `limb` (a direct 1:1 match to ACE3's own 6 real body parts — see
    [§4.1](#41-limbid--ace3-body-part)) to ACE3's 6 lowercase body-part strings, and `woundType`
    (`gunshot`/`shrapnel`/`blast`) to a real ACE3 damage-type class (`bullet`/`grenade`/`shell`).
+   Logs (rather than silently defaulting) if `limb` doesn't match any known `LimbId`.
 2. Calls `ace_medical_fnc_addDamageToUnit` with `severity` as the damage amount — this drives ACE's
    normal damage-to-wound pipeline (a *random* wound chosen from that damage type's weighting
    table).
