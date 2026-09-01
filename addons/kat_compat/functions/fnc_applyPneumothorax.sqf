@@ -14,6 +14,15 @@
  * Setting the variables alone isn't sufficient - `kat_breathing_fnc_handleBreathing` has to be
  * called afterward to actually apply the state.
  *
+ * Hemothorax specifically also needs `kat_circulation_fnc_updateInternalBleeding` called - real,
+ * confirmed from that same `fnc_inflictAdvancedPneumothorax.sqf` source, which calls it right after
+ * setting `hemopneumothorax` (not `handleBreathing` at all for that path). That function is what
+ * actually turns the hemopneumothorax flag into a live internal-bleeding rate
+ * (`kat_circulation_internalBleeding`, `EGVAR(breathing,HPTXBleedAmount)` × cardiac output ×
+ * vasoconstriction, `fnc_updateInternalBleeding.sqf`) that drains the patient's real ACE blood
+ * volume (`ace_medical_bloodVolume`) over time - without this call the flag was set but nothing
+ * was actually bleeding.
+ *
  * Deliberately deterministic, unlike KAT's own real infliction function (which rolls a random
  * chance and a random hemo-vs-tension split) - an instructor picking a type here should get
  * exactly what they picked, not a dice roll.
@@ -39,3 +48,8 @@ _unit setVariable ["kat_breathing_hemopneumothorax", _type == 2, true];
 _unit setVariable ["kat_breathing_tensionpneumothorax", _type == 3, true];
 
 [_unit] call kat_breathing_fnc_handleBreathing;
+// Unconditional, same as handleBreathing above - updateInternalBleeding reads the
+// hemopneumothorax flag fresh each call, so this also correctly zeroes the internal-bleeding
+// rate back out when switching away from Hemopneumothorax (to None or Tension), not just when
+// setting it.
+[_unit] call kat_circulation_fnc_updateInternalBleeding;

@@ -7,15 +7,16 @@
  * locally (DESIGN.md §6, same "request -> server validates/applies" pattern as the prior working
  * prototype, REFERENCES.md). The same wound configuration goes to every selected limb identically.
  *
- * Also reads the Fracture/Pneumothorax combos and, if either control is actually visible (KAT
- * active, and for Pneumothorax "chest" is among the selected limbs —
+ * Also reads the Fracture/Pneumothorax/Airway combos and, if a control is actually visible (KAT
+ * active, and for Pneumothorax "chest"/for Airway "head" is among the selected limbs —
  * fnc_injuryEditor_init.sqf) and not set to "None", remoteExecs those separately (INJURY_CODES.md
  * §6 — no equivalent in the generic Injury object, so they don't go through
  * afcm_sim_fnc_backend_applyInjury at all). Fracture applies once per selected limb that's an arm
  * or a leg specifically — skipped for head/chest even if they're also part of the selection, same
  * arms/legs-only restriction fnc_injuryEditor_init.sqf uses to decide whether to show the control
- * at all. Pneumothorax applies once total, not per limb — it's torso-wide. One Apply click commits
- * everything configured, for every limb selected, not just one wound.
+ * at all. Pneumothorax and Airway each apply once total, not per limb — both are whole-region
+ * conditions (torso-wide / head-wide), not per-limb ones. One Apply click commits everything
+ * configured, for every limb selected, not just one wound.
  *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Apply button <CONTROL>
@@ -67,6 +68,14 @@ if (isNull _targetUnit) then {
         private _pneumo = lbCurSel _ctrlPneumo;
         if (_pneumo > 0) then {
             [_targetUnit, _pneumo] remoteExec ["afcm_sim_scenario_fnc_serverApplyKatPneumothorax", 2];
+        };
+    };
+
+    private _ctrlAirway = _display displayCtrl 23;
+    if (ctrlShown _ctrlAirway) then {
+        private _airway = lbCurSel _ctrlAirway;
+        if (_airway > 0) then {
+            [_targetUnit, _airway] remoteExec ["afcm_sim_scenario_fnc_serverApplyKatAirway", 2];
         };
     };
 };

@@ -5,18 +5,28 @@
  * replace it, so the same read-only getters apply). Deliberately avoids
  * ace_medical_fnc_getBloodLoss (requires `local _unit`) for the same reason as the ACE backend.
  *
- * Also reports this limb's real KAT fracture state and the unit's real KAT pneumothorax state
- * (INJURY_CODES.md §6) - real, confirmed variables (`kat_surgery_fractures`/
- * `kat_breathing_pneumothorax`/`_hemopneumothorax`/`_tensionpneumothorax`, see
- * fnc_applyFracture.sqf/fnc_applyPneumothorax.sqf), read directly rather than via any KAT getter
- * function (none confirmed to exist for these).
+ * Also reports this limb's real KAT fracture state and the unit's real KAT pneumothorax/airway
+ * state (INJURY_CODES.md §6) - real, confirmed variables (`kat_surgery_fractures`/
+ * `kat_breathing_pneumothorax`/`_hemopneumothorax`/`_tensionpneumothorax`/`kat_airway_obstruction`/
+ * `_occluded`, see fnc_applyFracture.sqf/fnc_applyPneumothorax.sqf/fnc_applyAirway.sqf), read
+ * directly rather than via any KAT getter function (none confirmed to exist for these).
+ *
+ * "internalBleedingRate" is `kat_circulation_internalBleeding` (real, confirmed from
+ * addons/circulation/functions/fnc_updateInternalBleeding.sqf, consumed by
+ * addons/pharma/functions/fnc_getBloodVolumeChange.sqf - that function's own docstring confirms
+ * the units, "Blood volume change (liters per second)") - the live rate a Hemopneumothorax
+ * actually drains `bloodVolume` (below) at, 0 whenever hemopneumothorax isn't active. "bloodVolume"
+ * is the same real `ace_medical_bloodVolume` afcm_sim_ace_fnc_getState reports - KAT extends ACE's
+ * blood volume tracking rather than replacing it.
  *
  * Arguments:
  * 0: Target unit <OBJECT>
  * 1: LimbId <STRING> (default "") - if given, includes wound detail for that limb specifically
  *
  * Return Value:
- * State <HASHMAP> - same shape as afcm_sim_ace_fnc_getState, plus "fracture"/"pneumothoraxType"
+ * State <HASHMAP> - same shape as afcm_sim_ace_fnc_getState, plus "fracture" (given limb),
+ *   "pneumothoraxType"/"internalBleedingRate" (whole-unit), and "airwayStatus" (only set when
+ *   the given limb is "head" - 0=Clear, 1=Obstruction, 2=Occlusion)
  *
  * Public: No
 */
@@ -45,10 +55,18 @@ _state set ["lifeState", lifeState _unit];
 _state set ["incapacitatedState", incapacitatedState _unit];
 _state set ["limbWoundCount", count _wounds];
 _state set ["limbBleeding", _bleeding];
+_state set ["bloodVolume", _unit getVariable ["ace_medical_bloodVolume", 6.0]];
+_state set ["internalBleedingRate", _unit getVariable ["kat_circulation_internalBleeding", 0]];
 
 private _limbIndex = ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"] find _limb;
 if (_limbIndex != -1) then {
     _state set ["fracture", (_unit getVariable ["kat_surgery_fractures", [0, 0, 0, 0, 0, 0]]) select _limbIndex];
+};
+if (_limb == "head") then {
+    private _airwayStatus = 0;
+    if (_unit getVariable ["kat_airway_obstruction", false]) then { _airwayStatus = 1; };
+    if (_unit getVariable ["kat_airway_occluded", false]) then { _airwayStatus = 2; };
+    _state set ["airwayStatus", _airwayStatus];
 };
 
 if (_unit getVariable ["kat_breathing_tensionpneumothorax", false]) exitWith {

@@ -30,6 +30,7 @@ class CfgFunctions
             class buildInjury { file = "\afcm_sim\addons\scenario\functions\fnc_buildInjury.sqf"; };
             class serverApplyKatFracture { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatFracture.sqf"; };
             class serverApplyKatPneumothorax { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatPneumothorax.sqf"; };
+            class serverApplyKatAirway { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatAirway.sqf"; };
         };
         // Injury Presets (DESIGN.md §4.3/§ Injury Presets) - built-in library + a per-player
         // profileNamespace-backed user library, plain-Array export/import, and the server-side

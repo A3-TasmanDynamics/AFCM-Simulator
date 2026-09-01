@@ -388,6 +388,19 @@ is still the plan, not the state of the repo.
   directly, not through the generic `Injury`/backend-interface dispatch, since neither concept fits
   that schema — Apply on the injury editor fires them alongside the regular wound application in
   one click, whenever the corresponding control is actually visible and not set to "None".
+  - **Airway** (head) — added after Fracture/Pneumothorax, same real-source-grounded approach:
+    `kat_airway_obstruction`/`kat_airway_occluded` (`afcm_sim_kat_fnc_applyAirway`), two
+    mutually-exclusive Bools with genuinely different real treatment paths (Obstruction is what an
+    airway adjunct clears; Occlusion explicitly rejects that treatment — needs a surgical airway),
+    shown only when KAT is active AND "head" is among the selected limbs. INJURY_CODES.md §6 has
+    the full real source citations.
+  - **Hemothorax / blood volume** — picking Hemopneumothorax now also calls the real
+    `kat_circulation_fnc_updateInternalBleeding` (a real bug fix — an earlier pass set the flag with
+    no actual bleeding effect). The injury editor's live status readout gained **Blood Volume**
+    (real `ace_medical_bloodVolume`, both ACE and KAT) and, KAT-only, **Internal Bleeding Rate**
+    (real `kat_circulation_internalBleeding`, litres/second) whenever it's actually nonzero. KAT
+    doesn't model a separate "chest cavity" blood pool — hemothorax drains the same whole-body
+    volume faster, confirmed from real source, not guessed at (INJURY_CODES.md §6).
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
   **Implemented**, in `afcm_sim_scenario` (data/logic) + `afcm_sim_ui` (Preset Library/Preset Save
   dialogs). A Preset is a plain `Array`, not the `HashMap` §4.3 originally sketched — `str _preset`
@@ -410,8 +423,8 @@ is still the plan, not the state of the repo.
   selected limb (§ Selectable Body Limbs above — the same multi-limb toggle Apply uses), so a
   *multi*-injury preset built from scratch (several limbs, same wound, saved together) is possible
   directly from the injury editor now, not just from the 5 built-in presets — deliberately not
-  Fracture/Pneumothorax though, which have no place in this Array shape (INJURY_CODES.md §6, same
-  reason they're applied via a separate direct call). A dedicated "preset builder" cart flow (mixing
+  Fracture/Pneumothorax/Airway though, which have no place in this Array shape (INJURY_CODES.md §6,
+  same reason they're applied via a separate direct call). A dedicated "preset builder" cart flow (mixing
   *different* wounds across limbs into one save, not just one wound broadcast to several) is still a
   natural next step if this gets more use.
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
