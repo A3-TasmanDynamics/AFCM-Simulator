@@ -29,6 +29,14 @@ if !(isServer) exitWith {};
 if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
 _logic setVariable ["AFCM_SIM_moduleFired", true];
 
+// Real, confirmed gap fixed here: registerMedicalTent used to be called unconditionally even with
+// zero synced stretchers (mission maker forgot the sync step) - it would happily register nothing
+// and start the monitor loop anyway, with no diagnostic anywhere pointing at the real cause. Since
+// moduleFired is already latched above, this couldn't even be retried by re-firing the module.
+if (_units isEqualTo []) exitWith {
+    diag_log text "[AFCM-Simulator][Eden] Medical Tent module fired with no synced stretcher objects - nothing registered. Sync at least one object to this module for its Spawn Sessions to ever resolve.";
+};
+
 private _radius = _logic getVariable ["AFCM_SIM_stretcherRadius", 2];
 
 [_units, _radius] call afcm_sim_scenario_fnc_registerMedicalTent;

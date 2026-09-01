@@ -638,6 +638,15 @@ is still the plan, not the state of the repo.
     choices bolted onto the Arma mod itself. `"session.resolved"` on the event bus above is the
     intended hook point once that work actually starts: whatever ends up building the export layer
     subscribes there instead of AFCM needing to know about it in advance.
+  - **Three real edge cases fixed** (full-codebase review): a Medical Tent module fired with zero
+    synced stretchers used to register silently, with no diagnostic anywhere pointing at the real
+    cause when its sessions then never resolved — now logs and skips registration. A stretcher
+    object destroyed mid-mission used to leave a stale entry every future check ran `distance`
+    against forever — the monitor loop now prunes null stretchers once per cycle. A session whose
+    every patient died before being treated used to be silently skipped every cycle forever,
+    staying "pending" in the Session Manager with no way to ever resolve — it's now added to the
+    same stop-checking set as a genuinely resolved session, but deliberately without firing the
+    resolved notification, since nothing was actually treated.
 
 ---
 
