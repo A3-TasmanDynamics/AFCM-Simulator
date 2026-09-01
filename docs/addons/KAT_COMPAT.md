@@ -98,7 +98,8 @@ ace_medical_fnc_setUnconscious`, not the engine's own `setUnconscious` command (
 what `ace_medical_ai`'s state machine actually checks before letting a unit self-treat).
 
 ### `afcm_sim_kat_fnc_removeInjury`
-**Stub.** No real removal call wired up yet — same open question as `ace_compat`'s.
+**Stub.** No real removal call wired up yet — same open question as `ace_compat`'s. Returns `false`
+(see [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_removeinjury) for why that matters).
 
 ### `afcm_sim_kat_fnc_applyFracture`
 ```sqf

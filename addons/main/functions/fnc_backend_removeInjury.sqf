@@ -9,7 +9,11 @@
  * 1: Injury <HASHMAP> - see DESIGN.md §4.2 Injury object schema
  *
  * Return Value:
- * Bool - true if the active backend handled it, false if no backend is active/registered here
+ * Bool - true if the active backend actually handled it, false if no backend is active/registered
+ * here, or if the active backend's own removeInjury reports it didn't (real, confirmed bug fixed
+ * here: this used to unconditionally return true the moment ANY function existed to call, even
+ * both currently-registered backends' still-stub removeInjury - now propagates the callee's own
+ * return value instead of assuming success)
  *
  * Public: No
 */
@@ -39,5 +43,4 @@ if (isNil "_fnc") exitWith {
     false
 };
 
-[_unit, _injury] call _fnc;
-true
+[_unit, _injury] call _fnc
