@@ -56,10 +56,11 @@ if (count _state > 0) then {
     if (_incap != "") then { _consciousness = _consciousness + format [" (%1)", _incap]; };
 
     _text = format [
-        "Consciousness: %1\nPain: %2 | Injured: %3\n%4 — open wounds: %5 | Bleeding: %6",
+        "Consciousness: %1\nPain: %2 | Injured: %3\nBlood Volume: %4L\n%5 — open wounds: %6 | Bleeding: %7",
         _consciousness,
         _state getOrDefault ["pain", 0],
         _state getOrDefault ["injured", false],
+        _state getOrDefault ["bloodVolume", 6.0],
         _limbLine,
         _state getOrDefault ["limbWoundCount", 0],
         _state getOrDefault ["limbBleeding", false]
@@ -76,6 +77,21 @@ if (count _state > 0) then {
         private _pneumoName = _pneumoNames param [_state getOrDefault ["pneumothoraxType", 0], "None"];
 
         _text = _text + format ["\nFracture (KAT): %1 | Pneumothorax (KAT): %2", _fractureName, _pneumoName];
+
+        // Only present when the readout's limb is "head" (fnc_getState.sqf) - the first selected
+        // limb, same "first of possibly several" caveat the rest of this readout already has.
+        if ("airwayStatus" in _state) then {
+            private _airwayNames = ["Clear", "Obstruction", "Occlusion"];
+            private _airwayName = _airwayNames param [_state get "airwayStatus", "Clear"];
+            _text = _text + format ["\nAirway (KAT): %1", _airwayName];
+        };
+
+        // Only worth a line when it's actually doing anything - 0 whenever Hemopneumothorax isn't
+        // active (fnc_updateInternalBleeding.sqf, KAT-Advanced-Medical/KAM).
+        private _bleedRate = _state getOrDefault ["internalBleedingRate", 0];
+        if (_bleedRate > 0) then {
+            _text = _text + format ["\nInternal Bleeding (Hemothorax, KAT): %1L/s", _bleedRate];
+        };
     };
 };
 

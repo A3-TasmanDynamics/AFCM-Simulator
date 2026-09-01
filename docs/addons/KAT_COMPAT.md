@@ -79,7 +79,11 @@ bleeding-wound logic. Was a stub specifically because that research hadn't been 
 ### `afcm_sim_kat_fnc_getState`
 **Real implementation.** Identical in substance to `afcm_sim_ace_fnc_getState` (see
 [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_getstate)) — same read-only, any-machine-safe ACE3
-getters, since KAT extends the same underlying state ACE3 tracks rather than replacing it.
+getters, since KAT extends the same underlying state ACE3 tracks rather than replacing it. Also
+reports `bloodVolume` (real `ace_medical_bloodVolume`, litres — `afcm_sim_ace_fnc_getState` reports
+the same field), `internalBleedingRate` (real `kat_circulation_internalBleeding`, litres/second —
+0 whenever Hemopneumothorax isn't active), and, only when the given limb is `"head"`,
+`airwayStatus` (0=Clear/1=Obstruction/2=Occlusion, real `kat_airway_obstruction`/`_occluded`).
 
 ### `afcm_sim_kat_fnc_reset`
 **Real implementation.** Identical to `afcm_sim_ace_fnc_reset` — `ace_medical_fnc_fullHeal` then
@@ -101,7 +105,7 @@ what `ace_medical_ai`'s state machine actually checks before letting a unit self
 [_unit, _limb, _severity] call afcm_sim_kat_fnc_applyFracture
 ```
 **Real implementation.** Sets `kat_surgery_fractures` (confirmed 6-element array,
-`ALL_BODY_PARTS`-indexed — full detail: [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding--fracture--pneumothorax-wired-in)).
+`ALL_BODY_PARTS`-indexed — full detail: [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding--fracture--pneumothorax--airway-wired-in)).
 KAT-only, no ACE equivalent — called directly by
 `afcm_sim_scenario_fnc_serverApplyKatFracture`, not through the generic `applyInjury` dispatch.
 
@@ -111,11 +115,25 @@ KAT-only, no ACE equivalent — called directly by
 ```
 **Real implementation.** Sets `kat_breathing_pneumothorax`/`_hemopneumothorax`/
 `_tensionpneumothorax` (confirmed 0-4 severity scale + two mutually-exclusive booleans), then calls
-the real `kat_breathing_fnc_handleBreathing` to apply it. Torso-wide, not per-limb. Called directly
-by `afcm_sim_scenario_fnc_serverApplyKatPneumothorax`.
+the real `kat_breathing_fnc_handleBreathing` to apply it, **and** `kat_circulation_fnc_
+updateInternalBleeding` (real, confirmed from `fnc_inflictAdvancedPneumothorax.sqf`'s own call
+order — this was missing in an earlier pass, meaning Hemopneumothorax set the flag but never
+actually applied any internal-bleeding rate). Torso-wide, not per-limb. Called directly by
+`afcm_sim_scenario_fnc_serverApplyKatPneumothorax`.
 
-Both are wired into the injury editor UI, shown only when KAT is the active backend (Pneumothorax
-also only for the "chest" limb) — `afcm_sim_ui/functions/fnc_injuryEditor_init.sqf`.
+### `afcm_sim_kat_fnc_applyAirway`
+```sqf
+[_unit, _type] call afcm_sim_kat_fnc_applyAirway
+```
+**Real implementation.** Sets `kat_airway_obstruction`/`_occluded` (confirmed mutually-exclusive
+Bools, `addons/airway/functions/fnc_checkAirway.sqf` + `fnc_treatmentAdvanced_airwayLocal.sqf`) -
+no companion "apply" call needed (unlike Pneumothorax), since neither variable drives any derived
+physiological rate the way pneumothorax severity does. Head/neck-wide, not per-limb. Called
+directly by `afcm_sim_scenario_fnc_serverApplyKatAirway`.
+
+All three are wired into the injury editor UI, shown only when KAT is the active backend
+(Pneumothorax also only for the "chest" limb, Airway also only for the "head" limb) —
+`afcm_sim_ui/functions/fnc_injuryEditor_init.sqf`.
 
 ---
 
@@ -218,6 +236,20 @@ wouldn't need any folding at all, just a direct index lookup.
   **`kat_breathing_Tensionpneumothorax`** — set via `setVariable`, then
   `[_unit] call kat_breathing_fnc_handleBreathing` to actually apply the state (setting the
   variables alone isn't sufficient, confirmed from the prior working prototype).
+- **`kat_airway_obstruction`** / **`kat_airway_occluded`** — two Bools with genuinely different real
+  treatment paths, not two severities of one thing (`addons/airway/functions/
+  fnc_treatmentAdvanced_airwayLocal.sqf`): Obstruction is what inserting an airway adjunct clears;
+  Occlusion explicitly rejects that same treatment (item returned to the medic's inventory unused) -
+  it needs a surgical airway, which KAT doesn't model with an item. `kat_airway_overstretch` is a
+  separate, transient head-tilt-maneuver treatment state (not something an instructor would author
+  as a starting injury, so `afcm_sim_kat_fnc_applyAirway` doesn't touch it).
+- **`kat_circulation_internalBleeding`** — a live Number rate (litres/second, confirmed from
+  `addons/pharma/functions/fnc_getBloodVolumeChange.sqf`'s own docstring), computed by
+  `kat_circulation_fnc_updateInternalBleeding` from a fixed `HPTXBleedAmount` CBA setting × cardiac
+  output × vasoconstriction, driven entirely by whether `kat_breathing_hemopneumothorax` is true.
+  Drains the same real **`ace_medical_bloodVolume`** (litres, default 6.0) KAT extends from ACE3
+  rather than tracking its own separate "chest cavity" blood pool - there's no such thing in KAT's
+  real source, despite how the wound is often described casually ("bleeding into the chest").
 - **Real item classes** (from KAT's GitHub wiki Classnames page): `kat_bloodIV_A`/`_B`/`_AB`/`_O`
   (+ `_250`/`_500`/`_N` volume variants), `kat_AED`/`kat_X_AED`, `kat_IO_FAST`, `kat_IV_16`,
   pharmacology `kat_ketamine`/`kat_fentanyl`/`kat_atropine`/`kat_amiodarone`/`kat_naloxone`/
@@ -232,7 +264,7 @@ wouldn't need any folding at all, just a direct index lookup.
   removal call is wired up yet, same open question as `ace_compat`'s.
 - ~~KAT-specific state (fractures, pneumothorax) not exposed in the UI.~~ **Resolved** —
   `afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax` are real and wired into the injury editor UI
-  (§2, [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding--fracture--pneumothorax-wired-in)).
+  (§2, [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding--fracture--pneumothorax--airway-wired-in)).
 - ~~Fracture-*setting* function unconfirmed.~~ **Resolved** — `fnc_fractureSelectLocal.sqf` (KAT's
   real infliction entry point, fetched directly this pass) confirms the write pattern
   `afcm_sim_kat_fnc_applyFracture` uses: `_fractureArray set [_part, _severity]; _patient

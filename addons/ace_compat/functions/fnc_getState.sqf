@@ -21,6 +21,10 @@
  *   "incapacitatedState": String - "UNCONSCIOUS"/"MOVING"/"SHOOTING"/""
  *   "limbWoundCount": Number - open wounds on the given limb (0 if no limb given)
  *   "limbBleeding": Bool - any of that limb's open wounds have a nonzero bleed coefficient
+ *   "bloodVolume": Number - whole-body blood volume in litres, real ACE3 variable
+ *     (ace_medical_bloodVolume, default 6.0L - acemod/ACE3, addons/medical_engine/
+ *     script_macros_medical.hpp's DEFAULT_BLOOD_VOLUME), plain getVariable read like ace_medical_pain
+ *     above, not local-restricted
  *
  * Public: No
 */
@@ -50,4 +54,5 @@ _state set ["lifeState", lifeState _unit];
 _state set ["incapacitatedState", incapacitatedState _unit];
 _state set ["limbWoundCount", count _wounds];
 _state set ["limbBleeding", _bleeding];
+_state set ["bloodVolume", _unit getVariable ["ace_medical_bloodVolume", 6.0]];
 _state

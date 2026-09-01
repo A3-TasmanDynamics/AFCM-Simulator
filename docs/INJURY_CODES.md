@@ -212,19 +212,20 @@ built-in/`profileNamespace`/export-import pattern, just one layer up — full de
 
 ---
 
-## 6. KAT-Specific Coding — Fracture / Pneumothorax (Wired In)
+## 6. KAT-Specific Coding — Fracture / Pneumothorax / Airway (Wired In)
 
 KAT tracks some state that has no equivalent in the backend-agnostic `Injury` object at all — real,
 KAT-internal state, not something `afcm_sim_scenario`'s randomizer or a future preset produces. An
 earlier pass built this, then reverted it in favour of keeping the UI simple; it's back, this time
 grounded directly against real source fetched from `KAT-Advanced-Medical/KAM` (not the prior
 working prototype's comments) — full context:
-[KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables). Both are exposed in
-the injury editor UI, shown only when KAT is the active backend — Fracture also only when at least
-one selected limb is an arm or a leg (deliberately excludes head/chest, see below), Pneumothorax
-also only when "chest" is among the selected limbs (it's torso-wide, not per-limb) —
-`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`, called directly rather than through the
-generic `Injury`/backend-interface dispatch, since neither concept fits that schema.
+[KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables). All three are exposed
+in the injury editor UI, shown only when KAT is the active backend — Fracture also only when at
+least one selected limb is an arm or a leg (deliberately excludes head/chest, see below),
+Pneumothorax also only when "chest" is among the selected limbs (it's torso-wide, not per-limb),
+Airway also only when "head" is among the selected limbs (it's head/neck-wide, not per-limb) —
+`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`/`applyAirway`, called directly rather than
+through the generic `Injury`/backend-interface dispatch, since none of the three fit that schema.
 
 **Fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb — and each
 entry is a **severity/treatment-stage scale, not a boolean**. This array's own index order is
@@ -272,6 +273,45 @@ deliberately deterministic (severity always `4` for any non-None choice) unlike 
 infliction function, which rolls a random chance and a random hemo-vs-tension split — an
 instructor picking a type should get exactly that, not a dice roll. Unlike Fracture, this isn't
 per-limb — it's a torso-wide condition.
+
+**Hemothorax and "blood volume in the chest":** picking Hemopneumothorax now also calls the real
+`kat_circulation_fnc_updateInternalBleeding` (an earlier pass missed this — the flag was being set
+with no actual bleeding effect). That function turns the flag into a live internal-bleeding rate
+(`kat_circulation_internalBleeding`, litres/second) that drains the patient's real, whole-body
+**`ace_medical_bloodVolume`** (litres, default 6.0 — KAT extends ACE3's own blood volume tracking,
+same as everything else in §3 above). **There is no separate "chest cavity" blood pool in KAT's
+real source** — despite how a hemothorax gets described casually ("bleeding into the chest"), the
+mod models it as one whole-body volume draining faster, not a second, chest-scoped one. Both new
+fields are exposed in the injury editor's live status readout (`afcm_sim_kat_fnc_getState`) whenever
+KAT is active — Blood Volume always, Internal Bleeding Rate only while it's actually nonzero.
+
+**Airway** (`kat_airway_obstruction` / `kat_airway_occluded`) — two **mutually-exclusive** Bools,
+confirmed from `addons/airway/functions/fnc_checkAirway.sqf` and
+`fnc_treatmentAdvanced_airwayLocal.sqf`, with genuinely different real treatment paths rather than
+two severities of the same thing:
+
+```sqf
+/*
+Airway state (kat_airway_obstruction / kat_airway_occluded) - confirmed directly from
+addons/airway/functions/fnc_treatmentAdvanced_airwayLocal.sqf's own treatment logic:
+Obstruction - clearable by inserting a real airway adjunct (Larynxtubus/i-gel/OPA), which sets
+  obstruction back to false.
+Occlusion - NOT clearable that way - the treatment function explicitly rejects the item (returned
+  to the medic's inventory unused) whenever occluded is true. Models something an airway adjunct
+  physically can't fix (e.g. a crushed/destroyed airway), needing a real surgical airway KAT
+  doesn't otherwise model with an item.
+*/
+
+[patientUnit, 1] call afcm_sim_kat_fnc_applyAirway; // Obstruction
+[patientUnit, 2] call afcm_sim_kat_fnc_applyAirway; // Occlusion
+```
+
+`afcm_sim_kat_fnc_applyAirway` sets the variables directly with no companion "apply the state" call
+— unlike Pneumothorax, neither variable drives a derived physiological rate the way pneumothorax
+severity feeds `handleBreathing`'s math, and `kat_airway_fnc_handleAirway` is KAT's own *random*
+infliction roll, not a state-application function, so it would be wrong to call here. Like
+Pneumothorax, this isn't per-limb — it's a head/neck-wide condition, shown in the UI only when
+"head" is among the selected limbs.
 
 ---
 
