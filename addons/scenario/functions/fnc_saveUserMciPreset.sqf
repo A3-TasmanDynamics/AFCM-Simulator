@@ -17,6 +17,9 @@
  *
  * Public: Yes
 */
+// Reads the current library via afcm_sim_scenario_fnc_getUserMciPresets (not a raw
+// profileNamespace read) so any malformed entry is dropped here too, rather than surviving to
+// poison the write-back.
 
 params [
     "_name",
@@ -32,7 +35,7 @@ if (_id isEqualTo "") then {
 
 private _mciPreset = [_id, _name, _author, _description, _patientSpecs];
 
-private _presets = profileNamespace getVariable ["AFCM_SIM_userMciPresets", []];
+private _presets = call afcm_sim_scenario_fnc_getUserMciPresets;
 _presets = _presets select { (_x select 0) != _id };
 _presets pushBack _mciPreset;
 
