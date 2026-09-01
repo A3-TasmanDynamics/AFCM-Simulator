@@ -269,10 +269,16 @@ exclusive from that same real infliction function). All three set via `setVariab
 variables alone isn't sufficient. `afcm_sim_kat_fnc_applyPneumothorax` exposes this as a single UI
 choice — None / Simple Pneumothorax / Hemopneumothorax / Tension Pneumothorax — rather than three
 independent controls, since the real combinations that make clinical sense are limited, and is
-deliberately deterministic (severity always `4` for any non-None choice) unlike KAT's own real
-infliction function, which rolls a random chance and a random hemo-vs-tension split — an
-instructor picking a type should get exactly that, not a dice roll. Unlike Fracture, this isn't
-per-limb — it's a torso-wide condition.
+deliberately deterministic unlike KAT's own real infliction function, which rolls a random chance
+and a random hemo-vs-tension split — an instructor picking a type should get exactly that, not a
+dice roll. Severity is `2` for Simple, `4` for Hemo/Tension — an earlier pass gave Simple the same
+`4` as the advanced cases too, contradicting `handleBreathing`'s own continuous `_pneumothorax / 4`
+scaling (KAT has no real "basic pneumothorax" infliction function of its own to confirm an exact
+number against, only the advanced path exists in its source, so `2` is a reasonable mid-scale pick,
+not a confirmed KAT constant). Unlike Fracture, this isn't per-limb — it's a torso-wide condition.
+`kat_breathing_fnc_handleBreathing`/`kat_circulation_fnc_updateInternalBleeding` (below) are
+dispatched via a CBA event targeting the unit (`CBA_fnc_targetEvent`) rather than called directly —
+the same real locality fix `afcm_sim_ace_fnc_applyInjury` uses (INJURY_CODES.md §2, ACE_COMPAT.md).
 
 **Hemothorax and "blood volume in the chest":** picking Hemopneumothorax now also calls the real
 `kat_circulation_fnc_updateInternalBleeding` (an earlier pass missed this — the flag was being set

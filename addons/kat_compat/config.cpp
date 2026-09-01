@@ -43,6 +43,7 @@ class CfgFunctions
             // (INJURY_CODES.md §6).
             class applyFracture { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyFracture.sqf"; };
             class applyPneumothorax { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyPneumothorax.sqf"; };
+            class applyPneumothoraxLocal { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyPneumothoraxLocal.sqf"; };
             class applyAirway { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyAirway.sqf"; };
             class preInit { file = "\afcm_sim\addons\kat_compat\functions\fnc_preInit.sqf"; preInit = 1; };
         };
