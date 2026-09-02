@@ -32,11 +32,21 @@ if (isNil "AFCM_SIM_UI_mciPatientSpecs") then {
     disableSerialization;
     params ["_display"];
 
+    // Real, confirmed bug fixed here: this combo used to always show 1-10 only, so a patient list
+    // loaded/imported with more than 10 patients (a real MCI preset, no hard cap on preset size)
+    // left the dropdown showing a stale/wrong number while the Patient listbox below correctly
+    // showed every patient - and picking any value off that stale dropdown afterward would
+    // `resize` the real, larger array down to it, silently discarding already-configured patients
+    // far beyond what the visible "old number -> new number" transition implied. Appending the
+    // real current count when it's outside 1-10 means the dropdown always shows the truth, so any
+    // resize the operator triggers is the change they can actually see, not a surprise one.
     private _counts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    private _realCount = count AFCM_SIM_UI_mciPatientSpecs;
+    if !(_realCount in _counts) then { _counts pushBack _realCount; };
     private _countLB = _display displayCtrl 10;
     lbClear _countLB;
     { _countLB lbAdd (str _x); _countLB lbSetValue [_forEachIndex, _x]; } forEach _counts;
-    private _countIdx = _counts find (count AFCM_SIM_UI_mciPatientSpecs);
+    private _countIdx = _counts find _realCount;
     _countLB lbSetCurSel ([_countIdx, 2] select (_countIdx == -1));
 
     private _ctLB = _display displayCtrl 11;

@@ -65,6 +65,14 @@ private _jitteredPos = [
 ];
 
 private _unit = AFCM_SIM_patientGroup createUnit [_class, _jitteredPos, [], 0, "NONE"];
+// Real, confirmed gap fixed here: nothing downstream of this (session bookkeeping, addAction
+// wiring) guarded against createUnit ever failing - objNull would otherwise thread silently into
+// the shared, publicVariable'd AFCM_SIM_spawnedPatients/AFCM_SIM_spawnSessions state and get
+// remoteExec'd onward to addAction-adding functions.
+if (isNull _unit) exitWith {
+    diag_log text format ["[AFCM-Simulator] spawnPatient aborted - createUnit failed for class '%1' at %2.", _class, _jitteredPos];
+    objNull
+};
 _unit setPosATL _jitteredPos;
 _unit setUnitPos "DOWN";
 _unit setCaptive true;
