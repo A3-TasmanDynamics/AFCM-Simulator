@@ -117,7 +117,10 @@ applyAceStyleInjuryLocal` (`addons/main/functions/`), registered once as that ev
 ```sqf
 [_unit, _injury] call afcm_sim_ace_fnc_removeInjury
 ```
-**Stub.** Logs `"removeInjury stub called for %1 - not yet implemented"` via `diag_log` and returns.
+**Stub.** Logs `"removeInjury stub called for %1 - not yet implemented"` via `diag_log` and returns
+`false` — `afcm_sim_fnc_backend_removeInjury`'s own contract is "true if the active backend actually
+handled it," and now genuinely propagates this return value rather than always reporting `true` the
+moment any function existed to call (real bug, fixed).
 ACE3's real removal-side API (something in the spirit of `ace_medical_fnc_fullHeal`, or a targeted
 per-wound removal — unconfirmed which fits the `Injury` object shape) hasn't been researched yet.
 
