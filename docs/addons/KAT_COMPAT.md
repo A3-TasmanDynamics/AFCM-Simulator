@@ -91,10 +91,15 @@ the same field), `internalBleedingRate` (real `kat_circulation_internalBleeding`
 `airwayStatus` (0=Clear/1=Obstruction/2=Occlusion, real `kat_airway_obstruction`/`_occluded`).
 
 ### `afcm_sim_kat_fnc_reset`
-**Real implementation.** Identical to `afcm_sim_ace_fnc_reset` — `ace_medical_fnc_fullHeal` then
-re-lock via `afcm_sim_kat_fnc_setUnconscious`. Backs the limb-select ("main") screen's Reset
-Patient button — moved there from the injury editor, which now has its own purely-local
-"Reset Limb" that only clears the form (DESIGN.md §5).
+**Real implementation** — `ace_medical_fnc_fullHeal`, **plus clearing every KAT-only extra**
+(`kat_surgery_fractures`/`kat_breathing_pneumothorax`(+hemo/tension)/`kat_airway_obstruction`
+(+occluded), via `afcm_sim_kat_fnc_applyPneumothorax`/`applyAirway`'s own "None" value rather than
+duplicating their variable shapes here), then re-lock via `afcm_sim_kat_fnc_setUnconscious`. An
+earlier pass only did the ACE-side heal — `ace_medical_fnc_fullHeal` has no knowledge of AFCM's own
+KAT-specific variables and can't clear them, so a fracture/pneumothorax/airway state set before
+Reset kept showing in the live status readout forever afterward. Backs the limb-select ("main")
+screen's Reset Patient button — moved there from the injury editor, which now has its own
+purely-local "Reset Limb" that only clears the form (DESIGN.md §5).
 
 ### `afcm_sim_kat_fnc_setUnconscious`
 **Real implementation.** Identical to `afcm_sim_ace_fnc_setUnconscious` — `[_unit, true] call
