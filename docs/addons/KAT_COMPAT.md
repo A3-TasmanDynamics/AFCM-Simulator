@@ -118,12 +118,20 @@ KAT-only, no ACE equivalent — called directly by
 ```sqf
 [_unit, _type] call afcm_sim_kat_fnc_applyPneumothorax
 ```
-**Real implementation.** Sets `kat_breathing_pneumothorax`/`_hemopneumothorax`/
-`_tensionpneumothorax` (confirmed 0-4 severity scale + two mutually-exclusive booleans), then calls
-the real `kat_breathing_fnc_handleBreathing` to apply it, **and** `kat_circulation_fnc_
-updateInternalBleeding` (real, confirmed from `fnc_inflictAdvancedPneumothorax.sqf`'s own call
-order — this was missing in an earlier pass, meaning Hemopneumothorax set the flag but never
-actually applied any internal-bleeding rate). Torso-wide, not per-limb. Called directly by
+**Real implementation.** Sets `kat_breathing_pneumothorax` — Simple Pneumothorax gets `2`,
+Hemo/Tension get `4` (confirmed 0-4 *continuous* severity scale, `handleBreathing`'s own
+breathing-rate math scales directly off `_pneumothorax / 4` — an earlier pass gave Simple the same
+`4` as the advanced cases, contradicting that) — plus `_hemopneumothorax`/`_tensionpneumothorax`
+(two mutually-exclusive booleans). The actual application — `kat_breathing_fnc_handleBreathing`,
+**and**, for Hemothorax, `kat_circulation_fnc_updateInternalBleeding` (real, confirmed from
+`fnc_inflictAdvancedPneumothorax.sqf`'s own call order — an earlier pass missed this, meaning
+Hemopneumothorax set the flag but never actually applied any internal-bleeding rate) — is
+dispatched via a CBA event (`"afcm_sim_applyKatPneumothoraxLocal"`, `CBA_fnc_targetEvent`,
+`fnc_preInit.sqf`) targeting the unit, not called directly: same real locality fix as
+`afcm_sim_ace_fnc_applyInjury`'s own dispatch (see [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_applyinjury))
+- this function is reached from a server-authoritative remoteExec with no guarantee the target is
+actually local to the server. The `setVariable` calls themselves stay in the dispatcher (public
+sync, safe from anywhere). Torso-wide, not per-limb. Called directly by
 `afcm_sim_scenario_fnc_serverApplyKatPneumothorax`.
 
 ### `afcm_sim_kat_fnc_applyAirway`
