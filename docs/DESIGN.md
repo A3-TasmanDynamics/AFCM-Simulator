@@ -661,6 +661,16 @@ desync, validation on an authority machine):
   AFCM-Simulator does not need to invent its own state-sync layer either way, only the
   request→authority→domain-call path for *scenario-specific* actions (preset application, spawn
   placement, randomization) that neither backend knows about on its own.
+- **"Server-side" isn't always literally the server**: `ace_medical_fnc_addDamageToUnit` requires
+  `local _unit` (REFERENCES.md, confirmed from ACE3's own source) — a real constraint the
+  server-authoritative request path above doesn't satisfy on its own, since the server isn't
+  guaranteed to be local to every unit (a live player-controlled casualty, most notably). Real fix,
+  not guessed at: `ace_compat`/`kat_compat`'s `applyInjury` dispatch the actual ACE calls via a
+  shared CBA event (`"afcm_sim_applyAceStyleInjuryLocal"`, `CBA_fnc_targetEvent`) targeting the
+  unit, so the work genuinely runs on whichever machine is local to it — the same real mechanism
+  KAT's own source uses for the same problem (its "...Local"-suffixed treatment functions). "Server
+  decides, then dispatches to the right machine to actually execute" is the accurate description of
+  this path, not "the server does it."
 - **JIP**: preset library (built-in) is static per-addon-version, so no JIP concern — and, now that
   it's actually implemented, this turned out to apply to user presets too: they live in each
   player's own `profileNamespace`, computed locally from a function call rather than synced state,

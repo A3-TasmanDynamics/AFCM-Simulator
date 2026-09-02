@@ -72,9 +72,14 @@ All under the `afcm_sim_kat` tag.
 Registers this backend with `afcm_sim_main` under id `"kat"`, priority 15. Real, runs automatically.
 
 ### `afcm_sim_kat_fnc_applyInjury`
-**Real implementation.** Identical in substance to `afcm_sim_ace_fnc_applyInjury` — same `LimbId`
-fold, same `addDamageToUnit`/`addWound` calls (§3 explains why that's correct under KAT too), same
-bleeding-wound logic. Was a stub specifically because that research hadn't been done yet.
+**Real implementation**, and now literally the same shared code `afcm_sim_ace_fnc_applyInjury` calls
+— both are thin dispatchers firing the `"afcm_sim_applyAceStyleInjuryLocal"` CBA event (targeting
+the unit via `CBA_fnc_targetEvent`, real fix for `ace_medical_fnc_addDamageToUnit` requiring `local
+_unit`, REFERENCES.md), whose one shared handler (`afcm_sim_main_fnc_medical_
+applyAceStyleInjuryLocal`) does the actual `LimbId` fold + `addDamageToUnit`/`addWound` calls (§3
+explains why that's correct under KAT too). The two were previously byte-for-byte duplicated copies
+of this logic in each compat addon; see [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_applyinjury)
+for the full explanation.
 
 ### `afcm_sim_kat_fnc_getState`
 **Real implementation.** Identical in substance to `afcm_sim_ace_fnc_getState` (see

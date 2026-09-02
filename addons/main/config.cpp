@@ -55,6 +55,13 @@ class CfgFunctions
             // needs to be registered before that event can possibly fire, and doesn't depend on
             // backend registration/selection at all, so there's no reason to wait for postInit.
             class disableSpontaneousWakeup { file = "\afcm_sim\addons\main\functions\fnc_disableSpontaneousWakeup.sqf"; preInit = 1; };
+            // Shared, locality-correct ACE3 injury application - see
+            // fnc_medical_applyAceStyleInjuryLocal.sqf's own header for the full "why". Used by
+            // both ace_compat and kat_compat's fnc_applyInjury.sqf, dispatched via
+            // CBA_fnc_targetEvent rather than called directly, since ace_medical_fnc_addDamageToUnit
+            // requires `local _unit` (REFERENCES.md).
+            class medical_applyAceStyleInjuryLocal { file = "\afcm_sim\addons\main\functions\fnc_medical_applyAceStyleInjuryLocal.sqf"; };
+            class medical_registerEvents { file = "\afcm_sim\addons\main\functions\fnc_medical_registerEvents.sqf"; preInit = 1; };
         };
         class Settings
         {
