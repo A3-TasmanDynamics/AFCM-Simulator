@@ -19,6 +19,8 @@
  *
  * Public: Yes
 */
+// Reads the current library via afcm_sim_scenario_fnc_getUserPresets (not a raw profileNamespace
+// read) so any malformed entry is dropped here too, rather than surviving to poison the write-back.
 
 params [
     "_name",
@@ -42,7 +44,7 @@ if (_id isEqualTo "") then {
 
 private _preset = [_id, _name, _author, _description, _injuries, _tags];
 
-private _presets = profileNamespace getVariable ["AFCM_SIM_userPresets", []];
+private _presets = call afcm_sim_scenario_fnc_getUserPresets;
 _presets = _presets select { (_x select 0) != _id };
 _presets pushBack _preset;
 

@@ -426,7 +426,13 @@ is still the plan, not the state of the repo.
   Fracture/Pneumothorax/Airway though, which have no place in this Array shape (INJURY_CODES.md §6,
   same reason they're applied via a separate direct call). A dedicated "preset builder" cart flow (mixing
   *different* wounds across limbs into one save, not just one wound broadcast to several) is still a
-  natural next step if this gets more use.
+  natural next step if this gets more use. **Validated on read** (full-codebase review) — since
+  `profileNamespace` is user-editable/persistent data, `getUserPresets`/`getUserMciPresets` now
+  filter out any entry that isn't a well-formed Array with a real String id before returning it,
+  instead of trusting whatever's stored blindly; `saveUserPreset`/`deleteUserPreset` (and their MCI
+  counterparts) now read through those same getters rather than the raw `profileNamespace` variable,
+  so a single malformed entry can no longer wedge reading, saving, deleting, *and* importing all at
+  once the way it used to — it's just dropped, and self-heals on the next write.
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
   that level's profile → applies via the same `injury.applied` path presets use (one application
   pipeline, three sources: manual, preset, randomized). **Implemented**:
