@@ -401,6 +401,20 @@ is still the plan, not the state of the repo.
     (real `kat_circulation_internalBleeding`, litres/second) whenever it's actually nonzero. KAT
     doesn't model a separate "chest cavity" blood pool — hemothorax drains the same whole-body
     volume faster, confirmed from real source, not guessed at (INJURY_CODES.md §6).
+  - **Cardiac State** — unlike Fracture/Pneumothorax/Airway, **not** KAT-exclusive: cardiac arrest
+    is genuinely ACE-native (`ace_medical_vitals_inCardiacArrest`, set via the real
+    `ace_medical_status_fnc_setCardiacArrestState`), doubly confirmed since KAT's own repo vendors
+    the identical ACE header rather than defining its own arrest flag. `afcm_sim_ace_fnc_
+    applyCardiacState` exists in `ace_compat` for this reason, not just `kat_compat`. KAT layers a
+    real rhythm type on top (`kat_circulation_cardiacArrestType`, 0=Normal/1=Asystole/2=PEA/
+    3=Ventricular Fibrillation/4=Ventricular Tachycardia, confirmed from KAT's own
+    `fnc_handleCardiacArrest.sqf`) — only visibly affects behaviour if the mission has KAT's own
+    "Advanced Cardiac Rhythm" setting enabled, harmless real state either way. Exposed as one
+    Cardiac State combo, shown for either backend and deliberately **not limb-gated** (unlike
+    Fracture/Pneumothorax/Airway) — a whole-patient vitals state, not tied to a body region.
+    `afcm_sim_kat_fnc_reset` also explicitly clears the KAT rhythm variable, which `fullHeal` has no
+    knowledge of — same class of gap fixed for Fracture/Pneumothorax/Airway. Full real source
+    citations: INJURY_CODES.md §7.
 - **Injury Presets** — built-in + user library, save/load/export/import, apply-to-selected-unit.
   **Implemented**, in `afcm_sim_scenario` (data/logic) + `afcm_sim_ui` (Preset Library/Preset Save
   dialogs). A Preset is a plain `Array`, not the `HashMap` §4.3 originally sketched — `str _preset`

@@ -7,10 +7,11 @@
  * applied to every one of them, same as Apply does), then opens RscDisplayAFCM_SIM_PresetSave on
  * top of this dialog to name and save it.
  *
- * Deliberately does NOT include Fracture/Pneumothorax/Airway even if visible/set - the Preset
- * schema (DESIGN.md §4.3) only holds real Injury-shaped entries ([limb, woundType, severity,
- * bleeding]), and that KAT-only state has no equivalent there at all (INJURY_CODES.md §6, same
- * reason they're applied via a separate direct call rather than the generic dispatch).
+ * Deliberately does NOT include Fracture/Pneumothorax/Airway/Cardiac State even if visible/set -
+ * the Preset schema (DESIGN.md §4.3) only holds real Injury-shaped entries ([limb, woundType,
+ * severity, bleeding]), and none of that whole-region/whole-patient state has an equivalent there
+ * at all (INJURY_CODES.md §6/§7, same reason they're applied via a separate direct call rather
+ * than the generic dispatch).
  *
  * Doesn't close this dialog - Save as Preset never touches the patient, so there's no reason to
  * lose the form; the two dialogs simply stack (RscDisplayAFCM_SIM_PresetSave opens on top).

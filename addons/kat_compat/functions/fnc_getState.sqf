@@ -19,14 +19,20 @@
  * is the same real `ace_medical_bloodVolume` afcm_sim_ace_fnc_getState reports - KAT extends ACE's
  * blood volume tracking rather than replacing it.
  *
+ * "cardiacRhythm" is `kat_circulation_cardiacArrestType` (real, confirmed from
+ * addons/circulation/functions/fnc_handleCardiacArrest.sqf/fnc_getCardiacArrestHeartRate.sqf, see
+ * fnc_applyCardiacState.sqf) - 0=Normal, 1=Asystole, 2=PEA, 3=Ventricular Fibrillation,
+ * 4=Ventricular Tachycardia. "inCardiacArrest" is the same real `ace_medical_vitals_
+ * inCardiacArrest` afcm_sim_ace_fnc_getState reports.
+ *
  * Arguments:
  * 0: Target unit <OBJECT>
  * 1: LimbId <STRING> (default "") - if given, includes wound detail for that limb specifically
  *
  * Return Value:
  * State <HASHMAP> - same shape as afcm_sim_ace_fnc_getState, plus "fracture" (given limb),
- *   "pneumothoraxType"/"internalBleedingRate" (whole-unit), and "airwayStatus" (only set when
- *   the given limb is "head" - 0=Clear, 1=Obstruction, 2=Occlusion)
+ *   "pneumothoraxType"/"internalBleedingRate"/"cardiacRhythm" (whole-unit), and "airwayStatus"
+ *   (only set when the given limb is "head" - 0=Clear, 1=Obstruction, 2=Occlusion)
  *
  * Public: No
 */
@@ -57,6 +63,8 @@ _state set ["limbWoundCount", count _wounds];
 _state set ["limbBleeding", _bleeding];
 _state set ["bloodVolume", _unit getVariable ["ace_medical_bloodVolume", 6.0]];
 _state set ["internalBleedingRate", _unit getVariable ["kat_circulation_internalBleeding", 0]];
+_state set ["inCardiacArrest", _unit getVariable ["ace_medical_vitals_inCardiacArrest", false]];
+_state set ["cardiacRhythm", _unit getVariable ["kat_circulation_cardiacArrestType", 0]];
 
 private _limbIndex = ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"] find _limb;
 if (_limbIndex != -1) then {

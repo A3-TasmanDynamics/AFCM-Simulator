@@ -44,6 +44,7 @@ class CfgFunctions
             class applyFracture { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyFracture.sqf"; };
             class applyPneumothorax { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyPneumothorax.sqf"; };
             class applyAirway { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyAirway.sqf"; };
+            class applyCardiacState { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyCardiacState.sqf"; };
             class preInit { file = "\afcm_sim\addons\kat_compat\functions\fnc_preInit.sqf"; preInit = 1; };
         };
     };

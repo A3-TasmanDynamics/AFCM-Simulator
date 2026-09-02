@@ -146,6 +146,23 @@ machine actually checks before letting a unit self-treat. Early-exits if already
 ACE-unconscious, so the recurring re-lock safeguard in `afcm_sim_spawner_fnc_spawnPatient` is a
 cheap no-op most ticks.
 
+### `afcm_sim_ace_fnc_applyCardiacState`
+```sqf
+[_unit, _arrest] call afcm_sim_ace_fnc_applyCardiacState
+```
+**Real implementation.** Not part of the interface hashmap above (called directly by
+`afcm_sim_scenario_fnc_serverApplyCardiacState`, same pattern as `kat_compat`'s
+`applyFracture`/`applyPneumothorax`/`applyAirway` — a whole-patient vitals state has no place in
+the backend-agnostic `Injury` object). `[_unit, _arrest] call
+ace_medical_status_fnc_setCardiacArrestState;` — ACE3's own real, dedicated cardiac arrest toggle
+(confirmed from `acemod/ACE3`, `addons/medical_status/functions/fnc_setCardiacArrestState.sqf`):
+sets `ace_medical_vitals_inCardiacArrest`, zeroes heart rate (or restores it to 40 on revival),
+forces unconsciousness when entering arrest, and fires a real CBA local event
+(`"ace_cardiacArrest"`). Genuinely ACE-native, not a KAT invention, which is why this lives here in
+`ace_compat` too, not only in `kat_compat` — see [INJURY_CODES.md §7](../INJURY_CODES.md#7-cardiac-state--shared-ace--kat-not-kat-specific).
+`afcm_sim_ace_fnc_reset` already correctly exits cardiac arrest as a side effect, so no extra
+reset-side handling was needed.
+
 ---
 
 ## 3. Why Two ACE Calls, Not One
