@@ -323,6 +323,66 @@ Pneumothorax, this isn't per-limb — it's a head/neck-wide condition, shown in 
 
 ---
 
+## 7. Cardiac State — Shared (ACE + KAT), Not KAT-Specific
+
+Unlike §6, cardiac arrest is **genuinely ACE-native**, not a KAT invention — confirmed directly
+from `acemod/ACE3`'s own source (`addons/medical_status/functions/fnc_setCardiacArrestState.sqf`,
+`addons/medical_engine/script_macros_medical.hpp`'s `IN_CRDC_ARRST` macro), and doubly confirmed
+from KAT's own repo, which vendors a copy of that exact same ACE header (`include/z/ace/addons/
+medical_engine/script_macros_medical.hpp`) rather than defining its own arrest flag — KAT's vitals
+loop reads the identical real variable. That's why `afcm_sim_ace_fnc_applyCardiacState` exists at
+all, unlike Fracture/Pneumothorax/Airway which only exist under `kat_compat`.
+
+**Base arrest** (`ace_medical_vitals_inCardiacArrest`, `Bool`) — set via the real
+`ace_medical_status_fnc_setCardiacArrestState`, which also zeroes heart rate (or restores it to 40
+on revival), forces unconsciousness when entering arrest, and fires a real CBA local event
+(`"ace_cardiacArrest"`). `afcm_sim_ace_fnc_reset`/`afcm_sim_kat_fnc_reset` (`ace_medical_fnc_fullHeal`)
+already correctly exit cardiac arrest as a side effect — confirmed from ACE3's own
+`fnc_fullHealLocal.sqf` source, which fires a real `"ace_medical_CPRSucceeded"` local event
+whenever `IN_CRDC_ARRST` is true, rather than setting the flag directly (that line is deliberately
+commented out in ACE's own source — "this should be set by statemachine transition").
+
+**Rhythm type** (`kat_circulation_cardiacArrestType`, `Number`) — real, KAT-only detail layered on
+top of the shared base flag, doubly confirmed from KAT's own
+`addons/circulation/functions/fnc_handleCardiacArrest.sqf` and
+`fnc_getCardiacArrestHeartRate.sqf` (both fetched directly, their own in-file comments agree):
+
+```sqf
+/*
+Cardiac rhythm scale (kat_circulation_cardiacArrestType) - confirmed directly from
+addons/circulation/functions/fnc_handleCardiacArrest.sqf's own in-file comment:
+0 = Normal, 1 = Asystole (no pulse, not shockable), 2 = Pulseless Electrical Activity
+(AEDX fake pulse, not shockable), 3 = Ventricular Fibrillation (shockable),
+4 = Ventricular Tachycardia (shockable)
+*/
+
+[patientUnit, 1] call afcm_sim_kat_fnc_applyCardiacState; // Asystole
+[patientUnit, 3] call afcm_sim_kat_fnc_applyCardiacState; // Ventricular Fibrillation
+```
+
+`afcm_sim_kat_fnc_applyCardiacState` sets `ace_medical_vitals_inCardiacArrest` (true for any
+non-zero rhythm) *and* `kat_circulation_cardiacArrestType` together, with no companion "apply the
+state" call needed — both real KAT consumers read the rhythm variable fresh on their own periodic
+schedule (same as Airway, unlike Pneumothorax's `handleBreathing` requirement). Only has a visible
+effect on the *rhythm* if the mission has KAT's own "Advanced Cardiac Rhythm" setting
+(`kat_circulation_AdvRhythm`) enabled — the base arrest flag (and its unconsciousness/heart-rate
+effects) works regardless, since that part is pure ACE. Deliberately deterministic, unlike KAT's
+own real `fnc_handleCardiacArrest.sqf` (which rolls a random chance, a random rhythm split, and a
+time-based random deterioration cascade) — an instructor picking a rhythm here should get exactly
+that, not a dice roll or a later automatic downgrade to a worse rhythm.
+
+`afcm_sim_kat_fnc_reset` also clears `kat_circulation_cardiacArrestType` back to `0` explicitly —
+`ace_medical_fnc_fullHeal` has no knowledge of this KAT-only variable and can't clear it, same class
+of gap as `kat_surgery_fractures`/`kat_breathing_pneumothorax`/`kat_airway_obstruction` before it.
+
+Exposed in the injury editor as a single **Cardiac State** combo, shown for either backend, gated
+on **"chest"** being among the selected limbs — same gating as Pneumothorax, even though the real
+`ace_medical_vitals_inCardiacArrest` flag is actually whole-patient, since chest is where an
+instructor thinks to look for it. Under ACE it offers only None/Cardiac Arrest (no rhythm concept
+exists); under KAT it offers the full five-value rhythm enum above.
+
+---
+
 <div align="center">
 
 **Tasman Dynamics** — Engineering high-fidelity systems for the future of multi-domain simulation.

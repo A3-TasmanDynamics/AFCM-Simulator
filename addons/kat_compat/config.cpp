@@ -45,6 +45,7 @@ class CfgFunctions
             class applyPneumothorax { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyPneumothorax.sqf"; };
             class applyPneumothoraxLocal { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyPneumothoraxLocal.sqf"; };
             class applyAirway { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyAirway.sqf"; };
+            class applyCardiacState { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyCardiacState.sqf"; };
             class preInit { file = "\afcm_sim\addons\kat_compat\functions\fnc_preInit.sqf"; preInit = 1; };
         };
     };

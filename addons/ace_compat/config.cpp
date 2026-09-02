@@ -38,6 +38,12 @@ class CfgFunctions
             class getState { file = "\afcm_sim\addons\ace_compat\functions\fnc_getState.sqf"; };
             class reset { file = "\afcm_sim\addons\ace_compat\functions\fnc_reset.sqf"; };
             class setUnconscious { file = "\afcm_sim\addons\ace_compat\functions\fnc_setUnconscious.sqf"; };
+            // Not part of the backend interface hashmap below - called directly by
+            // afcm_sim_scenario_fnc_serverApplyCardiacState, same pattern as kat_compat's
+            // applyFracture/applyPneumothorax/applyAirway - a whole-patient vitals state has no
+            // place in the backend-agnostic Injury object. Genuinely ACE-native (not KAT-specific),
+            // so it lives here too, not just in kat_compat.
+            class applyCardiacState { file = "\afcm_sim\addons\ace_compat\functions\fnc_applyCardiacState.sqf"; };
             class preInit { file = "\afcm_sim\addons\ace_compat\functions\fnc_preInit.sqf"; preInit = 1; };
         };
     };

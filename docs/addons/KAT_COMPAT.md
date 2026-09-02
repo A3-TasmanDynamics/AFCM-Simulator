@@ -93,15 +93,17 @@ the same field), `internalBleedingRate` (real `kat_circulation_internalBleeding`
 `airwayStatus` (0=Clear/1=Obstruction/2=Occlusion, real `kat_airway_obstruction`/`_occluded`).
 
 ### `afcm_sim_kat_fnc_reset`
-**Real implementation** — `ace_medical_fnc_fullHeal`, **plus clearing every KAT-only extra**
-(`kat_surgery_fractures`/`kat_breathing_pneumothorax`(+hemo/tension)/`kat_airway_obstruction`
-(+occluded), via `afcm_sim_kat_fnc_applyPneumothorax`/`applyAirway`'s own "None" value rather than
-duplicating their variable shapes here), then re-lock via `afcm_sim_kat_fnc_setUnconscious`. An
-earlier pass only did the ACE-side heal — `ace_medical_fnc_fullHeal` has no knowledge of AFCM's own
-KAT-specific variables and can't clear them, so a fracture/pneumothorax/airway state set before
-Reset kept showing in the live status readout forever afterward. Backs the limb-select ("main")
-screen's Reset Patient button — moved there from the injury editor, which now has its own
-purely-local "Reset Limb" that only clears the form (DESIGN.md §5).
+**Real implementation** — `ace_medical_fnc_fullHeal` (which already correctly exits cardiac arrest
+as a side effect, see `afcm_sim_ace_fnc_applyCardiacState`), **plus clearing every KAT-only extra**
+that `fullHeal` has no knowledge of and can't clear: `kat_circulation_cardiacArrestType` back to
+`0`, and `kat_surgery_fractures`/`kat_breathing_pneumothorax`(+hemo/tension)/
+`kat_airway_obstruction`(+occluded) via `afcm_sim_kat_fnc_applyPneumothorax`/`applyAirway`'s own
+"None" value rather than duplicating their variable shapes here. Then re-locks via
+`afcm_sim_kat_fnc_setUnconscious`. An earlier pass only did the ACE-side heal, so a
+fracture/pneumothorax/airway state set before Reset kept showing in the live status readout
+forever afterward. Backs the limb-select ("main") screen's Reset Patient button — moved there from
+the injury editor, which now has its own purely-local "Reset Limb" that only clears the form
+(DESIGN.md §5).
 
 ### `afcm_sim_kat_fnc_setUnconscious`
 **Real implementation.** Identical to `afcm_sim_ace_fnc_setUnconscious` — `[_unit, true] call
@@ -155,6 +157,24 @@ directly by `afcm_sim_scenario_fnc_serverApplyKatAirway`.
 All three are wired into the injury editor UI, shown only when KAT is the active backend
 (Pneumothorax also only for the "chest" limb, Airway also only for the "head" limb) —
 `afcm_sim_ui/functions/fnc_injuryEditor_init.sqf`.
+
+### `afcm_sim_kat_fnc_applyCardiacState`
+```sqf
+[_unit, _rhythm] call afcm_sim_kat_fnc_applyCardiacState
+```
+**Real implementation.** Unlike Fracture/Pneumothorax/Airway, this is **not** KAT-exclusive — sets
+the shared, genuinely ACE-native `ace_medical_vitals_inCardiacArrest` (via the same real
+`ace_medical_status_fnc_setCardiacArrestState` `afcm_sim_ace_fnc_applyCardiacState` uses) *and*
+KAT's own real `kat_circulation_cardiacArrestType` (0=Normal/1=Asystole/2=PEA/
+3=Ventricular Fibrillation/4=Ventricular Tachycardia, confirmed from KAT's own
+`fnc_handleCardiacArrest.sqf`/`fnc_getCardiacArrestHeartRate.sqf`) together. No companion "apply"
+call needed - both real consumers read the rhythm variable fresh on their own schedule. Only has a
+visible effect on the *rhythm* specifically if the mission has KAT's own "Advanced Cardiac Rhythm"
+setting enabled; the base arrest flag (and its unconsciousness/heart-rate effects) works
+regardless. Shown for either backend in the injury editor UI, gated on "chest" being among the
+selected limbs (same gating as Pneumothorax) — full detail:
+[INJURY_CODES.md §7](../INJURY_CODES.md#7-cardiac-state--shared-ace--kat-not-kat-specific). Called
+directly by `afcm_sim_scenario_fnc_serverApplyCardiacState`.
 
 ---
 

@@ -31,6 +31,10 @@ class CfgFunctions
             class serverApplyKatFracture { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatFracture.sqf"; };
             class serverApplyKatPneumothorax { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatPneumothorax.sqf"; };
             class serverApplyKatAirway { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatAirway.sqf"; };
+            // Unlike the three above, NOT KAT-only - the base cardiac arrest flag is genuinely
+            // ACE-native, so this dispatches to whichever of "ace"/"kat" is actually active. See
+            // fnc_serverApplyCardiacState.sqf's own header.
+            class serverApplyCardiacState { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyCardiacState.sqf"; };
         };
         // Injury Presets (DESIGN.md §4.3/§ Injury Presets) - built-in library + a per-player
         // profileNamespace-backed user library, plain-Array export/import, and the server-side

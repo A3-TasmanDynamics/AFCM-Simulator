@@ -66,6 +66,12 @@ if (count _state > 0) then {
         _state getOrDefault ["limbBleeding", false]
     ];
 
+    // Shared field (both ace_compat and kat_compat's getState - real ace_medical_vitals_
+    // inCardiacArrest, see fnc_applyCardiacState.sqf), unlike the KAT-only block below.
+    if (_state getOrDefault ["inCardiacArrest", false]) then {
+        _text = _text + "\nCardiac Arrest: YES";
+    };
+
     // KAT-only fields (kat_compat's getState, not ace_compat's - see fnc_getState.sqf) - only
     // present at all when KAT is the active backend, so their presence alone gates showing this.
     if ("fracture" in _state) then {
@@ -91,6 +97,16 @@ if (count _state > 0) then {
         private _bleedRate = _state getOrDefault ["internalBleedingRate", 0];
         if (_bleedRate > 0) then {
             _text = _text + format ["\nInternal Bleeding (Hemothorax, KAT): %1L/s", _bleedRate];
+        };
+
+        // Only worth a line while actually in arrest (0 = Normal otherwise) - real KAT rhythm enum,
+        // see fnc_applyCardiacState.sqf. The base "Cardiac Arrest: YES" line above already covers
+        // the shared ACE flag regardless of backend; this adds the KAT-specific rhythm detail.
+        private _rhythm = _state getOrDefault ["cardiacRhythm", 0];
+        if (_rhythm > 0) then {
+            private _rhythmNames = ["Normal", "Asystole", "PEA", "Ventricular Fibrillation", "Ventricular Tachycardia"];
+            private _rhythmName = _rhythmNames param [_rhythm, "Normal"];
+            _text = _text + format ["\nCardiac Rhythm (KAT): %1", _rhythmName];
         };
     };
 };

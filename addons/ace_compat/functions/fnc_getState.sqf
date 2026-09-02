@@ -25,6 +25,9 @@
  *     (ace_medical_bloodVolume, default 6.0L - acemod/ACE3, addons/medical_engine/
  *     script_macros_medical.hpp's DEFAULT_BLOOD_VOLUME), plain getVariable read like ace_medical_pain
  *     above, not local-restricted
+ *   "inCardiacArrest": Bool - real ACE3 variable (ace_medical_vitals_inCardiacArrest, set via
+ *     ace_medical_status_fnc_setCardiacArrestState - see fnc_applyCardiacState.sqf), plain
+ *     getVariable read, not local-restricted
  *
  * Public: No
 */
@@ -55,4 +58,5 @@ _state set ["incapacitatedState", incapacitatedState _unit];
 _state set ["limbWoundCount", count _wounds];
 _state set ["limbBleeding", _bleeding];
 _state set ["bloodVolume", _unit getVariable ["ace_medical_bloodVolume", 6.0]];
+_state set ["inCardiacArrest", _unit getVariable ["ace_medical_vitals_inCardiacArrest", false]];
 _state
