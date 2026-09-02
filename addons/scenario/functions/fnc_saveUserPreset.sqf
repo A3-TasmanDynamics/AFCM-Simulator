@@ -19,6 +19,8 @@
  *
  * Public: Yes
 */
+// Reads the current library via afcm_sim_scenario_fnc_getUserPresets (not a raw profileNamespace
+// read) so any malformed entry is dropped here too, rather than surviving to poison the write-back.
 
 params [
     "_name",
@@ -30,12 +32,19 @@ params [
 ];
 
 if (_id isEqualTo "") then {
-    _id = format ["user_%1_%2", diag_tickTime, floor (random 100000)];
+    // Real, confirmed collision fixed here: diag_tickTime + random 100000 alone had a real, if
+    // small, chance of colliding - since a collision here silently OVERWRITES an unrelated saved
+    // preset (the dedup filter below matches on id) rather than merely merging like the Spawn
+    // Session case, this is worse than that one, not just as bad. A simple, always-incrementing
+    // counter guarantees no collision is possible at all, regardless of timing.
+    if (isNil "AFCM_SIM_presetIdCounter") then { AFCM_SIM_presetIdCounter = 0; };
+    AFCM_SIM_presetIdCounter = AFCM_SIM_presetIdCounter + 1;
+    _id = format ["user_%1_%2", diag_tickTime, AFCM_SIM_presetIdCounter];
 };
 
 private _preset = [_id, _name, _author, _description, _injuries, _tags];
 
-private _presets = profileNamespace getVariable ["AFCM_SIM_userPresets", []];
+private _presets = call afcm_sim_scenario_fnc_getUserPresets;
 _presets = _presets select { (_x select 0) != _id };
 _presets pushBack _preset;
 

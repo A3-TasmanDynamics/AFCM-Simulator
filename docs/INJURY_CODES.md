@@ -28,21 +28,22 @@ ACE3's own 6 real body parts, deliberately. A finer 13-region anatomical breakdo
 from abdomen, upper arm from forearm, etc.) was built and then reverted in favour of this simpler
 scheme.
 
-| `LimbId` | Real-world region | `afcm_sim_afcm_compat` target | `afcm_sim_ace_compat` target |
-|---|---|---|---|
-| `head` | Head | AFCM head site | `"head"` |
-| `chest` | Chest/torso | AFCM torso site | `"body"` |
-| `leftArm` | Left arm | AFCM left-arm site | `"leftarm"` |
-| `rightArm` | Right arm | AFCM right-arm site | `"rightarm"` |
-| `leftLeg` | Left leg | AFCM left-leg site | `"leftleg"` |
-| `rightLeg` | Right leg | AFCM right-leg site | `"rightleg"` |
+| `LimbId` | Real-world region | `afcm_sim_ace_compat` target |
+|---|---|---|
+| `head` | Head | `"head"` |
+| `chest` | Chest/torso | `"body"` |
+| `leftArm` | Left arm | `"leftarm"` |
+| `rightArm` | Right arm | `"rightarm"` |
+| `leftLeg` | Left leg | `"leftleg"` |
+| `rightLeg` | Right leg | `"rightleg"` |
 
-**Status**: `afcm_sim_afcm_compat`'s column is planned, not real yet (§9 — deferred stub, no AFCM
-API to target). `afcm_sim_ace_compat`'s column is real and confirmed — see
+**Status**: `afcm_sim_ace_compat`'s column is real and confirmed — see
 [ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part) for the source.
 `afcm_sim_kat_compat` uses the identical mapping (KAT sits on the same 6 ACE body parts underneath
 — [KAT_COMPAT.md §3](addons/KAT_COMPAT.md#3-the-real-finding-kat-extends-aces-wound-pipeline-it-doesnt-replace-it)).
-`acm_compat` doesn't have a confirmed mapping yet (`applyInjury` is still a stub).
+`acm_compat` doesn't have a confirmed mapping yet (`applyInjury` is still a stub). No native
+`afcm_compat` backend at this stage — there's no AFCM to target yet; an earlier empty config-only
+stub was removed rather than kept as scaffolding pointing at nothing (DESIGN.md §9).
 
 `tourniquetable` (§2) is only ever `true` for `leftArm`/`rightArm`/`leftLeg`/`rightLeg` — never
 `head`/`chest`.
@@ -207,8 +208,9 @@ built-in/`profileNamespace`/export-import pattern, just one layer up — full de
 |---|---|---|---|---|
 | `ace_compat` | **Real** | **Real** (3/16+ possible classes wired) | **Real** — deterministic via `addWound` | [ACE_COMPAT.md](addons/ACE_COMPAT.md) |
 | `kat_compat` | **Real** — identical fold to `ace_compat` | **Real** — identical to `ace_compat` | **Real** — identical to `ace_compat` | [KAT_COMPAT.md](addons/KAT_COMPAT.md) |
-| `afcm_compat` | Planned (table above) | Not started | Not started | — |
 | `acm_compat` | Not confirmed | Not confirmed | Not confirmed | — |
+
+No `afcm_compat` row — not being pursued at this stage, no AFCM to target yet (DESIGN.md §9).
 
 ---
 
@@ -269,10 +271,16 @@ exclusive from that same real infliction function). All three set via `setVariab
 variables alone isn't sufficient. `afcm_sim_kat_fnc_applyPneumothorax` exposes this as a single UI
 choice — None / Simple Pneumothorax / Hemopneumothorax / Tension Pneumothorax — rather than three
 independent controls, since the real combinations that make clinical sense are limited, and is
-deliberately deterministic (severity always `4` for any non-None choice) unlike KAT's own real
-infliction function, which rolls a random chance and a random hemo-vs-tension split — an
-instructor picking a type should get exactly that, not a dice roll. Unlike Fracture, this isn't
-per-limb — it's a torso-wide condition.
+deliberately deterministic unlike KAT's own real infliction function, which rolls a random chance
+and a random hemo-vs-tension split — an instructor picking a type should get exactly that, not a
+dice roll. Severity is `2` for Simple, `4` for Hemo/Tension — an earlier pass gave Simple the same
+`4` as the advanced cases too, contradicting `handleBreathing`'s own continuous `_pneumothorax / 4`
+scaling (KAT has no real "basic pneumothorax" infliction function of its own to confirm an exact
+number against, only the advanced path exists in its source, so `2` is a reasonable mid-scale pick,
+not a confirmed KAT constant). Unlike Fracture, this isn't per-limb — it's a torso-wide condition.
+`kat_breathing_fnc_handleBreathing`/`kat_circulation_fnc_updateInternalBleeding` (below) are
+dispatched via a CBA event targeting the unit (`CBA_fnc_targetEvent`) rather than called directly —
+the same real locality fix `afcm_sim_ace_fnc_applyInjury` uses (INJURY_CODES.md §2, ACE_COMPAT.md).
 
 **Hemothorax and "blood volume in the chest":** picking Hemopneumothorax now also calls the real
 `kat_circulation_fnc_updateInternalBleeding` (an earlier pass missed this — the flag was being set

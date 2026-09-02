@@ -33,8 +33,9 @@ backend actually handles that call is resolved at runtime, not at authoring time
 
 ### 1.1 Why it's a separate PBO, not an `ifdef`
 
-Each backend — `afcm_compat` (AFCM native), `ace_compat` (this one), `kat_compat`, `acm_compat` —
-is its own PBO with its own `requiredAddons` gate, rather than one PBO branching internally on
+Each backend — `ace_compat` (this one), `kat_compat`, `acm_compat`, and a future native
+`afcm_compat` once there's an AFCM to target — is its own PBO with its own `requiredAddons` gate,
+rather than one PBO branching internally on
 `isClass (configFile >> "CfgPatches" >> "...")`. A server running ACE3 **and** KAT loads
 `ace_compat` *and* `kat_compat` simultaneously; KAT's registration simply outranks ACE's (§1.3), so
 KAT wins without `ace_compat` needing to know KAT exists. This is what makes "just ACE3, no KAT"
@@ -87,12 +88,25 @@ Builds an interface `HashMap` (`{"applyInjury": ..., "removeInjury": ...}`) and 
 [_unit, _injury] call afcm_sim_ace_fnc_applyInjury
 ```
 **Real implementation.** Never called directly — dispatched to via
-`afcm_sim_fnc_backend_applyInjury` when `"ace"` is the active backend. Takes an `Injury` `HashMap`
+`afcm_sim_fnc_backend_applyInjury` when `"ace"` is the active backend. A thin dispatcher: since
+`ace_medical_fnc_addDamageToUnit` requires `local _unit` (confirmed directly from ACE3's own
+source, REFERENCES.md) and this function is reached from a server-authoritative remoteExec with no
+guarantee the target is actually local to the server, it fires a CBA event
+(`"afcm_sim_applyAceStyleInjuryLocal"`, real `CBA_fnc_targetEvent` mechanism, confirmed from
+CBATeam/CBA_A3's own source) targeting `_unit` rather than doing the work itself — the event runs
+on whichever machine the unit is really local to, same real mechanism KAT's own source uses for the
+same problem (its "...Local"-suffixed treatment functions).
+
+The actual work — shared between `ace_compat` and `kat_compat` rather than duplicated, since KAT
+extends ACE3's own wound pipeline (§3) — lives in `afcm_sim_main_fnc_medical_
+applyAceStyleInjuryLocal` (`addons/main/functions/`), registered once as that event's handler
+(`fnc_medical_registerEvents.sqf`, `afcm_sim_main`'s own `preInit`). It takes an `Injury` `HashMap`
 (see [DESIGN.md §4.2](../DESIGN.md#42-injury-object)) and:
 
 1. Maps the backend-agnostic `limb` (a direct 1:1 match to ACE3's own 6 real body parts — see
    [§4.1](#41-limbid--ace3-body-part)) to ACE3's 6 lowercase body-part strings, and `woundType`
    (`gunshot`/`shrapnel`/`blast`) to a real ACE3 damage-type class (`bullet`/`grenade`/`shell`).
+   Logs (rather than silently defaulting) if `limb` doesn't match any known `LimbId`.
 2. Calls `ace_medical_fnc_addDamageToUnit` with `severity` as the damage amount — this drives ACE's
    normal damage-to-wound pipeline (a *random* wound chosen from that damage type's weighting
    table).
@@ -104,7 +118,10 @@ Builds an interface `HashMap` (`{"applyInjury": ..., "removeInjury": ...}`) and 
 ```sqf
 [_unit, _injury] call afcm_sim_ace_fnc_removeInjury
 ```
-**Stub.** Logs `"removeInjury stub called for %1 - not yet implemented"` via `diag_log` and returns.
+**Stub.** Logs `"removeInjury stub called for %1 - not yet implemented"` via `diag_log` and returns
+`false` — `afcm_sim_fnc_backend_removeInjury`'s own contract is "true if the active backend actually
+handled it," and now genuinely propagates this return value rather than always reporting `true` the
+moment any function existed to call (real bug, fixed).
 ACE3's real removal-side API (something in the spirit of `ace_medical_fnc_fullHeal`, or a targeted
 per-wound removal — unconfirmed which fits the `Injury` object shape) hasn't been researched yet.
 

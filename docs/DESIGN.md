@@ -130,10 +130,11 @@ logic:
   `afcm_sim_spawner`** — `requiredAddons` includes `afcm_sim_main` (to call the backend interface)
   and, for spawner, `afcm_sim_scenario` too. None of the three mention AFCM, ACE3, KAT, or ACM —
   they call `afcm_sim_fnc_backend_*` and have no idea which backend is actually active.
-- **`afcm_sim_afcm_compat`** — `requiredAddons = {"cba_main", "afcm_main", "afcm_sim_main"}`. Only
-  loads if AFCM is present. Will implement the backend interface against AFCM's `PatientState` API
-  and register itself as an available backend on `preInit` once AFCM's API is stable — deferred,
-  config-only stub for now (§9).
+- **A native `afcm_sim_afcm_compat` backend isn't being built at this stage** — there's no AFCM to
+  target yet, and the empty config-only stub this repo carried earlier was removed rather than left
+  as scaffolding nothing pointed at (§9). The soft-dependency mechanism below already covers this
+  case cleanly if that changes later: a new PBO gated on `afcm_main`, registering above `kat_compat`
+  on `preInit`, same shape as every backend below.
 - **`afcm_sim_ace_compat`** — `requiredAddons = {"cba_main", "ace_medical_engine", "afcm_sim_main"}`.
   Only loads if ACE3 is present. Implements the backend interface against vanilla
   `ace_medical_engine` hitpoints. Registers at priority 10.
@@ -161,9 +162,10 @@ logic:
   attempt tried subscribing to a `"CBA_addons_postInit"` event via `CBA_fnc_addEventHandler` —
   confirmed via an actual in-game launch that this event doesn't exist as a subscribable global
   broadcast; CBA's own postInit is the same per-addon `postInit=1` mechanism, not something else to
-  hook into.) Highest-priority registered backend wins: `afcm_compat` (once implemented, priority
-  20+) outranks `kat_compat` (priority 15, confirmed working) outranks `acm_compat` (once
-  implemented) / `ace_compat` (priority 10). If nothing registers at all —
+  hook into.) Highest-priority registered backend wins: today that's `kat_compat` (priority 15,
+  confirmed working) over `acm_compat` (once implemented) / `ace_compat` (priority 10) — a future
+  native `afcm_compat`, if one's ever built, would register above all three (20+). If nothing
+  registers at all —
   no medical mod is present — `afcm_sim_scenario`'s injury-application actions disable themselves
   with a clear "no medical backend detected" message rather than silently no-op-ing or erroring.
 - **MP consistency**: backend selection happens server-side (or the logical host) and is
@@ -182,10 +184,12 @@ ACE3 at all) works identically, since neither backend addon is required for the 
 ```
 AFCM-Simulator (standalone addon, no Tasman-Dynamics-Core dependency)
    ├─ requires          ─→ CBA_A3 (only hard dependency)
-   ├─ soft, either/both ─→ AFCM   (activates afcm_compat)
    ├─ soft, either/both ─→ ACE3   (activates ace_compat)
    ├─ soft, either/both ─→ KAT    (activates kat_compat — confirmed working, §2.5)
    └─ soft, either/both ─→ ACM    (activates acm_compat, once real detection lands — §2.5)
+
+AFCM itself has no compat backend at this stage (§2.5) — the mod this simulator is a companion to
+doesn't exist yet to target. The soft-dependency mechanism above already covers adding one later.
 ```
 
 Everything this tool needs beyond a chosen backend — the backend interface, dialog framework,
@@ -204,11 +208,11 @@ by construction (§2.5). The internal split:
 - **`afcm_sim_scenario` / `afcm_sim_spawner`** own: injury presets, randomization profiles, patient
   spawner, stretcher placement, the map tool — and call the **backend interface** (owned by
   `afcm_sim_main`), never AFCM or ACE3 directly.
-- **`afcm_sim_afcm_compat`** / **`afcm_sim_ace_compat`** / **`afcm_sim_kat_compat`** /
-  **`afcm_sim_acm_compat`** (§2.5) — the interchangeable backend implementations, one per target
-  medical system. Each is isolated precisely so any one can be deleted without touching anything
-  else. All `requiredAddon` `afcm_sim_main` (for the interface they register against), not
-  `afcm_sim_scenario`.
+- **`afcm_sim_ace_compat`** / **`afcm_sim_kat_compat`** / **`afcm_sim_acm_compat`** (§2.5) — the
+  interchangeable backend implementations, one per target medical system. Each is isolated
+  precisely so any one can be deleted without touching anything else (as `afcm_sim_afcm_compat`
+  itself was — no native AFCM to target at this stage, §9). All `requiredAddon` `afcm_sim_main`
+  (for the interface they register against), not `afcm_sim_scenario`.
 - **`afcm_sim_zeus`** / **`afcm_sim_eden`** own the editor-facing side of patient
   authoring/placement (§5) — a Zeus module ("Spawn Patient") and two Eden modules ("AFCM Patient"
   and "AFCM MASCAL Zone"). **Implemented** — all three call real `afcm_sim_spawner` functions, not
@@ -441,7 +445,13 @@ is still the plan, not the state of the repo.
   Fracture/Pneumothorax/Airway though, which have no place in this Array shape (INJURY_CODES.md §6,
   same reason they're applied via a separate direct call). A dedicated "preset builder" cart flow (mixing
   *different* wounds across limbs into one save, not just one wound broadcast to several) is still a
-  natural next step if this gets more use.
+  natural next step if this gets more use. **Validated on read** (full-codebase review) — since
+  `profileNamespace` is user-editable/persistent data, `getUserPresets`/`getUserMciPresets` now
+  filter out any entry that isn't a well-formed Array with a real String id before returning it,
+  instead of trusting whatever's stored blindly; `saveUserPreset`/`deleteUserPreset` (and their MCI
+  counterparts) now read through those same getters rather than the raw `profileNamespace` variable,
+  so a single malformed entry can no longer wedge reading, saving, deleting, *and* importing all at
+  once the way it used to — it's just dropped, and self-heals on the next write.
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
   that level's profile → applies via the same `injury.applied` path presets use (one application
   pipeline, three sources: manual, preset, randomized). **Implemented**:
@@ -585,9 +595,15 @@ is still the plan, not the state of the repo.
   — built fresh per spawn call, with a clear function that filters keys by matching `spawnerNetId`
   prefix, then either clears just the most-recent-timestamp match ("last") or every match ("all")
   for that specific spawner. This implementation uses a simpler scheme instead - a freshly
-  generated `session_<tickTime>_<random>` id per batch, explicit rather than derived from
+  generated `session_<tickTime>_<counter>` id per batch, explicit rather than derived from
   `spawnerNetId` - since the batch spawner itself already knows exactly which patients are its own
-  without needing to reconstruct that from the id string.
+  without needing to reconstruct that from the id string. The counter (`AFCM_SIM_sessionIdCounter`,
+  always-incrementing) replaced an earlier `<tickTime>_<random>` scheme after the review found a
+  real, if small, collision chance — two batch spawns landing in the same server tick could
+  generate the identical id, silently merging two unrelated incidents into one session entry. Same
+  fix applied to user preset/MCI preset ids (`fnc_saveUserPreset.sqf`/`saveUserMciPreset.sqf`),
+  where a collision would have silently overwritten an unrelated saved preset instead of merely
+  merging.
   **Custom session names** — every batch spawn path (Zeus/Eden Spawn Patient, Zeus/Eden MASCAL
   Zone, Zeus/Eden MCI Spawner, and the MCI Creator dialog) now reads an optional free-text label
   and uses it verbatim in place of the auto-generated one when non-blank, so the Session Manager
@@ -653,6 +669,15 @@ is still the plan, not the state of the repo.
     choices bolted onto the Arma mod itself. `"session.resolved"` on the event bus above is the
     intended hook point once that work actually starts: whatever ends up building the export layer
     subscribes there instead of AFCM needing to know about it in advance.
+  - **Three real edge cases fixed** (full-codebase review): a Medical Tent module fired with zero
+    synced stretchers used to register silently, with no diagnostic anywhere pointing at the real
+    cause when its sessions then never resolved — now logs and skips registration. A stretcher
+    object destroyed mid-mission used to leave a stale entry every future check ran `distance`
+    against forever — the monitor loop now prunes null stretchers once per cycle. A session whose
+    every patient died before being treated used to be silently skipped every cycle forever,
+    staying "pending" in the Session Manager with no way to ever resolve — it's now added to the
+    same stop-checking set as a genuinely resolved session, but deliberately without firing the
+    resolved notification, since nothing was actually treated.
 
 ---
 
@@ -676,6 +701,16 @@ desync, validation on an authority machine):
   AFCM-Simulator does not need to invent its own state-sync layer either way, only the
   request→authority→domain-call path for *scenario-specific* actions (preset application, spawn
   placement, randomization) that neither backend knows about on its own.
+- **"Server-side" isn't always literally the server**: `ace_medical_fnc_addDamageToUnit` requires
+  `local _unit` (REFERENCES.md, confirmed from ACE3's own source) — a real constraint the
+  server-authoritative request path above doesn't satisfy on its own, since the server isn't
+  guaranteed to be local to every unit (a live player-controlled casualty, most notably). Real fix,
+  not guessed at: `ace_compat`/`kat_compat`'s `applyInjury` dispatch the actual ACE calls via a
+  shared CBA event (`"afcm_sim_applyAceStyleInjuryLocal"`, `CBA_fnc_targetEvent`) targeting the
+  unit, so the work genuinely runs on whichever machine is local to it — the same real mechanism
+  KAT's own source uses for the same problem (its "...Local"-suffixed treatment functions). "Server
+  decides, then dispatches to the right machine to actually execute" is the accurate description of
+  this path, not "the server does it."
 - **JIP**: preset library (built-in) is static per-addon-version, so no JIP concern — and, now that
   it's actually implemented, this turned out to apply to user presets too: they live in each
   player's own `profileNamespace`, computed locally from a function call rather than synced state,
@@ -707,9 +742,6 @@ AFCM-Simulator/
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario, afcm_sim_spawner}
     eden/          # afcm_sim_eden — "AFCM Patient"/"AFCM MASCAL Zone" Eden modules (§5), implemented
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario, afcm_sim_spawner}
-    afcm_compat/   # afcm_sim_afcm_compat — implements the interface against AFCM's PatientState API
-                    # requiredAddons = {cba_main, afcm_main, afcm_sim_main} — only loads if AFCM present
-                    # deferred, config-only (§9)
     ace_compat/    # afcm_sim_ace_compat — implements the interface against vanilla ace_medical_engine
                     # requiredAddons = {cba_main, ace_medical_engine, afcm_sim_main} — only loads if ACE3 present
     kat_compat/    # afcm_sim_kat_compat — KAT-specific compat backend, own PBO (not internal ace_compat
@@ -790,12 +822,12 @@ rather than one hard-required with the others bolted on.
   the ACE backend first means AFCM-Simulator has a real, usable v1 without waiting on AFCM's build
   order at all — and proves the backend-interface abstraction (§2.5 open question #6) against a
   concrete, already-shipped mod before `afcm_sim_afcm_compat` has to conform to it.
-- **v1.x** — `afcm_sim_afcm_compat` lands once AFCM's `PatientState` API (§8 open question #2) is
-  stable enough to build against — likely tracking AFCM's own v1/v2, not gated on AFCM-Simulator's
-  own version number. `afcm_sim_kat_compat`'s scaffolding has already landed (registers as a real
-  backend, priority 15) — its actual wound-application call is the remaining piece, tracked
-  alongside `afcm_sim_ace_compat`'s. `afcm_sim_acm_compat` lands once its real `requiredAddons`
-  target is confirmed (§8 #1).
+- **v1.x** — `afcm_sim_afcm_compat` gets built (a fresh PBO, not a scaffold sitting idle in the
+  repo — an earlier empty config-only stub was removed rather than maintained with nothing to
+  point at) once AFCM's `PatientState` API (§8 open question #2) is stable enough to build against
+  — likely tracking AFCM's own v1/v2, not gated on AFCM-Simulator's own version number.
+  `afcm_sim_kat_compat` is real now — `applyInjury`/`getState` implemented, `removeInjury` still a
+  stub. `afcm_sim_acm_compat` lands once its real `requiredAddons` target is confirmed (§8 #1).
 - **v2** — ~~injury presets (built-in + user save/load)~~ **done** (DESIGN.md § Injury Presets,
   incl. export/import — pulled forward from v3 below once it turned out `str`/`call compile` on a
   plain Array made that nearly free); randomization levels (done); Random Patient (incl. making the

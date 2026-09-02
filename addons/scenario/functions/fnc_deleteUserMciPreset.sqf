@@ -4,6 +4,9 @@
  * via `saveProfileNamespace`. Built-in MCI presets (id prefix "builtin_mci_") can't be deleted -
  * same guard pattern as fnc_deleteUserPreset.sqf.
  *
+ * Reads the current library via afcm_sim_scenario_fnc_getUserMciPresets (not a raw profileNamespace
+ * read) so any malformed entry is dropped here too, rather than surviving to poison the write-back.
+ *
  * Arguments:
  * 0: Id <STRING>
  *
@@ -17,7 +20,7 @@ params ["_id"];
 
 if (_id find "builtin_" == 0) exitWith {};
 
-private _presets = profileNamespace getVariable ["AFCM_SIM_userMciPresets", []];
+private _presets = call afcm_sim_scenario_fnc_getUserMciPresets;
 _presets = _presets select { (_x select 0) != _id };
 
 profileNamespace setVariable ["AFCM_SIM_userMciPresets", _presets];

@@ -49,18 +49,20 @@ requiredAddons[] = {"cba_main", "ace_medical_engine", "kat_main", "afcm_sim_main
 
 ### 1.2 Registration & Priority
 
-Registers on `preInit` (`fnc_preInit.sqf`) at **priority 15** — above `ace_compat`'s 10, below
-where `afcm_compat` will land once implemented. Rationale: a server running ACE3 **and** KAT should
-get KAT's richer model, not fall back to plain-ACE3 behaviour, without either compat addon needing
-to know the other exists (full registration/selection lifecycle in
+Registers on `preInit` (`fnc_preInit.sqf`) at **priority 15** — above `ace_compat`'s 10, below where
+a future native `afcm_compat` would land if one's ever built (no AFCM to target at this stage — an
+earlier empty config-only stub was removed rather than kept as scaffolding pointing at nothing,
+DESIGN.md §9). Rationale: a server running ACE3 **and** KAT should get KAT's richer model, not fall
+back to plain-ACE3 behaviour, without either compat addon needing to know the other exists (full
+registration/selection lifecycle in
 [DESIGN.md §2.5](../DESIGN.md#25-soft-dependencies--runtime-backend-detection)).
 
 | Backend | Priority | Status |
 |---|---|---|
-| `afcm` (native AFCM) | 20+ (planned) | Deferred stub |
 | **`kat`** (this addon) | **15** | **Confirmed, registers** |
 | `acm` | between ace/kat (planned) | Deferred stub |
 | `ace` | 10 | Confirmed, registers — see [ACE_COMPAT.md](ACE_COMPAT.md) |
+| `afcm` (native AFCM) | 20+, if ever built | Not pursued at this stage |
 
 ---
 
@@ -72,9 +74,14 @@ All under the `afcm_sim_kat` tag.
 Registers this backend with `afcm_sim_main` under id `"kat"`, priority 15. Real, runs automatically.
 
 ### `afcm_sim_kat_fnc_applyInjury`
-**Real implementation.** Identical in substance to `afcm_sim_ace_fnc_applyInjury` — same `LimbId`
-fold, same `addDamageToUnit`/`addWound` calls (§3 explains why that's correct under KAT too), same
-bleeding-wound logic. Was a stub specifically because that research hadn't been done yet.
+**Real implementation**, and now literally the same shared code `afcm_sim_ace_fnc_applyInjury` calls
+— both are thin dispatchers firing the `"afcm_sim_applyAceStyleInjuryLocal"` CBA event (targeting
+the unit via `CBA_fnc_targetEvent`, real fix for `ace_medical_fnc_addDamageToUnit` requiring `local
+_unit`, REFERENCES.md), whose one shared handler (`afcm_sim_main_fnc_medical_
+applyAceStyleInjuryLocal`) does the actual `LimbId` fold + `addDamageToUnit`/`addWound` calls (§3
+explains why that's correct under KAT too). The two were previously byte-for-byte duplicated copies
+of this logic in each compat addon; see [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_applyinjury)
+for the full explanation.
 
 ### `afcm_sim_kat_fnc_getState`
 **Real implementation.** Identical in substance to `afcm_sim_ace_fnc_getState` (see
@@ -87,13 +94,16 @@ the same field), `internalBleedingRate` (real `kat_circulation_internalBleeding`
 
 ### `afcm_sim_kat_fnc_reset`
 **Real implementation** — `ace_medical_fnc_fullHeal` (which already correctly exits cardiac arrest
-as a side effect, see `afcm_sim_ace_fnc_applyCardiacState`), **plus** explicitly clearing
-`kat_circulation_cardiacArrestType` back to `0` — `fullHeal` has no knowledge of this KAT-only
-rhythm variable and can't clear it, same class of gap as `kat_surgery_fractures`/
-`kat_breathing_pneumothorax`/`kat_airway_obstruction`. Then re-locks via
-`afcm_sim_kat_fnc_setUnconscious`. Backs the limb-select ("main") screen's Reset Patient button —
-moved there from the injury editor, which now has its own purely-local "Reset Limb" that only
-clears the form (DESIGN.md §5).
+as a side effect, see `afcm_sim_ace_fnc_applyCardiacState`), **plus clearing every KAT-only extra**
+that `fullHeal` has no knowledge of and can't clear: `kat_circulation_cardiacArrestType` back to
+`0`, and `kat_surgery_fractures`/`kat_breathing_pneumothorax`(+hemo/tension)/
+`kat_airway_obstruction`(+occluded) via `afcm_sim_kat_fnc_applyPneumothorax`/`applyAirway`'s own
+"None" value rather than duplicating their variable shapes here. Then re-locks via
+`afcm_sim_kat_fnc_setUnconscious`. An earlier pass only did the ACE-side heal, so a
+fracture/pneumothorax/airway state set before Reset kept showing in the live status readout
+forever afterward. Backs the limb-select ("main") screen's Reset Patient button — moved there from
+the injury editor, which now has its own purely-local "Reset Limb" that only clears the form
+(DESIGN.md §5).
 
 ### `afcm_sim_kat_fnc_setUnconscious`
 **Real implementation.** Identical to `afcm_sim_ace_fnc_setUnconscious` — `[_unit, true] call
@@ -102,7 +112,8 @@ ace_medical_fnc_setUnconscious`, not the engine's own `setUnconscious` command (
 what `ace_medical_ai`'s state machine actually checks before letting a unit self-treat).
 
 ### `afcm_sim_kat_fnc_removeInjury`
-**Stub.** No real removal call wired up yet — same open question as `ace_compat`'s.
+**Stub.** No real removal call wired up yet — same open question as `ace_compat`'s. Returns `false`
+(see [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_removeinjury) for why that matters).
 
 ### `afcm_sim_kat_fnc_applyFracture`
 ```sqf
@@ -117,12 +128,20 @@ KAT-only, no ACE equivalent — called directly by
 ```sqf
 [_unit, _type] call afcm_sim_kat_fnc_applyPneumothorax
 ```
-**Real implementation.** Sets `kat_breathing_pneumothorax`/`_hemopneumothorax`/
-`_tensionpneumothorax` (confirmed 0-4 severity scale + two mutually-exclusive booleans), then calls
-the real `kat_breathing_fnc_handleBreathing` to apply it, **and** `kat_circulation_fnc_
-updateInternalBleeding` (real, confirmed from `fnc_inflictAdvancedPneumothorax.sqf`'s own call
-order — this was missing in an earlier pass, meaning Hemopneumothorax set the flag but never
-actually applied any internal-bleeding rate). Torso-wide, not per-limb. Called directly by
+**Real implementation.** Sets `kat_breathing_pneumothorax` — Simple Pneumothorax gets `2`,
+Hemo/Tension get `4` (confirmed 0-4 *continuous* severity scale, `handleBreathing`'s own
+breathing-rate math scales directly off `_pneumothorax / 4` — an earlier pass gave Simple the same
+`4` as the advanced cases, contradicting that) — plus `_hemopneumothorax`/`_tensionpneumothorax`
+(two mutually-exclusive booleans). The actual application — `kat_breathing_fnc_handleBreathing`,
+**and**, for Hemothorax, `kat_circulation_fnc_updateInternalBleeding` (real, confirmed from
+`fnc_inflictAdvancedPneumothorax.sqf`'s own call order — an earlier pass missed this, meaning
+Hemopneumothorax set the flag but never actually applied any internal-bleeding rate) — is
+dispatched via a CBA event (`"afcm_sim_applyKatPneumothoraxLocal"`, `CBA_fnc_targetEvent`,
+`fnc_preInit.sqf`) targeting the unit, not called directly: same real locality fix as
+`afcm_sim_ace_fnc_applyInjury`'s own dispatch (see [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_applyinjury))
+- this function is reached from a server-authoritative remoteExec with no guarantee the target is
+actually local to the server. The `setVariable` calls themselves stay in the dispatcher (public
+sync, safe from anywhere). Torso-wide, not per-limb. Called directly by
 `afcm_sim_scenario_fnc_serverApplyKatPneumothorax`.
 
 ### `afcm_sim_kat_fnc_applyAirway`
