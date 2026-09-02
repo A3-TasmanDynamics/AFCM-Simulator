@@ -33,8 +33,9 @@ backend actually handles that call is resolved at runtime, not at authoring time
 
 ### 1.1 Why it's a separate PBO, not an `ifdef`
 
-Each backend — `afcm_compat` (AFCM native), `ace_compat` (this one), `kat_compat`, `acm_compat` —
-is its own PBO with its own `requiredAddons` gate, rather than one PBO branching internally on
+Each backend — `ace_compat` (this one), `kat_compat`, `acm_compat`, and a future native
+`afcm_compat` once there's an AFCM to target — is its own PBO with its own `requiredAddons` gate,
+rather than one PBO branching internally on
 `isClass (configFile >> "CfgPatches" >> "...")`. A server running ACE3 **and** KAT loads
 `ace_compat` *and* `kat_compat` simultaneously; KAT's registration simply outranks ACE's (§1.3), so
 KAT wins without `ace_compat` needing to know KAT exists. This is what makes "just ACE3, no KAT"

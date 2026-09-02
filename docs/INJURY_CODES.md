@@ -28,21 +28,22 @@ ACE3's own 6 real body parts, deliberately. A finer 13-region anatomical breakdo
 from abdomen, upper arm from forearm, etc.) was built and then reverted in favour of this simpler
 scheme.
 
-| `LimbId` | Real-world region | `afcm_sim_afcm_compat` target | `afcm_sim_ace_compat` target |
-|---|---|---|---|
-| `head` | Head | AFCM head site | `"head"` |
-| `chest` | Chest/torso | AFCM torso site | `"body"` |
-| `leftArm` | Left arm | AFCM left-arm site | `"leftarm"` |
-| `rightArm` | Right arm | AFCM right-arm site | `"rightarm"` |
-| `leftLeg` | Left leg | AFCM left-leg site | `"leftleg"` |
-| `rightLeg` | Right leg | AFCM right-leg site | `"rightleg"` |
+| `LimbId` | Real-world region | `afcm_sim_ace_compat` target |
+|---|---|---|
+| `head` | Head | `"head"` |
+| `chest` | Chest/torso | `"body"` |
+| `leftArm` | Left arm | `"leftarm"` |
+| `rightArm` | Right arm | `"rightarm"` |
+| `leftLeg` | Left leg | `"leftleg"` |
+| `rightLeg` | Right leg | `"rightleg"` |
 
-**Status**: `afcm_sim_afcm_compat`'s column is planned, not real yet (§9 — deferred stub, no AFCM
-API to target). `afcm_sim_ace_compat`'s column is real and confirmed — see
+**Status**: `afcm_sim_ace_compat`'s column is real and confirmed — see
 [ACE_COMPAT.md §4.1](addons/ACE_COMPAT.md#41-limbid--ace3-body-part) for the source.
 `afcm_sim_kat_compat` uses the identical mapping (KAT sits on the same 6 ACE body parts underneath
 — [KAT_COMPAT.md §3](addons/KAT_COMPAT.md#3-the-real-finding-kat-extends-aces-wound-pipeline-it-doesnt-replace-it)).
-`acm_compat` doesn't have a confirmed mapping yet (`applyInjury` is still a stub).
+`acm_compat` doesn't have a confirmed mapping yet (`applyInjury` is still a stub). No native
+`afcm_compat` backend at this stage — there's no AFCM to target yet; an earlier empty config-only
+stub was removed rather than kept as scaffolding pointing at nothing (DESIGN.md §9).
 
 `tourniquetable` (§2) is only ever `true` for `leftArm`/`rightArm`/`leftLeg`/`rightLeg` — never
 `head`/`chest`.
@@ -207,8 +208,9 @@ built-in/`profileNamespace`/export-import pattern, just one layer up — full de
 |---|---|---|---|---|
 | `ace_compat` | **Real** | **Real** (3/16+ possible classes wired) | **Real** — deterministic via `addWound` | [ACE_COMPAT.md](addons/ACE_COMPAT.md) |
 | `kat_compat` | **Real** — identical fold to `ace_compat` | **Real** — identical to `ace_compat` | **Real** — identical to `ace_compat` | [KAT_COMPAT.md](addons/KAT_COMPAT.md) |
-| `afcm_compat` | Planned (table above) | Not started | Not started | — |
 | `acm_compat` | Not confirmed | Not confirmed | Not confirmed | — |
+
+No `afcm_compat` row — not being pursued at this stage, no AFCM to target yet (DESIGN.md §9).
 
 ---
 

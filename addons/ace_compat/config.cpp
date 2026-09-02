@@ -16,9 +16,11 @@ class CfgPatches
 // present — this is what makes AFCM a soft dependency rather than a hard one (DESIGN.md §2.5).
 // requiredAddons also includes afcm_sim_main so this PBO is guaranteed to load after it, meaning
 // afcm_sim_fnc_backend_registerBackend already exists by the time this addon's own preInit calls
-// it. Registers at priority 10 — lowest of the compat/native backends, since afcm_compat (native
-// AFCM) and, once real KAT/ACM detection lands, kat_compat/acm_compat should all outrank plain
-// vanilla-ACE3 behaviour when their target mod is actually present (DESIGN.md §2.5).
+// it. Registers at priority 10 — lowest of the compat/native backends, since kat_compat (already
+// real) and, once real ACM detection lands, acm_compat should both outrank plain vanilla-ACE3
+// behaviour when their target mod is actually present (DESIGN.md §2.5). A native afcm_compat
+// backend isn't being pursued at this stage - no AFCM to target yet - but the priority scheme
+// leaves room above kat_compat's 15 for one later if that changes.
 // NOTE: explicit `file=` per leaf class, as a full absolute virtual path (matching $PBOPREFIX$) —
 // see afcm_sim_main/config.cpp for why both the fnc_ filename AND the absolute-path form are
 // required (neither `hemtt build` nor `hemtt check` catch either mistake; only an actual in-game

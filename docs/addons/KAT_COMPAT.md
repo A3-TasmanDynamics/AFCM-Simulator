@@ -49,18 +49,20 @@ requiredAddons[] = {"cba_main", "ace_medical_engine", "kat_main", "afcm_sim_main
 
 ### 1.2 Registration & Priority
 
-Registers on `preInit` (`fnc_preInit.sqf`) at **priority 15** — above `ace_compat`'s 10, below
-where `afcm_compat` will land once implemented. Rationale: a server running ACE3 **and** KAT should
-get KAT's richer model, not fall back to plain-ACE3 behaviour, without either compat addon needing
-to know the other exists (full registration/selection lifecycle in
+Registers on `preInit` (`fnc_preInit.sqf`) at **priority 15** — above `ace_compat`'s 10, below where
+a future native `afcm_compat` would land if one's ever built (no AFCM to target at this stage — an
+earlier empty config-only stub was removed rather than kept as scaffolding pointing at nothing,
+DESIGN.md §9). Rationale: a server running ACE3 **and** KAT should get KAT's richer model, not fall
+back to plain-ACE3 behaviour, without either compat addon needing to know the other exists (full
+registration/selection lifecycle in
 [DESIGN.md §2.5](../DESIGN.md#25-soft-dependencies--runtime-backend-detection)).
 
 | Backend | Priority | Status |
 |---|---|---|
-| `afcm` (native AFCM) | 20+ (planned) | Deferred stub |
 | **`kat`** (this addon) | **15** | **Confirmed, registers** |
 | `acm` | between ace/kat (planned) | Deferred stub |
 | `ace` | 10 | Confirmed, registers — see [ACE_COMPAT.md](ACE_COMPAT.md) |
+| `afcm` (native AFCM) | 20+, if ever built | Not pursued at this stage |
 
 ---
 
