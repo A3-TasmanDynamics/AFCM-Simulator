@@ -570,9 +570,15 @@ is still the plan, not the state of the repo.
   — built fresh per spawn call, with a clear function that filters keys by matching `spawnerNetId`
   prefix, then either clears just the most-recent-timestamp match ("last") or every match ("all")
   for that specific spawner. This implementation uses a simpler scheme instead - a freshly
-  generated `session_<tickTime>_<random>` id per batch, explicit rather than derived from
+  generated `session_<tickTime>_<counter>` id per batch, explicit rather than derived from
   `spawnerNetId` - since the batch spawner itself already knows exactly which patients are its own
-  without needing to reconstruct that from the id string.
+  without needing to reconstruct that from the id string. The counter (`AFCM_SIM_sessionIdCounter`,
+  always-incrementing) replaced an earlier `<tickTime>_<random>` scheme after the review found a
+  real, if small, collision chance — two batch spawns landing in the same server tick could
+  generate the identical id, silently merging two unrelated incidents into one session entry. Same
+  fix applied to user preset/MCI preset ids (`fnc_saveUserPreset.sqf`/`saveUserMciPreset.sqf`),
+  where a collision would have silently overwritten an unrelated saved preset instead of merely
+  merging.
   **Custom session names** — every batch spawn path (Zeus/Eden Spawn Patient, Zeus/Eden MASCAL
   Zone, Zeus/Eden MCI Spawner, and the MCI Creator dialog) now reads an optional free-text label
   and uses it verbatim in place of the auto-generated one when non-blank, so the Session Manager
