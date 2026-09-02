@@ -482,9 +482,10 @@ class RscDisplayAFCM_SIM_LimbSelect
 // it read as misleadingly scoped to one limb sitting here.
 //
 // Wound type/severity/bleeding work identically for ACE and KAT (ACE_COMPAT.md §3/KAT_COMPAT.md
-// §3), so those three stay unconditional. Cardiac State (below Bleeding) is also unconditional
-// (shown under both ACE and KAT, real cardiac arrest is ACE-native) but not limb-gated at all,
-// unlike everything below it - it's a whole-patient vitals state, not tied to any body region.
+// §3), so those three stay unconditional. Cardiac State (below Bleeding) is shown under both ACE
+// and KAT (real cardiac arrest is ACE-native), gated on "chest" being among the selected limbs -
+// same gating as Pneumothorax, even though the real ace_medical_vitals_inCardiacArrest flag is
+// actually whole-patient, since chest is where an instructor thinks to look for it.
 // Fracture/Pneumothorax/Airway below that are real KAT-specific state with no ACE equivalent at
 // all (INJURY_CODES.md §6) — shown/hidden at runtime by fnc_injuryEditor_init.sqf (`ctrlShow`)
 // based on `afcm_sim_fnc_backend_getActive`: Fracture only when KAT is active, Pneumothorax only
@@ -603,11 +604,12 @@ class RscDisplayAFCM_SIM_InjuryEditor
             w = "0.04 * safeZoneH";
             h = "0.04 * safeZoneH";
         };
-        // Shared, unconditional (works under ACE AND KAT), not limb-gated - cardiac arrest is a
-        // whole-patient vitals state, not tied to any one body region, unlike Fracture/Pneumothorax/
-        // Airway below. Under ACE only "None"/"Cardiac Arrest" are offered (afcm_sim_ace_fnc_
-        // applyCardiacState has no rhythm concept); under KAT the full real 0-4 rhythm enum is
-        // offered (afcm_sim_kat_fnc_applyCardiacState). See fnc_serverApplyCardiacState.sqf.
+        // Shared (works under ACE AND KAT), gated on "chest" being among the selected limbs - same
+        // gating as Pneumothorax below, even though the real ace_medical_vitals_inCardiacArrest
+        // flag is actually whole-patient, since chest is where an instructor thinks to look for it.
+        // Under ACE only "None"/"Cardiac Arrest" are offered (afcm_sim_ace_fnc_applyCardiacState
+        // has no rhythm concept); under KAT the full real 0-4 rhythm enum is offered
+        // (afcm_sim_kat_fnc_applyCardiacState). See fnc_serverApplyCardiacState.sqf.
         class CardiacStateLabel: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IE_CARDIACSTATELABEL;

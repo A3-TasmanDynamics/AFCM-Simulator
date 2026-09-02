@@ -152,7 +152,8 @@ KAT's own real `kat_circulation_cardiacArrestType` (0=Normal/1=Asystole/2=PEA/
 call needed - both real consumers read the rhythm variable fresh on their own schedule. Only has a
 visible effect on the *rhythm* specifically if the mission has KAT's own "Advanced Cardiac Rhythm"
 setting enabled; the base arrest flag (and its unconsciousness/heart-rate effects) works
-regardless. Not limb-gated, shown for either backend in the injury editor UI — full detail:
+regardless. Shown for either backend in the injury editor UI, gated on "chest" being among the
+selected limbs (same gating as Pneumothorax) — full detail:
 [INJURY_CODES.md §7](../INJURY_CODES.md#7-cardiac-state--shared-ace--kat-not-kat-specific). Called
 directly by `afcm_sim_scenario_fnc_serverApplyCardiacState`.
 

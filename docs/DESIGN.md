@@ -410,8 +410,9 @@ is still the plan, not the state of the repo.
     3=Ventricular Fibrillation/4=Ventricular Tachycardia, confirmed from KAT's own
     `fnc_handleCardiacArrest.sqf`) — only visibly affects behaviour if the mission has KAT's own
     "Advanced Cardiac Rhythm" setting enabled, harmless real state either way. Exposed as one
-    Cardiac State combo, shown for either backend and deliberately **not limb-gated** (unlike
-    Fracture/Pneumothorax/Airway) — a whole-patient vitals state, not tied to a body region.
+    Cardiac State combo, shown for either backend, gated on "chest" being among the selected limbs
+    — same gating as Pneumothorax, even though the real `ace_medical_vitals_inCardiacArrest` flag
+    is actually whole-patient, since chest is where an instructor thinks to look for it.
     `afcm_sim_kat_fnc_reset` also explicitly clears the KAT rhythm variable, which `fullHeal` has no
     knowledge of — same class of gap fixed for Fracture/Pneumothorax/Airway. Full real source
     citations: INJURY_CODES.md §7.

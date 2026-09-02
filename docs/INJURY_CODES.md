@@ -367,10 +367,11 @@ that, not a dice roll or a later automatic downgrade to a worse rhythm.
 `ace_medical_fnc_fullHeal` has no knowledge of this KAT-only variable and can't clear it, same class
 of gap as `kat_surgery_fractures`/`kat_breathing_pneumothorax`/`kat_airway_obstruction` before it.
 
-Exposed in the injury editor as a single **Cardiac State** combo, shown for either backend and
-**not limb-gated** (unlike Fracture/Pneumothorax/Airway) — cardiac arrest is a whole-patient vitals
-state, not tied to any one body region. Under ACE it offers only None/Cardiac Arrest (no rhythm
-concept exists); under KAT it offers the full five-value rhythm enum above.
+Exposed in the injury editor as a single **Cardiac State** combo, shown for either backend, gated
+on **"chest"** being among the selected limbs — same gating as Pneumothorax, even though the real
+`ace_medical_vitals_inCardiacArrest` flag is actually whole-patient, since chest is where an
+instructor thinks to look for it. Under ACE it offers only None/Cardiac Arrest (no rhythm concept
+exists); under KAT it offers the full five-value rhythm enum above.
 
 ---
 
