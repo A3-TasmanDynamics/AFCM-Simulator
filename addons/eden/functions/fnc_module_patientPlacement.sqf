@@ -5,8 +5,9 @@
  * selected afterward via the "Edit Injuries" scroll action every spawned patient gets
  * (afcm_sim_ui_fnc_addInjuryEditorAction, wired up inside afcm_sim_spawner_fnc_spawnPatient itself)
  * - UNLESS the Injury Preset Import attribute is filled in, in which case the patient spawns
- * pre-configured with those exact injuries (eden/config.cpp - same real "one patient, exact
- * injuries" building block "The Job" export/import loop is meant to feed).
+ * pre-configured with those exact injuries AND any KAT extras/cardiac state the exported preset
+ * carries (eden/config.cpp - same real "one patient, exact injuries" building block "The Job"
+ * export/import loop is meant to feed).
  *
  * Position resolution (eden/config.cpp's AFCM_SIM_UseSyncedPosition/AFCM_SIM_SpawnMarkerName):
  * Spawn at Synced Object ticked and at least one unit synced -> that unit's position. Otherwise, a
@@ -61,6 +62,7 @@ if (_useSyncedPosition && {count _units > 0}) then {
 
 private _importString = _logic getVariable ["AFCM_SIM_injuryPresetImport", ""];
 private _injuries = [];
+private _katExtras = [];
 if (_importString != "") then {
     private _cleaned = [_importString] call afcm_sim_scenario_fnc_parseExportedPreset;
     if (_cleaned isEqualTo []) then {
@@ -70,7 +72,8 @@ if (_importString != "") then {
             _x params ["_limb", "_woundType", "_severity", "_bleeding"];
             [_limb, _woundType, _severity, _bleeding] call afcm_sim_scenario_fnc_buildInjury
         };
+        _katExtras = _cleaned select 5;
     };
 };
 
-[_pos, _injuries, _casualtyType, "", _sessionLabel] call afcm_sim_spawner_fnc_spawnPatient;
+[_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras] call afcm_sim_spawner_fnc_spawnPatient;

@@ -155,7 +155,9 @@ class CfgVehicles
         //    entirely out of these modules. Parsed by the shared
         //    afcm_sim_scenario_fnc_parseExportedPreset (also used by the Preset Library's own
         //    Import), so it accepts anything either the Preset Library's Export button or a live
-        //    patient's "Export Patient State" action produces.
+        //    patient's "Export Patient State" action produces - including that action's KAT extras/
+        //    cardiac state (the Preset shape's optional 7th element), applied via
+        //    afcm_sim_scenario_fnc_serverApplyKatExtras alongside the base injuries.
         //  - AFCM_SIM_UseSyncedPosition / AFCM_SIM_SpawnMarkerName: where the patient actually
         //    spawns. Default (both left as-is) is unchanged - the module's own placed position.
         //    Ticking "Spawn at Synced Object" spawns at the position of an object synced to this
@@ -169,7 +171,7 @@ class CfgVehicles
             class AFCM_SIM_InjuryPresetImport
             {
                 displayName = "Injury Preset (paste to import)";
-                tooltip = "Paste an exported Injury Preset or Patient State string here to spawn this patient pre-configured with those exact injuries. Leave blank to spawn clean/unconscious (use the Edit Injuries action instead).";
+                tooltip = "Paste an exported Injury Preset or Patient State string here to spawn this patient pre-configured with those exact injuries (including any KAT fracture/pneumothorax/airway/cardiac state the export carries). Leave blank to spawn clean/unconscious (use the Edit Injuries action instead).";
                 property = "AFCM_SIM_injuryPresetImport";
                 control = "Edit";
                 defaultValue = "";

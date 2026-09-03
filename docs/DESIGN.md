@@ -462,19 +462,35 @@ is still the plan, not the state of the repo.
   itself (`AFCM_SIM_appliedInjuries`, `publicVariable`'d, a fresh apply on a limb overwriting its
   own tracked entry rather than appending) — there's no reliable way to reverse-map live ACE/KAT
   wound state back into this addon's own simplified woundType strings, so it's captured at the
-  point of application instead. `afcm_sim_scenario_fnc_exportPatientState` reads that back and
-  wraps it in the same `[id, name, author, description, injuries, tags]` shape/`str` round-trip as
-  `fnc_exportPreset.sqf`. A new "AFCM: Export Patient State" scroll action (every spawned patient
-  gets it, `afcm_sim_spawner_fnc_spawnPatient`) copies the result straight to the OS clipboard
-  (`copyToClipboard`, same mechanism the Preset Library's own Export uses). The reverse direction —
-  parsing an exported string back into a clean injuries array — is factored out of
-  `fnc_importPreset.sqf` into `fnc_parseExportedPreset.sqf` specifically so the AFCM Patient
-  module's spawn-time import and the Preset Library's save-to-library import share one validated
-  parser instead of two copies of the same logic. **Scope note**: KAT-only extras
-  (fracture/pneumothorax/airway) and cardiac state are NOT captured — the Preset format itself has
-  never carried them (every built-in preset is base injuries only), so this is a pre-existing gap
-  this doesn't regress, not a new one, but it does mean this isn't yet a full "everything about
-  this patient" export.
+  point of application instead. KAT-only extras/cardiac state (fracture/pneumothorax/airway/
+  cardiac rhythm) ARE captured too, but read straight from live state instead
+  (`kat_surgery_fractures`/`kat_breathing_pneumothorax`(+hemo/tension)/`kat_airway_obstruction`
+  (+occluded)/`kat_circulation_cardiacArrestType`, falling back to the plain ACE
+  `ace_medical_vitals_inCardiacArrest` flag when no KAT rhythm is set) — these are AFCM/KAT's own
+  custom variables, not part of ACE's generic wound system, so unlike base injuries there's no
+  reverse-mapping problem to work around. `afcm_sim_scenario_fnc_exportPatientState` wraps both in
+  the same `[id, name, author, description, injuries, tags]` shape/`str` round-trip as
+  `fnc_exportPreset.sqf`, **plus a new optional 7th element**, `katExtras` (`[fractures <ARRAY[6]>,
+  pneumothoraxType, airwayType, cardiacRhythm]`) — omitted entirely when every value is at its
+  "clear" default, so a pure-ACE export still looks like every other 6-element Preset. A new "AFCM:
+  Export Patient State" scroll action (every spawned patient gets it,
+  `afcm_sim_spawner_fnc_spawnPatient`) copies the result straight to the OS clipboard
+  (`copyToClipboard`, same mechanism the Preset Library's own Export uses).
+
+  The reverse direction — parsing an exported string back into clean injuries + katExtras — is
+  factored out of `fnc_importPreset.sqf` into `fnc_parseExportedPreset.sqf` specifically so the
+  AFCM Patient module's spawn-time import and the Preset Library's save-to-library import share one
+  validated parser instead of two copies of the same logic. Applying katExtras itself is factored
+  into `afcm_sim_scenario_fnc_serverApplyKatExtras` (dispatches to the same
+  serverApplyKatFracture/serverApplyKatPneumothorax/serverApplyKatAirway/serverApplyCardiacState
+  handlers the injury editor's own controls use — each already no-ops safely under a non-KAT
+  backend), reused by `fnc_serverApplyPreset.sqf` (Preset Library Apply, including the MCI batch
+  path) and `afcm_sim_spawner_fnc_spawnPatient` (the AFCM Patient module's spawn-time import). A
+  preset carrying only katExtras and no base injuries (e.g. "just a cardiac arrest, no wound") is a
+  valid export/import on its own — export/parse both check injuries-empty-AND-katExtras-empty, not
+  either alone. **Scope note**: `fnc_getBuiltinPresets.sqf`'s built-ins and the injury editor's own
+  "Save as Preset" button still only carry base injuries — katExtras only ever originates from
+  Export Patient State right now, not from hand-building a preset in the Preset Library UI.
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
   that level's profile → applies via the same `injury.applied` path presets use (one application
   pipeline, three sources: manual, preset, randomized). **Implemented**:

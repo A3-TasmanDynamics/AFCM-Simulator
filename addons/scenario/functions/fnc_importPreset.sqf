@@ -25,6 +25,6 @@ private _cleaned = [_exported] call afcm_sim_scenario_fnc_parseExportedPreset;
 
 if (_cleaned isEqualTo []) exitWith { [] };
 
-_cleaned params ["_name", "_injuries", "_author", "_description", "_tags"];
+_cleaned params ["_name", "_injuries", "_author", "_description", "_tags", "_katExtras"];
 
-[_name, _injuries, _author, _description, _tags] call afcm_sim_scenario_fnc_saveUserPreset
+[_name, _injuries, _author, _description, _tags, "", _katExtras] call afcm_sim_scenario_fnc_saveUserPreset

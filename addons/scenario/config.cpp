@@ -35,6 +35,7 @@ class CfgFunctions
             // ACE-native, so this dispatches to whichever of "ace"/"kat" is actually active. See
             // fnc_serverApplyCardiacState.sqf's own header.
             class serverApplyCardiacState { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyCardiacState.sqf"; };
+            class serverApplyKatExtras { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatExtras.sqf"; };
         };
         // Injury Presets (DESIGN.md §4.3/§ Injury Presets) - built-in library + a per-player
         // profileNamespace-backed user library, plain-Array export/import, and the server-side
