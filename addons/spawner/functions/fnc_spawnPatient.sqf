@@ -26,6 +26,10 @@
  * 3: Session Id <STRING> (default "" - generates a fresh one for just this unit)
  * 4: Session Label <STRING> (default "" - falls back to "Spawn Patient" if a fresh id was also
  *    generated; ignored if joining an existing session)
+ * 5: katExtras <ARRAY> (default []) - the Preset shape's optional 7th element
+ *    (fnc_exportPatientState.sqf - `[fractures <ARRAY[6]>, pneumothoraxType, airwayType,
+ *    cardiacRhythm]`), applied via afcm_sim_scenario_fnc_serverApplyKatExtras alongside Injuries -
+ *    the Eden AFCM Patient module's Injury Preset Import attribute is the real caller
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -36,7 +40,7 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""]];
+params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []]];
 
 // Purely cosmetic - all four are real, base-game (no DLC/faction mod) Arma 3 classnames, so this
 // works with nothing but vanilla + CBA installed. Whatever's picked, gear is stripped down to bare
@@ -156,7 +160,7 @@ publicVariable "AFCM_SIM_spawnSessions";
 _unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
 
 [{
-    params ["_unit", "_injuries"];
+    params ["_unit", "_injuries", "_katExtras"];
     if (isNull _unit) exitWith {};
 
     // addAction is local to whichever machine calls it - every client (present + JIP) needs to run
@@ -170,8 +174,12 @@ _unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
     // "Mark as Treated" - the manual half of the Medical Tent's "Both" treated-detection mode
     // (afcm_sim_scenario_fnc_isPatientTreated), same local-addAction reasoning as the line above.
     [_unit] remoteExec ["afcm_sim_ui_fnc_addTreatedAction", 0, true];
+    // "Export Patient State" - lets a controller copy this patient's current AFCM-applied injuries
+    // out as a reusable Preset string (fnc_exportPatientState.sqf), same local-addAction reasoning.
+    [_unit] remoteExec ["afcm_sim_ui_fnc_addExportStateAction", 0, true];
 
     { [_unit, _x] call afcm_sim_fnc_backend_applyInjury; } forEach _injuries;
-}, [_unit, _injuries], 1] call CBA_fnc_waitAndExecute;
+    [_unit, _katExtras] call afcm_sim_scenario_fnc_serverApplyKatExtras;
+}, [_unit, _injuries, _katExtras], 1] call CBA_fnc_waitAndExecute;
 
 _unit

@@ -13,11 +13,19 @@ class CfgPatches
 };
 
 // Eden (mission editor) modules — the design-time side of patient placement (DESIGN.md §5 "Map to
-// Spawn Patients"), now calling real afcm_sim_spawner logic. `scopeCurator = 2;` is set here too
-// even though these are Eden-placed, not Zeus-placed — confirmed via a real in-Zeus test that
-// Zeus specifically requires it in addition to `scope = 2;` (plain scope=2 alone doesn't make a
-// module appear in the Zeus curator browser at all), and setting it also lets these modules be
-// placed via Zeus if a mission maker ever wants that, at no cost.
+// Spawn Patients"), now calling real afcm_sim_spawner logic. `scope = 2;` makes every module below
+// placeable in Eden as before; `scopeCurator` now varies per module rather than a blanket `2`:
+//  - AFCM_SIM_ModulePatientPlacement / AFCM_SIM_ModuleMciSpawnerPlacement -> `scopeCurator = 0;`,
+//    hidden from the Zeus curator browser. Zeus already has its own live counterparts doing the
+//    exact same job at mission runtime (addons/zeus/config.cpp: Spawn Patient, MCI Spawner) - an
+//    earlier pass showed both sets in Zeus "at no cost", which in practice just duplicated/confused
+//    the module list with two near-identical entries for the same action.
+//  - AFCM_SIM_ModuleMascalZone / AFCM_SIM_ModuleInteractiveTerminal / AFCM_SIM_ModuleMedicalTent ->
+//    left at `scopeCurator = 2;`, unchanged. None of these three has a Zeus-side duplicate, so
+//    there's no clutter to fix - and AFCM_SIM_ModuleInteractiveTerminal specifically NEEDS Zeus
+//    visibility for its `curatorCanAttach = 1` drag-directly-onto-an-object mechanic to be
+//    reachable at all (a module hidden from the curator browser can't be selected/dragged in Zeus
+//    in the first place, regardless of curatorCanAttach).
 class CfgFunctions
 {
     class afcm_sim_eden
@@ -117,7 +125,7 @@ class CfgVehicles
     class AFCM_SIM_ModulePatientPlacement: Module_F
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         side = 7;
         displayName = "AFCM Patient";
         icon = "\afcm_sim\addons\eden\data\module_patient.paa";
@@ -129,15 +137,65 @@ class CfgVehicles
         curatorCanAttach = 0;
 
         // No Injury Level attribute anymore - this module now spawns a clean, unconscious patient
-        // and relies on the "Edit Injuries" scroll action (added to every spawned patient,
-        // afcm_sim_spawner_fnc_spawnPatient) for real injury selection, same as Zeus's Spawn
-        // Patient module. AFCM_SIM_ModuleMascalZone below keeps its own Injury Level attribute -
-        // that one's still a randomized batch-spawn tool.
+        // by default and relies on the "Edit Injuries" scroll action (added to every spawned
+        // patient, afcm_sim_spawner_fnc_spawnPatient) for real injury selection, same as Zeus's
+        // Spawn Patient module - UNLESS the Injury Preset Import attribute below is filled in, in
+        // which case the patient spawns pre-configured with those exact injuries instead.
+        // AFCM_SIM_ModuleMascalZone below keeps its own Injury Level attribute - that one's still a
+        // randomized batch-spawn tool.
         //
         // Casualty Type IS still an attribute here though - purely cosmetic (clothing/appearance),
         // not tied to the injury-randomization pipeline the Injury Level attribute controlled, so
         // it makes sense on a manually-treated single patient too.
-        class Attributes: AFCM_SIM_CasualtyTypeAttributes {};
+        //
+        // Three new attributes, all read back by fnc_module_patientPlacement.sqf:
+        //  - AFCM_SIM_InjuryPresetImport: paste an exported Injury Preset/Patient State string
+        //    (fnc_exportPreset.sqf / fnc_exportPatientState.sqf - same shape) to spawn this patient
+        //    pre-injured, e.g. one hand-authored casualty that's part of a larger custom MCI built
+        //    entirely out of these modules. Parsed by the shared
+        //    afcm_sim_scenario_fnc_parseExportedPreset (also used by the Preset Library's own
+        //    Import), so it accepts anything either the Preset Library's Export button or a live
+        //    patient's "Export Patient State" action produces - including that action's KAT extras/
+        //    cardiac state (the Preset shape's optional 7th element), applied via
+        //    afcm_sim_scenario_fnc_serverApplyKatExtras alongside the base injuries.
+        //  - AFCM_SIM_UseSyncedPosition / AFCM_SIM_SpawnMarkerName: where the patient actually
+        //    spawns. Default (both left as-is) is unchanged - the module's own placed position.
+        //    Ticking "Spawn at Synced Object" spawns at the position of an object synced to this
+        //    module instead (Eden: Ctrl+click drag a sync line to it); leaving it unticked but
+        //    filling in a marker name spawns at that marker's position instead (e.g. an Empty
+        //    marker under Markers > System - real, confirmed Eden marker type, chosen purely so it
+        //    has no icon of its own cluttering the map). Synced-object position wins if both are
+        //    set, since the checkbox is the explicit "prefer sync" toggle.
+        class Attributes: AFCM_SIM_CasualtyTypeAttributes
+        {
+            class AFCM_SIM_InjuryPresetImport
+            {
+                displayName = "Injury Preset (paste to import)";
+                tooltip = "Paste an exported Injury Preset or Patient State string here to spawn this patient pre-configured with those exact injuries (including any KAT fracture/pneumothorax/airway/cardiac state the export carries). Leave blank to spawn clean/unconscious (use the Edit Injuries action instead).";
+                property = "AFCM_SIM_injuryPresetImport";
+                control = "Edit";
+                defaultValue = "";
+                typeName = "STRING";
+            };
+            class AFCM_SIM_UseSyncedPosition
+            {
+                displayName = "Spawn at Synced Object";
+                tooltip = "If enabled, spawns the patient at the position of an object synced to this module instead of the module's own placed position. If disabled, the Spawn Marker Name field below is used instead (leave both empty/unset to use the module's own position).";
+                property = "AFCM_SIM_useSyncedPosition";
+                control = "Checkbox";
+                defaultValue = "0";
+                typeName = "BOOL";
+            };
+            class AFCM_SIM_SpawnMarkerName
+            {
+                displayName = "Spawn Marker Name";
+                tooltip = "Name of a placed marker whose position to spawn the patient at, used only when 'Spawn at Synced Object' above is disabled. Leave blank to spawn at the module's own placed position.";
+                property = "AFCM_SIM_spawnMarkerName";
+                control = "Edit";
+                defaultValue = "";
+                typeName = "STRING";
+            };
+        };
     };
 
     // Design-time counterpart to "Map to Spawn Patients... MASCAL scenarios" (DESIGN.md §5) — a
@@ -208,7 +266,7 @@ class CfgVehicles
     class AFCM_SIM_ModuleMciSpawnerPlacement: Module_F
     {
         scope = 2;
-        scopeCurator = 2;
+        scopeCurator = 0;
         side = 7;
         displayName = "AFCM MCI Spawner";
         icon = "\afcm_sim\addons\eden\data\module_mascal.paa";

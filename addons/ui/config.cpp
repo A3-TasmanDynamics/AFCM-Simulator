@@ -56,6 +56,7 @@ class CfgFunctions
             class injuryEditor_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryEditor_onSavePreset.sqf"; };
             class addInjuryEditorAction { file = "\afcm_sim\addons\ui\functions\fnc_addInjuryEditorAction.sqf"; };
             class addTreatedAction { file = "\afcm_sim\addons\ui\functions\fnc_addTreatedAction.sqf"; };
+            class addExportStateAction { file = "\afcm_sim\addons\ui\functions\fnc_addExportStateAction.sqf"; };
         };
         class Mci
         {

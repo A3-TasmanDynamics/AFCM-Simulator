@@ -13,6 +13,9 @@
  * 4: Tags <ARRAY of STRING> (default [])
  * 5: Id <STRING> (default "" - generates a fresh one; pass an existing user preset's id to
  *    overwrite it in place instead of adding a duplicate)
+ * 6: katExtras <ARRAY> (default [] - omitted from the saved Preset entirely) - the Preset shape's
+ *    optional 7th element, `[fractures <ARRAY[6]>, pneumothoraxType, airwayType, cardiacRhythm]`,
+ *    see fnc_exportPatientState.sqf/fnc_serverApplyKatExtras.sqf
  *
  * Return Value:
  * The saved Preset <ARRAY>
@@ -28,7 +31,8 @@ params [
     ["_author", profileName],
     ["_description", ""],
     ["_tags", []],
-    ["_id", ""]
+    ["_id", ""],
+    ["_katExtras", []]
 ];
 
 if (_id isEqualTo "") then {
@@ -43,6 +47,7 @@ if (_id isEqualTo "") then {
 };
 
 private _preset = [_id, _name, _author, _description, _injuries, _tags];
+if (_katExtras isNotEqualTo []) then { _preset pushBack _katExtras; };
 
 private _presets = call afcm_sim_scenario_fnc_getUserPresets;
 _presets = _presets select { (_x select 0) != _id };

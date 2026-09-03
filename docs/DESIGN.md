@@ -452,6 +452,45 @@ is still the plan, not the state of the repo.
   counterparts) now read through those same getters rather than the raw `profileNamespace` variable,
   so a single malformed entry can no longer wedge reading, saving, deleting, *and* importing all at
   once the way it used to — it's just dropped, and self-heals on the next write.
+- **Export Patient State** — export one live, hand-authored patient's current AFCM-applied
+  injuries as a Preset string, reusable in the AFCM Patient module's Injury Preset Import attribute
+  (above) or the Preset Library's own Import field — the building block for authoring a custom MCI
+  entirely out of individually-configured patients. **Implemented**, in `afcm_sim_scenario` +
+  `afcm_sim_ui`. `afcm_sim_fnc_backend_applyInjury` (owned by `afcm_sim_main`, the one real choke
+  point every injury application already goes through regardless of source — manual, preset,
+  randomized, MCI) tracks one `[limb, woundType, severity, bleeding]` tuple per limb on the unit
+  itself (`AFCM_SIM_appliedInjuries`, `publicVariable`'d, a fresh apply on a limb overwriting its
+  own tracked entry rather than appending) — there's no reliable way to reverse-map live ACE/KAT
+  wound state back into this addon's own simplified woundType strings, so it's captured at the
+  point of application instead. KAT-only extras/cardiac state (fracture/pneumothorax/airway/
+  cardiac rhythm) ARE captured too, but read straight from live state instead
+  (`kat_surgery_fractures`/`kat_breathing_pneumothorax`(+hemo/tension)/`kat_airway_obstruction`
+  (+occluded)/`kat_circulation_cardiacArrestType`, falling back to the plain ACE
+  `ace_medical_vitals_inCardiacArrest` flag when no KAT rhythm is set) — these are AFCM/KAT's own
+  custom variables, not part of ACE's generic wound system, so unlike base injuries there's no
+  reverse-mapping problem to work around. `afcm_sim_scenario_fnc_exportPatientState` wraps both in
+  the same `[id, name, author, description, injuries, tags]` shape/`str` round-trip as
+  `fnc_exportPreset.sqf`, **plus a new optional 7th element**, `katExtras` (`[fractures <ARRAY[6]>,
+  pneumothoraxType, airwayType, cardiacRhythm]`) — omitted entirely when every value is at its
+  "clear" default, so a pure-ACE export still looks like every other 6-element Preset. A new "AFCM:
+  Export Patient State" scroll action (every spawned patient gets it,
+  `afcm_sim_spawner_fnc_spawnPatient`) copies the result straight to the OS clipboard
+  (`copyToClipboard`, same mechanism the Preset Library's own Export uses).
+
+  The reverse direction — parsing an exported string back into clean injuries + katExtras — is
+  factored out of `fnc_importPreset.sqf` into `fnc_parseExportedPreset.sqf` specifically so the
+  AFCM Patient module's spawn-time import and the Preset Library's save-to-library import share one
+  validated parser instead of two copies of the same logic. Applying katExtras itself is factored
+  into `afcm_sim_scenario_fnc_serverApplyKatExtras` (dispatches to the same
+  serverApplyKatFracture/serverApplyKatPneumothorax/serverApplyKatAirway/serverApplyCardiacState
+  handlers the injury editor's own controls use — each already no-ops safely under a non-KAT
+  backend), reused by `fnc_serverApplyPreset.sqf` (Preset Library Apply, including the MCI batch
+  path) and `afcm_sim_spawner_fnc_spawnPatient` (the AFCM Patient module's spawn-time import). A
+  preset carrying only katExtras and no base injuries (e.g. "just a cardiac arrest, no wound") is a
+  valid export/import on its own — export/parse both check injuries-empty-AND-katExtras-empty, not
+  either alone. **Scope note**: `fnc_getBuiltinPresets.sqf`'s built-ins and the injury editor's own
+  "Save as Preset" button still only carry base injuries — katExtras only ever originates from
+  Export Patient State right now, not from hand-building a preset in the Preset Library UI.
 - **Injury Levels (Randomization)** — pick a level → domain logic rolls a concrete injury set from
   that level's profile → applies via the same `injury.applied` path presets use (one application
   pipeline, three sources: manual, preset, randomized). **Implemented**:
@@ -490,14 +529,30 @@ is still the plan, not the state of the repo.
   combatant, so it never spawns carrying a weapon or gear of its own even when the military
   classnames' default combat loadout would otherwise include one.
 - **AFCM Patient (Eden)** — design-time patient placement for scripted scenarios: a mission maker
-  places the module, and it spawns a clean, unconscious patient on mission start
-  (`afcm_sim_eden`) — same "Edit Injuries" selection flow as Zeus's Spawn Patient, not a random
-  roll. Distinct from Spawn Patient (Zeus, live) and Map to Spawn Patients (below, in-mission) —
-  this is the pre-authoring path. **Implemented**: calls `spawnPatient` directly, no injuries
-  argument. The module's old "Injury Level" attribute is gone (eden/config.cpp) — it stopped doing
-  anything once this module stopped auto-randomizing. It keeps its own "Casualty Type" attribute
-  (same four options as Zeus's, shared `AFCM_SIM_CasualtyTypeAttributes` base class) — purely
-  cosmetic, so it's independent of the injury-randomization pipeline the old attribute controlled.
+  places the module, and it spawns a patient on mission start (`afcm_sim_eden`), clean/unconscious
+  by default — same "Edit Injuries" selection flow as Zeus's Spawn Patient, not a random roll.
+  Distinct from Spawn Patient (Zeus, live) and Map to Spawn Patients (below, in-mission) — this is
+  the pre-authoring path. **Implemented**: calls `spawnPatient` directly. The module's old "Injury
+  Level" attribute is gone (eden/config.cpp) — it stopped doing anything once this module stopped
+  auto-randomizing. It keeps its own "Casualty Type" attribute (same four options as Zeus's, shared
+  `AFCM_SIM_CasualtyTypeAttributes` base class) — purely cosmetic, so it's independent of the
+  injury-randomization pipeline the old attribute controlled. Hidden from Zeus's own curator module
+  browser (`scopeCurator = 0;`) since Zeus already has its own live "Spawn Patient" doing the same
+  job — showing both used to just clutter the Zeus module list.
+
+  Three attributes make this module a real building block for hand-authoring a custom MCI one
+  patient at a time (§ Export Patient State, below):
+  - **Injury Preset (paste to import)** — paste an exported Injury Preset or Patient State string
+    (`fnc_exportPreset.sqf` / `fnc_exportPatientState.sqf` — same shape) to spawn this patient
+    pre-configured with those exact injuries instead of clean/unconscious. Parsed by the shared
+    `afcm_sim_scenario_fnc_parseExportedPreset` (also used by the Preset Library's own Import), so
+    it accepts anything either one produces.
+  - **Spawn at Synced Object** (checkbox) / **Spawn Marker Name** (text) — where the patient
+    actually spawns. Ticking the checkbox spawns at the position of an object synced to the module
+    instead of the module's own placed position; leaving it unticked but naming a real placed
+    marker spawns at that marker's position instead; leaving both alone keeps the original,
+    still-default behaviour (the module's own placed position). Synced-object position wins if both
+    are set.
 - **Stretcher Placement** — selectable stretcher type (class list sourced from whichever backend
   is active, §2.5), ghost-preview placement (surface-snapped, like Zeus placement), spawns synced
   for MP. *Not implemented.*

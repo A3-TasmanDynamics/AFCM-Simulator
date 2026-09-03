@@ -1,9 +1,10 @@
 /*
  * Author: Tasman Dynamics
  * ButtonClick handler for the Preset Library's Apply button (RscDisplayAFCM_SIM_PresetLibrary).
- * Looks up the selected preset (afcm_sim_scenario_fnc_findPreset) and remoteExecs every one of its
- * injuries to the server (afcm_sim_scenario_fnc_serverApplyPreset) - never applies locally
- * (DESIGN.md §6, same pattern as the injury editor's own Apply).
+ * Looks up the selected preset (afcm_sim_scenario_fnc_findPreset) and remoteExecs its injuries
+ * (plus any KAT extras/cardiac state - the Preset shape's optional 7th element,
+ * fnc_exportPatientState.sqf) to the server (afcm_sim_scenario_fnc_serverApplyPreset) - never
+ * applies locally (DESIGN.md §6, same pattern as the injury editor's own Apply).
  *
  * Two modes, depending on which target variable is set when this dialog was opened:
  *  - Batch (MCI): AFCM_SIM_UI_targetUnits (plural, non-empty) - set by the "Assign MCI Preset"
@@ -33,11 +34,14 @@ private _preset = [_id] call afcm_sim_scenario_fnc_findPreset;
 if (_preset isEqualTo []) exitWith {};
 
 private _injuries = _preset select 4;
+// katExtras - the Preset shape's optional 7th element (fnc_exportPatientState.sqf), absent on
+// every built-in/older preset.
+private _katExtras = if (count _preset >= 7) then { _preset select 6 } else { [] };
 private _targetUnits = missionNamespace getVariable ["AFCM_SIM_UI_targetUnits", []];
 
 if (_targetUnits isNotEqualTo []) then {
     diag_log text format ["[AFCM-Simulator][UI] Applying preset '%1' to MCI batch of %2 unit(s).", _preset select 1, count _targetUnits];
-    { [_x, _injuries] remoteExec ["afcm_sim_scenario_fnc_serverApplyPreset", 2]; } forEach _targetUnits;
+    { [_x, _injuries, _katExtras] remoteExec ["afcm_sim_scenario_fnc_serverApplyPreset", 2]; } forEach _targetUnits;
     missionNamespace setVariable ["AFCM_SIM_UI_targetUnits", []];
 } else {
     private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
@@ -45,7 +49,7 @@ if (_targetUnits isNotEqualTo []) then {
         diag_log text "[AFCM-Simulator][UI] Preset Apply aborted - no target unit(s) set.";
     };
     diag_log text format ["[AFCM-Simulator][UI] Applying preset '%1' to %2.", _preset select 1, _targetUnit];
-    [_targetUnit, _injuries] remoteExec ["afcm_sim_scenario_fnc_serverApplyPreset", 2];
+    [_targetUnit, _injuries, _katExtras] remoteExec ["afcm_sim_scenario_fnc_serverApplyPreset", 2];
 };
 
 closeDialog 0;

@@ -6,11 +6,16 @@
  *
  * Preset shape (a plain Array, not a HashMap - see fnc_exportPreset.sqf for why):
  * [id <STRING>, name <STRING>, author <STRING>, description <STRING>,
- *  injuries <ARRAY of [limb, woundType, severity, bleeding]>, tags <ARRAY of STRING>]
+ *  injuries <ARRAY of [limb, woundType, severity, bleeding]>, tags <ARRAY of STRING>,
+ *  katExtras <ARRAY> (optional, 7th element)]
  *
  * Each injuries entry uses the same 4 real primitives afcm_sim_scenario_fnc_serverApplyInjury
  * already takes (LimbId/woundType/severity/bleeding, DESIGN.md §4.1/§4.2/INJURY_CODES.md) - a
- * preset is just a named, reusable batch of those.
+ * preset is just a named, reusable batch of those. No built-in preset below carries a 7th element -
+ * katExtras (`[fractures <ARRAY[6]>, pneumothoraxType, airwayType, cardiacRhythm]`) only ever comes
+ * from fnc_exportPatientState.sqf, and every other consumer of this shape
+ * (fnc_parseExportedPreset.sqf/fnc_serverApplyPreset.sqf/fnc_saveUserPreset.sqf) treats it as
+ * optional, defaulting to "none" when absent - so this stays a valid 6-element Preset either way.
  *
  * Arguments:
  * None

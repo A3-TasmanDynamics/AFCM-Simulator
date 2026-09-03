@@ -2,7 +2,21 @@
  * Author: Tasman Dynamics
  * Dispatches an injury application to whichever backend the server selected as active
  * (DESIGN.md §2.5/§4.2). afcm_sim_scenario and afcm_sim_spawner call this - never a backend
- * addon's function directly, and never AFCM/ACE3 directly.
+ * addon's function directly, and never AFCM/ACE3 directly. Both real callers
+ * (afcm_sim_scenario_fnc_serverApplyInjury, afcm_sim_spawner_fnc_spawnPatient) only ever run this
+ * on the server, so the per-limb bookkeeping below (AFCM_SIM_appliedInjuries, publicVariable'd) is
+ * safe to write unconditionally rather than needing its own isServer guard.
+ *
+ * That bookkeeping - one tracked [limb, woundType, severity, bleeding] tuple per limb, a fresh
+ * apply on the same limb overwriting its own entry rather than appending - is what
+ * fnc_exportPatientState.sqf reads back to let a controller export a hand-authored patient's
+ * current injuries for reuse elsewhere (an Eden AFCM Patient module's Injury Preset Import
+ * attribute, or the Preset Library) - there's no reliable way to reverse-engineer this addon's
+ * simplified woundType strings back out of live ACE/KAT wound state, so it's tracked here at the
+ * point of application instead. Deliberately a plain Array of primitives, not a HashMap of Injury
+ * HashMaps - same "Array round-trips reliably, HashMap doesn't cross a network boundary the same
+ * way" reasoning fnc_exportPreset.sqf documents, and this variable IS publicVariable'd (`true`
+ * below) so every client can read it back locally when exporting, not just the server.
  *
  * Arguments:
  * 0: Target unit <OBJECT>
@@ -40,4 +54,11 @@ if (isNil "_fnc") exitWith {
 };
 
 [_unit, _injury] call _fnc;
+
+private _limb = _injury getOrDefault ["limb", ""];
+private _history = _unit getVariable ["AFCM_SIM_appliedInjuries", []];
+_history = _history select { (_x select 0) != _limb };
+_history pushBack [_limb, _injury getOrDefault ["woundType", ""], _injury getOrDefault ["severity", 0.5], _injury getOrDefault ["bleeding", false]];
+_unit setVariable ["AFCM_SIM_appliedInjuries", _history, true];
+
 true
