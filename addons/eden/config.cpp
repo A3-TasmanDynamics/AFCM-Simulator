@@ -2,7 +2,7 @@ class CfgPatches
 {
     class afcm_sim_eden
     {
-        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleMascalZone", "AFCM_SIM_ModuleMciSpawnerPlacement", "AFCM_SIM_ModuleInteractiveTerminal", "AFCM_SIM_ModuleMedicalTent"};
+        units[] = {"AFCM_SIM_ModulePatientPlacement", "AFCM_SIM_ModuleInteractiveTerminal"};
         weapons[] = {};
         requiredVersion = 2.14;
         requiredAddons[] = {"cba_main", "afcm_sim_main", "afcm_sim_scenario", "afcm_sim_spawner"};
@@ -13,19 +13,20 @@ class CfgPatches
 };
 
 // Eden (mission editor) modules — the design-time side of patient placement (DESIGN.md §5 "Map to
-// Spawn Patients"), now calling real afcm_sim_spawner logic. `scope = 2;` makes every module below
-// placeable in Eden as before; `scopeCurator` now varies per module rather than a blanket `2`:
-//  - AFCM_SIM_ModulePatientPlacement / AFCM_SIM_ModuleMciSpawnerPlacement -> `scopeCurator = 0;`,
-//    hidden from the Zeus curator browser. Zeus already has its own live counterparts doing the
-//    exact same job at mission runtime (addons/zeus/config.cpp: Spawn Patient, MCI Spawner) - an
-//    earlier pass showed both sets in Zeus "at no cost", which in practice just duplicated/confused
-//    the module list with two near-identical entries for the same action.
-//  - AFCM_SIM_ModuleMascalZone / AFCM_SIM_ModuleInteractiveTerminal / AFCM_SIM_ModuleMedicalTent ->
-//    left at `scopeCurator = 2;`, unchanged. None of these three has a Zeus-side duplicate, so
-//    there's no clutter to fix - and AFCM_SIM_ModuleInteractiveTerminal specifically NEEDS Zeus
-//    visibility for its `curatorCanAttach = 1` drag-directly-onto-an-object mechanic to be
-//    reachable at all (a module hidden from the curator browser can't be selected/dragged in Zeus
-//    in the first place, regardless of curatorCanAttach).
+// Spawn Patients"), now calling real afcm_sim_spawner logic. Trimmed to just these two on request -
+// AFCM MASCAL Zone, AFCM MCI Spawner (Eden), and Medical Tent were removed (their function files
+// deleted, not just hidden) since only AFCM Patient and Interactive Terminal were still wanted;
+// Zeus keeps its own MASCAL/MCI Spawner equivalents (addons/zeus/config.cpp), the MCI Creator UI
+// still covers ad-hoc batch spawning, but Medical Tent has NO other entry point left anywhere in
+// the mod now that its one Eden module is gone (see fnc_registerMedicalTent.sqf/
+// fnc_startMedicalTentMonitor.sqf, still real code, just currently unreachable).
+//
+// `scope = 2;` makes both modules below placeable in Eden. `scopeCurator` differs per module:
+// AFCM_SIM_ModulePatientPlacement is `0;` (hidden from the Zeus curator browser - Zeus already has
+// its own live "Spawn Patient" doing the same job, so showing both there just duplicated/confused
+// the module list); AFCM_SIM_ModuleInteractiveTerminal stays `2;` since it has no Zeus-side
+// duplicate and specifically NEEDS Zeus visibility for its `curatorCanAttach = 1`
+// drag-directly-onto-an-object mechanic to be reachable at all.
 class CfgFunctions
 {
     class afcm_sim_eden
@@ -37,10 +38,7 @@ class CfgFunctions
             // Explicit `file=`, full absolute virtual path — see afcm_sim_main/config.cpp for why
             // both the fnc_ filename AND the absolute-path form are required.
             class module_patientPlacement { file = "\afcm_sim\addons\eden\functions\fnc_module_patientPlacement.sqf"; };
-            class module_mascalZone { file = "\afcm_sim\addons\eden\functions\fnc_module_mascalZone.sqf"; };
-            class module_mciSpawner { file = "\afcm_sim\addons\eden\functions\fnc_module_mciSpawner.sqf"; };
             class module_interactiveTerminal { file = "\afcm_sim\addons\eden\functions\fnc_module_interactiveTerminal.sqf"; };
-            class module_medicalTent { file = "\afcm_sim\addons\eden\functions\fnc_module_medicalTent.sqf"; };
         };
     };
 };
@@ -141,14 +139,12 @@ class CfgVehicles
         // patient, afcm_sim_spawner_fnc_spawnPatient) for real injury selection, same as Zeus's
         // Spawn Patient module - UNLESS the Injury Preset Import attribute below is filled in, in
         // which case the patient spawns pre-configured with those exact injuries instead.
-        // AFCM_SIM_ModuleMascalZone below keeps its own Injury Level attribute - that one's still a
-        // randomized batch-spawn tool.
         //
         // Casualty Type IS still an attribute here though - purely cosmetic (clothing/appearance),
-        // not tied to the injury-randomization pipeline the Injury Level attribute controlled, so
-        // it makes sense on a manually-treated single patient too.
+        // not tied to the injury-randomization pipeline the old Injury Level attribute controlled,
+        // so it makes sense on a manually-treated single patient too.
         //
-        // Three new attributes, all read back by fnc_module_patientPlacement.sqf:
+        // Two more attributes, both read back by fnc_module_patientPlacement.sqf:
         //  - AFCM_SIM_InjuryPresetImport: paste an exported Injury Preset/Patient State string
         //    (fnc_exportPreset.sqf / fnc_exportPatientState.sqf - same shape) to spawn this patient
         //    pre-injured, e.g. one hand-authored casualty that's part of a larger custom MCI built
@@ -158,14 +154,15 @@ class CfgVehicles
         //    patient's "Export Patient State" action produces - including that action's KAT extras/
         //    cardiac state (the Preset shape's optional 7th element), applied via
         //    afcm_sim_scenario_fnc_serverApplyKatExtras alongside the base injuries.
-        //  - AFCM_SIM_UseSyncedPosition / AFCM_SIM_SpawnMarkerName: where the patient actually
-        //    spawns. Default (both left as-is) is unchanged - the module's own placed position.
-        //    Ticking "Spawn at Synced Object" spawns at the position of an object synced to this
-        //    module instead (Eden: Ctrl+click drag a sync line to it); leaving it unticked but
-        //    filling in a marker name spawns at that marker's position instead (e.g. an Empty
-        //    marker under Markers > System - real, confirmed Eden marker type, chosen purely so it
-        //    has no icon of its own cluttering the map). Synced-object position wins if both are
-        //    set, since the checkbox is the explicit "prefer sync" toggle.
+        //  - AFCM_SIM_SpawnMarkerName: where the patient actually spawns. Left blank (the default),
+        //    behaviour is unchanged - the module's own placed position. Real, confirmed bug fixed
+        //    here: an earlier pass also required a "Spawn at Synced Object" checkbox to be ticked
+        //    before a synced object's position would be used at all, so simply syncing an object
+        //    with the checkbox left at its default silently fell through to the module's own
+        //    position - that checkbox is gone now. Any object synced to the module (Eden:
+        //    Ctrl+click drag a sync line to it) now always wins; a non-blank marker name here is
+        //    the fallback when nothing's synced (fnc_module_patientPlacement.sqf has the full
+        //    precedence).
         class Attributes: AFCM_SIM_CasualtyTypeAttributes
         {
             class AFCM_SIM_InjuryPresetImport
@@ -177,141 +174,14 @@ class CfgVehicles
                 defaultValue = "";
                 typeName = "STRING";
             };
-            class AFCM_SIM_UseSyncedPosition
-            {
-                displayName = "Spawn at Synced Object";
-                tooltip = "If enabled, spawns the patient at the position of an object synced to this module instead of the module's own placed position. If disabled, the Spawn Marker Name field below is used instead (leave both empty/unset to use the module's own position).";
-                property = "AFCM_SIM_useSyncedPosition";
-                control = "Checkbox";
-                defaultValue = "0";
-                typeName = "BOOL";
-            };
             class AFCM_SIM_SpawnMarkerName
             {
                 displayName = "Spawn Marker Name";
-                tooltip = "Name of a placed marker whose position to spawn the patient at, used only when 'Spawn at Synced Object' above is disabled. Leave blank to spawn at the module's own placed position.";
+                tooltip = "Name of a placed marker to spawn the patient at. Ignored if an object is synced to this module (that always wins). Leave blank to spawn at the module's own placed position.";
                 property = "AFCM_SIM_spawnMarkerName";
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
-            };
-        };
-    };
-
-    // Design-time counterpart to "Map to Spawn Patients... MASCAL scenarios" (DESIGN.md §5) — a
-    // placed area where multiple patients spawn on mission start, rather than one at a time.
-    // Distinct from AFCM_SIM_ModulePatientPlacement (single patient) above.
-    class AFCM_SIM_ModuleMascalZone: Module_F
-    {
-        scope = 2;
-        scopeCurator = 2;
-        side = 7;
-        displayName = "AFCM MASCAL Zone";
-        icon = "\afcm_sim\addons\eden\data\module_mascal.paa";
-        category = "AFCM_SIM_Category";
-        function = "afcm_sim_eden_fnc_module_mascalZone";
-        functionPriority = 1;
-        isGlobal = 1;
-        isTriggerActivated = 0;
-        curatorCanAttach = 0;
-
-        // Patient count, injury level, casualty type. Values read back via
-        // `_logic getVariable ["AFCM_SIM_patientCount"/"AFCM_SIM_injuryLevel"/
-        // "AFCM_SIM_casualtyType", default]` in the module function once spawner logic exists to
-        // actually place patients (DESIGN.md §8 open question #4 — realistic max simultaneous
-        // patients still needs a real number; the option list below is a starting guess, not a
-        // validated limit). Inherits AFCM_SIM_CasualtyType from AFCM_SIM_CasualtyTypeAttributes
-        // above, plus its own two attributes.
-        class Attributes: AFCM_SIM_CasualtyTypeAttributes
-        {
-            class AFCM_SIM_PatientCount
-            {
-                displayName = "Patient Count";
-                property = "AFCM_SIM_patientCount";
-                control = "combo";
-                defaultValue = "4";
-                class Values
-                {
-                    class Two { name = "2"; value = 2; };
-                    class Four { name = "4"; value = 4; default = 1; };
-                    class Six { name = "6"; value = 6; };
-                    class Eight { name = "8"; value = 8; };
-                    class Ten { name = "10"; value = 10; };
-                };
-            };
-            class AFCM_SIM_InjuryLevel
-            {
-                displayName = "Injury Level";
-                property = "AFCM_SIM_injuryLevel";
-                control = "combo";
-                defaultValue = "0";
-                class Values
-                {
-                    class Easy { name = "Easy"; value = 0; default = 1; };
-                    class Medium { name = "Medium"; value = 1; };
-                    class Hard { name = "Hard"; value = 2; };
-                    class Extreme { name = "Extreme"; value = 3; };
-                    class Fucked { name = "F*CKED!"; value = 4; };
-                };
-            };
-        };
-    };
-
-    // Design-time counterpart to Zeus's AFCM_SIM_ModuleMciSpawner (addons/zeus/config.cpp) - a
-    // batch of patients all spawned with the exact same real Injury Preset (INJURY_CODES.md §4)
-    // applied, distinct from AFCM_SIM_ModuleMascalZone above (randomized injury level, not a
-    // specific preset). Preset is a static Attribute here, not a live dialog like Zeus's version -
-    // see fnc_module_mciSpawner.sqf's comment for why (a design-time module can't reference a
-    // specific player's own future profileNamespace user presets).
-    class AFCM_SIM_ModuleMciSpawnerPlacement: Module_F
-    {
-        scope = 2;
-        scopeCurator = 0;
-        side = 7;
-        displayName = "AFCM MCI Spawner";
-        icon = "\afcm_sim\addons\eden\data\module_mascal.paa";
-        category = "AFCM_SIM_Category";
-        function = "afcm_sim_eden_fnc_module_mciSpawner";
-        functionPriority = 1;
-        isGlobal = 1;
-        isTriggerActivated = 0;
-        curatorCanAttach = 0;
-
-        // Patient count, casualty type, preset. Preset Values are numeric indices into
-        // afcm_sim_scenario_fnc_getBuiltinPresets's own array order (fnc_module_mciSpawner.sqf
-        // reads it back the same way Casualty Type/Injury Level already do elsewhere in this
-        // addon) - keep both in sync if the built-in preset list ever changes.
-        class Attributes: AFCM_SIM_CasualtyTypeAttributes
-        {
-            class AFCM_SIM_PatientCount
-            {
-                displayName = "Patient Count";
-                property = "AFCM_SIM_patientCount";
-                control = "combo";
-                defaultValue = "4";
-                class Values
-                {
-                    class Two { name = "2"; value = 2; };
-                    class Four { name = "4"; value = 4; default = 1; };
-                    class Six { name = "6"; value = 6; };
-                    class Eight { name = "8"; value = 8; };
-                    class Ten { name = "10"; value = 10; };
-                };
-            };
-            class AFCM_SIM_MciPreset
-            {
-                displayName = "Preset";
-                property = "AFCM_SIM_mciPreset";
-                control = "combo";
-                defaultValue = "0";
-                class Values
-                {
-                    class GswChest { name = "GSW — Chest"; value = 0; default = 1; };
-                    class GswLimbTq { name = "GSW — Limb (Tourniquet Candidate)"; value = 1; };
-                    class BlastCasualty { name = "Blast Casualty"; value = 2; };
-                    class FragMultiple { name = "Frag Wounds (Multiple)"; value = 3; };
-                    class MinorLaceration { name = "Training — Minor Laceration"; value = 4; };
-                };
             };
         };
     };
@@ -339,54 +209,5 @@ class CfgVehicles
         isGlobal = 1;
         isTriggerActivated = 0;
         curatorCanAttach = 1;
-    };
-
-    // Session-scoped treatment detection for a physical Medical Tent the mission maker builds
-    // themselves out of real objects (a tent, screens, medical gear - however elaborate they want,
-    // via a normal Eden Composition) - AFCM doesn't spawn or know about any of that scenery, it only
-    // needs to know which placed objects act as stretchers.
-    //
-    // Sync every stretcher-ish object (any classname - a real stretcher prop, a cot, whatever the
-    // composition uses) to this module - naming each one afcm_stretcher_1/afcm_stretcher_2/etc in
-    // Eden's own object Name field first is the recommended convention (not parsed by the code,
-    // purely so multiple stretchers/tents stay identifiable in the editor and in AFCM's own logs).
-    // A Spawn Session (afcm_sim_spawner) counts as resolved once every one of its live patients is
-    // simultaneously treated and within Stretcher Radius of any synced stretcher from ANY placed
-    // Medical Tent - see fnc_module_medicalTent.sqf and afcm_sim_scenario_fnc_
-    // startMedicalTentMonitor for the session-scoped, multi-tent-friendly detection logic.
-    class AFCM_SIM_ModuleMedicalTent: Module_F
-    {
-        scope = 2;
-        scopeCurator = 2;
-        side = 7;
-        displayName = "Medical Tent";
-        icon = "\afcm_sim\addons\eden\data\module_mascal.paa";
-        category = "AFCM_SIM_Category";
-        function = "afcm_sim_eden_fnc_module_medicalTent";
-        functionPriority = 1;
-        isGlobal = 1;
-        isTriggerActivated = 0;
-        curatorCanAttach = 0;
-
-        class Attributes
-        {
-            scope = 0;
-            class AFCM_SIM_StretcherRadius
-            {
-                displayName = "Stretcher Radius (m)";
-                tooltip = "How close a patient must be to a synced stretcher to count as 'on' it";
-                property = "AFCM_SIM_stretcherRadius";
-                control = "combo";
-                defaultValue = "2";
-                class Values
-                {
-                    class One { name = "1"; value = 1; };
-                    class OnePointFive { name = "1.5"; value = 1.5; };
-                    class Two { name = "2"; value = 2; default = 1; };
-                    class Three { name = "3"; value = 3; };
-                    class Four { name = "4"; value = 4; };
-                };
-            };
-        };
     };
 };

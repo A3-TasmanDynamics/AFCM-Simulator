@@ -214,11 +214,13 @@ by construction (§2.5). The internal split:
   itself was — no native AFCM to target at this stage, §9). All `requiredAddon` `afcm_sim_main`
   (for the interface they register against), not `afcm_sim_scenario`.
 - **`afcm_sim_zeus`** / **`afcm_sim_eden`** own the editor-facing side of patient
-  authoring/placement (§5) — a Zeus module ("Spawn Patient") and two Eden modules ("AFCM Patient"
-  and "AFCM MASCAL Zone"). **Implemented** — all three call real `afcm_sim_spawner` functions, not
-  stubs. Only MASCAL Zone still has an injury-level attribute/randomizes — Spawn Patient and AFCM
-  Patient spawn clean and rely on the "Edit Injuries" selection flow instead. `requiredAddon`
-  `afcm_sim_main`, `afcm_sim_scenario`, and `afcm_sim_spawner`.
+  authoring/placement (§5) — Zeus's "Spawn Patient"/"MCI Spawner"/"Edit Injuries" and Eden's own
+  "AFCM Patient"/"Interactive Terminal". **Implemented** — all call real `afcm_sim_spawner`
+  functions, not stubs; both spawn modules spawn clean and rely on the "Edit Injuries" selection
+  flow (or, on AFCM Patient, an optional Injury Preset Import attribute) rather than randomizing.
+  Eden previously also shipped AFCM MASCAL Zone/AFCM MCI Spawner/Medical Tent modules - removed on
+  request, keeping just these two (§9). `requiredAddon` `afcm_sim_main`, `afcm_sim_scenario`, and
+  `afcm_sim_spawner`.
 
 ---
 
@@ -517,9 +519,11 @@ is still the plan, not the state of the repo.
   "spontaneously recovers on its own" was never the intended behaviour either way.
   `AFCM_SIM_ModuleSpawnRandomPatient` internally (display name is now just "Spawn Patient" —
   renaming the class would orphan it in any mission that's already placed one).
-  `afcm_sim_spawner_fnc_spawnRandomPatient` (the actual randomizer wrapper) still exists and is
-  still used by AFCM MASCAL Zone (§ below) — batch/mass-casualty drills are the one place
-  random-by-design still makes sense. Casualty appearance is configurable, not random: a
+  `afcm_sim_spawner_fnc_spawnRandomPatient` (the randomizer wrapper `afcm_sim_scenario_fnc_
+  randomizeInjuries` fed) was removed along with its one real caller, AFCM MASCAL Zone (§9) — dead
+  code once that module was gone, per this repo's own "remove rather than orphan" convention.
+  `randomizeInjuries` itself is still real and still called elsewhere (`resolveMciPatientSpec`'s
+  `"random"` branch). Casualty appearance is configurable, not random: a
   "Casualty Type" module attribute (Civilian/Military BLUFOR/Military OPFOR/Military Independent,
   real base-game classnames `C_man_1`/`B_Soldier_F`/`O_Soldier_F`/`I_Soldier_F` — no faction mod
   dependency) picks the spawned classname, falling back to the `afcm_sim_defaultCasualtyType` CBA
@@ -540,47 +544,44 @@ is still the plan, not the state of the repo.
   browser (`scopeCurator = 0;`) since Zeus already has its own live "Spawn Patient" doing the same
   job — showing both used to just clutter the Zeus module list.
 
-  Three attributes make this module a real building block for hand-authoring a custom MCI one
+  Two attributes make this module a real building block for hand-authoring a custom MCI one
   patient at a time (§ Export Patient State, below):
   - **Injury Preset (paste to import)** — paste an exported Injury Preset or Patient State string
     (`fnc_exportPreset.sqf` / `fnc_exportPatientState.sqf` — same shape) to spawn this patient
     pre-configured with those exact injuries instead of clean/unconscious. Parsed by the shared
     `afcm_sim_scenario_fnc_parseExportedPreset` (also used by the Preset Library's own Import), so
     it accepts anything either one produces.
-  - **Spawn at Synced Object** (checkbox) / **Spawn Marker Name** (text) — where the patient
-    actually spawns. Ticking the checkbox spawns at the position of an object synced to the module
-    instead of the module's own placed position; leaving it unticked but naming a real placed
-    marker spawns at that marker's position instead; leaving both alone keeps the original,
-    still-default behaviour (the module's own placed position). Synced-object position wins if both
-    are set.
+  - **Spawn Marker Name** (text) — where the patient actually spawns. Precedence: any object synced
+    to the module (Eden: Ctrl+click drag a sync line to it) always wins; otherwise a non-blank
+    marker name that resolves to a real placed marker; otherwise (both left alone) the original,
+    still-default behaviour, the module's own placed position. Real, confirmed bug fixed here: an
+    earlier pass required a separate "Spawn at Synced Object" checkbox to be ticked before a sync
+    would take effect at all, so simply syncing an object with the checkbox left at its default
+    silently fell through to the module's own position — that checkbox is gone now, sync alone just
+    works.
 - **Stretcher Placement** — selectable stretcher type (class list sourced from whichever backend
   is active, §2.5), ghost-preview placement (surface-snapped, like Zeus placement), spawns synced
   for MP. *Not implemented.*
 - **Map to Spawn Patients / MCI Spawner** — pick a place on the map, pick a preset, batch-spawn a
-  Mass Casualty Incident. **Implemented three ways**, alongside the existing **AFCM MASCAL Zone**
-  (§7 — `AFCM_SIM_ModuleMascalZone`, randomized-by-level batch spawn, unchanged): the module pair
-  below (Zeus/Eden, one shared preset per batch), and the **MCI Creator** further down (§ MCI
-  Creator — a real, literal interactive map-click tool, standalone, not tied to module placement,
-  where every patient in the incident can carry a *different* preset).
+  Mass Casualty Incident. **Implemented**: a Zeus module below, plus the **MCI Creator** further
+  down (§ MCI Creator — a real, literal interactive map-click tool, standalone, not tied to module
+  placement, where every patient in the incident can carry a *different* preset).
   - **MCI Spawner (Zeus, `AFCM_SIM_ModuleMciSpawner`)** — placing the module spawns Patient Count
     clean, unconscious patients at that position (loosely scattered via `spawnPatient`'s own
-    jitter, same as MASCAL Zone), then adds an "Assign MCI Preset" scroll action to the whole
-    batch. Clicking it on any one of them opens the real Preset Library
-    (`RscDisplayAFCM_SIM_PresetLibrary`, § Injury Presets) in batch mode
-    (`AFCM_SIM_UI_targetUnits`, plural) — picking a preset there applies it to every patient in the
-    group at once, in one Apply. Deliberately doesn't try to pop the dialog straight from the
-    module function itself: Module_F functions run with `isGlobal = 1` (broadcast to every
-    connected machine — every module in this addon already needs its own `isServer` guard for
-    exactly that reason), so there's no reliable way to know which one client's curator actually
+    jitter), then adds an "Assign MCI Preset" scroll action to the whole batch. Clicking it on any
+    one of them opens the real Preset Library (`RscDisplayAFCM_SIM_PresetLibrary`, § Injury
+    Presets) in batch mode (`AFCM_SIM_UI_targetUnits`, plural) — picking a preset there applies it
+    to every patient in the group at once, in one Apply. Deliberately doesn't try to pop the dialog
+    straight from the module function itself: Module_F functions run with `isGlobal = 1` (broadcast
+    to every connected machine — every module in this addon already needs its own `isServer` guard
+    for exactly that reason), so there's no reliable way to know which one client's curator actually
     placed it and should see a dialog. The addAction route sidesteps that entirely, reusing the
     same already-proven, inherently per-client-local mechanism "Edit Injuries" uses — full built-in
     *and* the placing operator's own saved presets are reachable this way, live.
-  - **AFCM MCI Spawner (Eden, `AFCM_SIM_ModuleMciSpawnerPlacement`)** — same batch spawn, but the
-    preset is picked at design time via a static Attribute (the 5 built-in presets only — a
-    design-time module can't reference a specific player's own future `profileNamespace` user
-    presets, since those are per-player and wouldn't resolve consistently for anyone else running
-    the mission). No interactive dialog needed at mission start, unlike Zeus's version — everything
-    is already fully resolved from config by the time the module function runs.
+  - **AFCM MCI Spawner (Eden)** and **AFCM MASCAL Zone** (the design-time, static-preset/randomized
+    batch-spawn counterparts to the above) were both removed on request (§9), along with Medical
+    Tent — Eden's module list is now just AFCM Patient + Interactive Terminal. Zeus's MCI Spawner
+    above and the MCI Creator below still cover live/ad-hoc batch spawning.
 - **MCI Creator** — the standalone tool for when patients need genuinely *different* injuries from
   each other in the same incident (module MCI Spawners above give every patient the same preset;
   this is the "a HE shell hit a section, 3 are down, but with different injuries" case). Callable
@@ -626,8 +627,8 @@ is still the plan, not the state of the repo.
 - **Clear spawned patients / Spawn Sessions** — not in the original feature list; added after
   reviewing a prior working prototype (REFERENCES.md) that needed exactly this. **Implemented**,
   including the per-spawner/session-scoped clearing the prototype had that an earlier pass here
-  didn't yet build: every batch of patients spawned together (a Zeus/Eden MCI Spawner, an MCI
-  Creator incident, an AFCM MASCAL Zone) is grouped into one named **Spawn Session**
+  didn't yet build: every batch of patients spawned together (a Zeus MCI Spawner, an MCI Creator
+  incident) is grouped into one named **Spawn Session**
   (`afcm_sim_spawner_fnc_spawnPatient`/`newSessionId`) — `[id, label, spawnTime, units]`, tracked
   in `AFCM_SIM_spawnSessions` alongside the existing flat `AFCM_SIM_spawnedPatients` list (which
   still covers every patient regardless of session). Single-patient spawns (Zeus "Spawn Patient",
@@ -659,8 +660,8 @@ is still the plan, not the state of the repo.
   fix applied to user preset/MCI preset ids (`fnc_saveUserPreset.sqf`/`saveUserMciPreset.sqf`),
   where a collision would have silently overwritten an unrelated saved preset instead of merely
   merging.
-  **Custom session names** — every batch spawn path (Zeus/Eden Spawn Patient, Zeus/Eden MASCAL
-  Zone, Zeus/Eden MCI Spawner, and the MCI Creator dialog) now reads an optional free-text label
+  **Custom session names** — every batch spawn path (Zeus/Eden Spawn Patient, Zeus MCI Spawner, and
+  the MCI Creator dialog) now reads an optional free-text label
   and uses it verbatim in place of the auto-generated one when non-blank, so the Session Manager
   list can show something meaningful ("Breach team casualties") instead of only "MCI Spawner — 6
   patients". Zeus/Eden modules expose this as a shared `AFCM_SIM_SessionName` Eden Attribute
@@ -677,11 +678,18 @@ is still the plan, not the state of the repo.
   recommended way, since it's real classnames + relative positions the mission maker picks visually,
   with zero classname-guessing risk on AFCM's side either way). All AFCM needs from that scenery is
   which objects act as stretchers.
-  - **Placement**: `AFCM_SIM_ModuleMedicalTent` (Eden) — sync any stretcher-ish objects to it (naming
-    each one `afcm_stretcher_1`/`afcm_stretcher_2`/etc in Eden's own object Name field first is the
-    recommended convention, purely for the mission maker's/AFCM's own log readability — not parsed
-    by the code, membership comes from the sync line itself, so any classname works). A "Stretcher
-    Radius (m)" attribute (default 2) sets how close a patient must be to count as on one.
+  - **Currently unreachable**: its one placement module, `AFCM_SIM_ModuleMedicalTent` (Eden), was
+    removed on request (§9) along with AFCM MASCAL Zone/AFCM MCI Spawner (Eden) — no Zeus
+    equivalent was ever built, so there's no other way to register a tent's synced stretchers right
+    now. The scenario-layer logic below is all still real, working code, just currently with
+    nothing left to call it — reachable again if a new entry point (Zeus module, or re-adding the
+    Eden one) is ever wanted.
+  - **Placement (removed)**: `AFCM_SIM_ModuleMedicalTent` used to sync any stretcher-ish objects to
+    it (naming each one `afcm_stretcher_1`/`afcm_stretcher_2`/etc in Eden's own object Name field
+    first was the recommended convention, purely for the mission maker's/AFCM's own log readability
+    — not parsed by the code, membership came from the sync line itself, so any classname worked). A
+    "Stretcher Radius (m)" attribute (default 2) set how close a patient had to be to count as on
+    one.
   - **Detection is session-scoped, not tent-scoped**: `afcm_sim_scenario_fnc_registerMedicalTent`
     adds a module's synced stretchers to one shared global list
     (`AFCM_SIM_medicalStretchers`) and lazily starts a single shared monitor loop
@@ -795,7 +803,7 @@ AFCM-Simulator/
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario}
     zeus/          # afcm_sim_zeus — "Spawn Patient" Zeus module (§5), implemented
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario, afcm_sim_spawner}
-    eden/          # afcm_sim_eden — "AFCM Patient"/"AFCM MASCAL Zone" Eden modules (§5), implemented
+    eden/          # afcm_sim_eden — "AFCM Patient"/"Interactive Terminal" Eden modules (§5), implemented
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario, afcm_sim_spawner}
     ace_compat/    # afcm_sim_ace_compat — implements the interface against vanilla ace_medical_engine
                     # requiredAddons = {cba_main, ace_medical_engine, afcm_sim_main} — only loads if ACE3 present
@@ -896,6 +904,15 @@ rather than one hard-required with the others bolted on.
   (done early, see v2 — MCI presets too, § MCI Creator), making the `afcm_sim_eden` module real
   (done — `AFCM_SIM_ModulePatientPlacement`/`AFCM_SIM_ModuleMascalZone`/
   `AFCM_SIM_ModuleMciSpawnerPlacement`).
+- **Eden module list trimmed** — `AFCM_SIM_ModuleMascalZone`/`AFCM_SIM_ModuleMciSpawnerPlacement`/
+  `AFCM_SIM_ModuleMedicalTent` removed on request, keeping just `AFCM_SIM_ModulePatientPlacement`
+  ("AFCM Patient") and `AFCM_SIM_ModuleInteractiveTerminal`. Function files deleted outright, not
+  hidden; `afcm_sim_spawner_fnc_spawnRandomPatient` went with MASCAL Zone (its one real caller).
+  Zeus's own MCI Spawner/MASCAL-equivalent-via-randomizeInjuries and the MCI Creator UI are
+  unaffected and still cover live/ad-hoc batch spawning; Medical Tent has no other entry point left
+  (§ Medical Tent above). AFCM Patient's own position resolution was also fixed in the same pass —
+  syncing an object to it now just works, instead of silently requiring a since-removed "Spawn at
+  Synced Object" checkbox to be ticked first.
 - **Phase-2 spike (parallel, inside AFCM-Simulator)** — overlay-window proof of concept, evaluated
   independently; only promoted to "supported" if the hard problems in §2.3 are actually solved.
 
