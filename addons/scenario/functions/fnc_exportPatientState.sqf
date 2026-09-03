@@ -1,13 +1,22 @@
 /*
  * Author: Tasman Dynamics
- * Builds a shareable export string (same shape/format as fnc_exportPreset.sqf) from a live
- * patient's currently-applied AFCM injuries (AFCM_SIM_appliedInjuries, tracked per-limb by
- * afcm_sim_fnc_backend_applyInjury.sqf whenever it dispatches to a backend), PLUS current KAT-only
- * extras and cardiac state - fracture/pneumothorax/airway/cardiac rhythm. "The Job": a controller
- * hand-authors one patient (injuries AND KAT extras) via the normal Edit Injuries flow, then
- * exports the result straight into an Eden AFCM Patient module's Injury Preset Import attribute
- * (or the Preset Library) to reuse it - e.g. building a custom MCI entirely out of
- * individually-authored patients.
+ * Builds a shareable export string from a live patient's currently-applied AFCM injuries
+ * (AFCM_SIM_appliedInjuries, tracked per-limb by afcm_sim_fnc_backend_applyInjury.sqf whenever it
+ * dispatches to a backend), PLUS current KAT-only extras and cardiac state -
+ * fracture/pneumothorax/airway/cardiac rhythm. "The Job": a controller hand-authors one patient
+ * (injuries AND KAT extras) via the normal Edit Injuries flow, then exports the result straight
+ * into an Eden AFCM Patient module's Injury Preset Import attribute (or the Preset Library) to
+ * reuse it - e.g. building a custom MCI entirely out of individually-authored patients.
+ *
+ * Deliberately a bare array on request, NOT a full Preset envelope
+ * (id/name/author/description/tags) the way fnc_exportPreset.sqf's own output is - this is a
+ * one-patient, throwaway export meant to be pasted straight back into another module/patient, and
+ * the envelope fields were pure noise for that. Exported shape: `str _injuries` when there are no
+ * KAT extras/cardiac state to carry (so a base-injuries-only export is exactly the injuries array,
+ * nothing wrapping it), or `str [_injuries, _katExtras]` when there are.
+ * fnc_parseExportedPreset.sqf (shared with the Preset Library's own Import, which still expects
+ * the full Preset envelope from its own Export) tells the two shapes apart by element count and
+ * reads either one back.
  *
  * Base injuries deliberately read back only AFCM's own applied-injury bookkeeping, not live
  * ACE/KAT wound state - there's no reliable reverse mapping from ACE's own wound classes back to
@@ -21,17 +30,13 @@
  * ace_medical_vitals_inCardiacArrest flag if no KAT rhythm is set) rather than needing their own
  * applied-state tracking - these are AFCM/KAT's own custom variables, not part of ACE's generic
  * wound system, so there's no reverse-mapping problem for them the way there is for base injuries.
- * The katExtras element is the Preset shape's new, optional 7th entry
- * (`[fractures <ARRAY[6]>, pneumothoraxType, airwayType, cardiacRhythm]`) - omitted entirely when
- * every value is at its "clear" default, so a pure-ACE export still looks exactly like every other
- * 6-element Preset. fnc_parseExportedPreset.sqf/fnc_serverApplyPreset.sqf are what read it back.
  *
  * Arguments:
  * 0: Target unit <OBJECT>
  *
  * Return Value:
- * Exported string <STRING> - same format fnc_exportPreset.sqf produces, "" if the unit has neither
- * AFCM-applied injuries nor any KAT extras/cardiac state set
+ * Exported string <STRING> - `str _injuries` or `str [_injuries, _katExtras]`, "" if the unit has
+ * neither AFCM-applied injuries nor any KAT extras/cardiac state set
  *
  * Public: Yes
 */
@@ -76,15 +81,8 @@ private _hasKatExtras = _katExtras isNotEqualTo [[0, 0, 0, 0, 0, 0], 0, 0, 0];
 
 if (_injuries isEqualTo [] && {!_hasKatExtras}) exitWith { "" };
 
-private _preset = [
-    format ["exported_%1", diag_tickTime],
-    format ["Exported Patient (%1)", name _unit],
-    profileName,
-    "Exported from a live patient's current AFCM-applied injuries.",
-    _injuries,
-    ["exported"]
-];
-
-if (_hasKatExtras) then { _preset pushBack _katExtras; };
-
-_preset call afcm_sim_scenario_fnc_exportPreset
+if (_hasKatExtras) then {
+    str [_injuries, _katExtras]
+} else {
+    str _injuries
+}

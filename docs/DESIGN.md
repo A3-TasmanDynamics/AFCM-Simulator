@@ -455,9 +455,9 @@ is still the plan, not the state of the repo.
   so a single malformed entry can no longer wedge reading, saving, deleting, *and* importing all at
   once the way it used to — it's just dropped, and self-heals on the next write.
 - **Export Patient State** — export one live, hand-authored patient's current AFCM-applied
-  injuries as a Preset string, reusable in the AFCM Patient module's Injury Preset Import attribute
-  (above) or the Preset Library's own Import field — the building block for authoring a custom MCI
-  entirely out of individually-configured patients. **Implemented**, in `afcm_sim_scenario` +
+  injuries as a shareable string, reusable in the AFCM Patient module's Injury Preset Import
+  attribute (above) or the Preset Library's own Import field — the building block for authoring a
+  custom MCI entirely out of individually-configured patients. **Implemented**, in `afcm_sim_scenario` +
   `afcm_sim_ui`. `afcm_sim_fnc_backend_applyInjury` (owned by `afcm_sim_main`, the one real choke
   point every injury application already goes through regardless of source — manual, preset,
   randomized, MCI) tracks one `[limb, woundType, severity, bleeding]` tuple per limb on the unit
@@ -470,26 +470,36 @@ is still the plan, not the state of the repo.
   (+occluded)/`kat_circulation_cardiacArrestType`, falling back to the plain ACE
   `ace_medical_vitals_inCardiacArrest` flag when no KAT rhythm is set) — these are AFCM/KAT's own
   custom variables, not part of ACE's generic wound system, so unlike base injuries there's no
-  reverse-mapping problem to work around. `afcm_sim_scenario_fnc_exportPatientState` wraps both in
-  the same `[id, name, author, description, injuries, tags]` shape/`str` round-trip as
-  `fnc_exportPreset.sqf`, **plus a new optional 7th element**, `katExtras` (`[fractures <ARRAY[6]>,
-  pneumothoraxType, airwayType, cardiacRhythm]`) — omitted entirely when every value is at its
-  "clear" default, so a pure-ACE export still looks like every other 6-element Preset. A new "AFCM:
-  Export Patient State" scroll action (every spawned patient gets it,
-  `afcm_sim_spawner_fnc_spawnPatient`) copies the result straight to the OS clipboard
-  (`copyToClipboard`, same mechanism the Preset Library's own Export uses).
+  reverse-mapping problem to work around.
+
+  `afcm_sim_scenario_fnc_exportPatientState` outputs a deliberately bare shape, on request — NOT
+  the full `[id, name, author, description, injuries, tags, katExtras?]` Preset envelope
+  `fnc_exportPreset.sqf` produces (the Preset Library's own Export button still uses that one
+  unchanged): just `str _injuries` when there's no KAT extras/cardiac state to carry — so a
+  base-injuries-only export is literally the injuries array and nothing else, e.g.
+  `[["head","gunshot",0.25,false]]` — or `str [_injuries, _katExtras]` when there is. The
+  id/name/author/description/tags fields were pure noise for this specific "export one patient,
+  paste it straight back into another module" workflow. A new "AFCM: Export Patient State" scroll
+  action (every spawned patient gets it, `afcm_sim_spawner_fnc_spawnPatient`) copies the result
+  straight to the OS clipboard (`copyToClipboard`, same mechanism the Preset Library's own Export
+  uses).
 
   The reverse direction — parsing an exported string back into clean injuries + katExtras — is
-  factored out of `fnc_importPreset.sqf` into `fnc_parseExportedPreset.sqf` specifically so the
-  AFCM Patient module's spawn-time import and the Preset Library's save-to-library import share one
-  validated parser instead of two copies of the same logic. Applying katExtras itself is factored
-  into `afcm_sim_scenario_fnc_serverApplyKatExtras` (dispatches to the same
+  factored out of `fnc_importPreset.sqf` into `fnc_parseExportedPreset.sqf`, shared by the AFCM
+  Patient module's spawn-time import and the Preset Library's save-to-library import, and able to
+  tell BOTH real export shapes apart by element count: the full Preset envelope (`count >= 5`,
+  `name` required non-blank) from `fnc_exportPreset.sqf`/built-in/user presets, or the bare
+  injuries/`[injuries, katExtras]` shape (`count` 1 or 2) from `fnc_exportPatientState.sqf` — given
+  a synthetic name ("Imported Patient") in that case, since the bare shape has none, purely so the
+  shared return tuple always has one (irrelevant to the module's own import, which never reads it).
+  Applying katExtras itself is factored into `afcm_sim_scenario_fnc_serverApplyKatExtras`
+  (dispatches to the same
   serverApplyKatFracture/serverApplyKatPneumothorax/serverApplyKatAirway/serverApplyCardiacState
   handlers the injury editor's own controls use — each already no-ops safely under a non-KAT
   backend), reused by `fnc_serverApplyPreset.sqf` (Preset Library Apply, including the MCI batch
-  path) and `afcm_sim_spawner_fnc_spawnPatient` (the AFCM Patient module's spawn-time import). A
-  preset carrying only katExtras and no base injuries (e.g. "just a cardiac arrest, no wound") is a
-  valid export/import on its own — export/parse both check injuries-empty-AND-katExtras-empty, not
+  path) and `afcm_sim_spawner_fnc_spawnPatient` (the AFCM Patient module's spawn-time import). An
+  export carrying only katExtras and no base injuries (e.g. "just a cardiac arrest, no wound") is
+  valid on its own either way — export/parse both check injuries-empty-AND-katExtras-empty, not
   either alone. **Scope note**: `fnc_getBuiltinPresets.sqf`'s built-ins and the injury editor's own
   "Save as Preset" button still only carry base injuries — katExtras only ever originates from
   Export Patient State right now, not from hand-building a preset in the Preset Library UI.

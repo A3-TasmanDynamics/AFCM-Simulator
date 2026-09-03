@@ -145,15 +145,18 @@ class CfgVehicles
         // so it makes sense on a manually-treated single patient too.
         //
         // Two more attributes, both read back by fnc_module_patientPlacement.sqf:
-        //  - AFCM_SIM_InjuryPresetImport: paste an exported Injury Preset/Patient State string
-        //    (fnc_exportPreset.sqf / fnc_exportPatientState.sqf - same shape) to spawn this patient
-        //    pre-injured, e.g. one hand-authored casualty that's part of a larger custom MCI built
-        //    entirely out of these modules. Parsed by the shared
+        //  - AFCM_SIM_InjuryPresetImport: paste an exported Injury Preset or Patient State string
+        //    here to spawn this patient pre-injured, e.g. one hand-authored casualty that's part
+        //    of a larger custom MCI built entirely out of these modules. Parsed by the shared
         //    afcm_sim_scenario_fnc_parseExportedPreset (also used by the Preset Library's own
-        //    Import), so it accepts anything either the Preset Library's Export button or a live
-        //    patient's "Export Patient State" action produces - including that action's KAT extras/
-        //    cardiac state (the Preset shape's optional 7th element), applied via
-        //    afcm_sim_scenario_fnc_serverApplyKatExtras alongside the base injuries.
+        //    Import), which accepts EITHER real export shape: the full Preset envelope the Preset
+        //    Library's own Export button produces (fnc_exportPreset.sqf -
+        //    `[id, name, author, description, injuries, tags, katExtras?]`), or the leaner bare
+        //    array a live patient's "Export Patient State" action produces on its own
+        //    (fnc_exportPatientState.sqf - just `injuries`, or `[injuries, katExtras]` when there's
+        //    KAT extras/cardiac state to carry - no id/name/author/description/tags noise). KAT
+        //    extras, from either shape, are applied via afcm_sim_scenario_fnc_serverApplyKatExtras
+        //    alongside the base injuries.
         //  - AFCM_SIM_SpawnMarkerName: where the patient actually spawns. Left blank (the default),
         //    behaviour is unchanged - the module's own placed position. Real, confirmed bug fixed
         //    here: an earlier pass also required a "Spawn at Synced Object" checkbox to be ticked
