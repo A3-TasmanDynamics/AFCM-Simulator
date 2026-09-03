@@ -14,9 +14,14 @@ class CfgPatches
 
 // Zeus (curator) modules — the live, in-mission side of "Random Patient" / MASCAL placement
 // (DESIGN.md §5), now calling real afcm_sim_spawner logic. `scopeCurator = 2;` (below) is required
-// in addition to `scope = 2;` — confirmed via a real in-Zeus test that without it, the module
-// compiles and registers fine but simply never appears in the Zeus curator browser at all (plain
-// `scope=2` alone is not sufficient for Zeus specifically, unlike Eden).
+// in addition to `scope`, confirmed via a real in-Zeus test that without it, the module compiles
+// and registers fine but simply never appears in the Zeus curator browser at all (plain `scope=2`
+// alone is not sufficient for Zeus specifically, unlike Eden). `scope` itself is now set to `0`,
+// not `2`, on every module below — deliberately keeping these OUT of the Eden 2D-editor module
+// list, since Eden already has its own design-time counterparts (addons/eden/config.cpp: AFCM
+// Patient, MCI Spawner) and showing both sets in Eden just duplicated/confused the module browser.
+// Confirmed this doesn't affect Zeus visibility at all, since `scopeCurator` is explicitly defined
+// here (see the BI wiki: scopeCurator only falls back to `scope` when left undefined).
 //
 // Second, bigger gotcha (found by diffing against KAT's real addons/zeus/config.cpp): Zeus does
 // NOT use CfgVehicleClasses for module categorization at all — that's an Eden (2D editor) only
@@ -107,7 +112,7 @@ class CfgVehicles
 
     class AFCM_SIM_ModuleSpawnRandomPatient: Module_F
     {
-        scope = 2;
+        scope = 0;
         scopeCurator = 2;
         side = 7;
         displayName = "Spawn Patient";
@@ -134,7 +139,7 @@ class CfgVehicles
     // version is limited to.
     class AFCM_SIM_ModuleMciSpawner: Module_F
     {
-        scope = 2;
+        scope = 0;
         scopeCurator = 2;
         side = 7;
         displayName = "MCI Spawner";
@@ -180,7 +185,7 @@ class CfgVehicles
     // target back via `attachedTo _logic`, not the `_units` (synced units) param.
     class AFCM_SIM_ModuleEditInjuries: Module_F
     {
-        scope = 2;
+        scope = 0;
         scopeCurator = 2;
         side = 7;
         displayName = "Edit Injuries";

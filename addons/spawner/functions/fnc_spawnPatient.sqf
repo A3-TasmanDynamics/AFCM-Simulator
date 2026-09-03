@@ -170,6 +170,9 @@ _unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
     // "Mark as Treated" - the manual half of the Medical Tent's "Both" treated-detection mode
     // (afcm_sim_scenario_fnc_isPatientTreated), same local-addAction reasoning as the line above.
     [_unit] remoteExec ["afcm_sim_ui_fnc_addTreatedAction", 0, true];
+    // "Export Patient State" - lets a controller copy this patient's current AFCM-applied injuries
+    // out as a reusable Preset string (fnc_exportPatientState.sqf), same local-addAction reasoning.
+    [_unit] remoteExec ["afcm_sim_ui_fnc_addExportStateAction", 0, true];
 
     { [_unit, _x] call afcm_sim_fnc_backend_applyInjury; } forEach _injuries;
 }, [_unit, _injuries], 1] call CBA_fnc_waitAndExecute;
