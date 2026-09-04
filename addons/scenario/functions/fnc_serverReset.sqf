@@ -3,7 +3,10 @@
  * Server-side handler for resetting a patient's medical state (DESIGN.md §5 "Selectable
  * Injuries" - the injury editor's Reset button). Called via remoteExec from afcm_sim_ui, never
  * called directly by a client - DESIGN.md §6 requires interventions to be requests validated and
- * applied on the server, same pattern as fnc_serverApplyInjury.sqf.
+ * applied on the server, same pattern as fnc_serverApplyInjury.sqf. Also clears
+ * AFCM_SIM_appliedInjuries (fnc_backend_applyInjury.sqf's per-limb tracking) - otherwise a reset
+ * patient's old wounds would keep reappearing in the injury author dialog's staging form on reopen,
+ * even though the live backend state was genuinely wiped.
  *
  * Arguments:
  * 0: Target unit <OBJECT>
@@ -26,3 +29,4 @@ if (isNull _unit) exitWith {
 };
 
 [_unit] call afcm_sim_fnc_backend_reset;
+_unit setVariable ["AFCM_SIM_appliedInjuries", [], true];

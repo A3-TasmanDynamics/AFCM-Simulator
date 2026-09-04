@@ -3,7 +3,7 @@
  * Opens the generic Yes/No confirmation dialog (RscDisplayAFCM_SIM_ConfirmDialog) - not specific
  * to sessions, any future destructive action in this addon can reuse it. Stashes the message and
  * the Code to run if the operator clicks Yes in plain (client-local, unsynced) missionNamespace
- * variables, same reasoning as fnc_limbSelect_open.sqf - the dialog's own onLoad
+ * variables, same reasoning as fnc_injuryAuthor_open.sqf - the dialog's own onLoad
  * (fnc_confirmDialog_init.sqf) and Yes handler (fnc_confirmDialog_onYes.sqf) read them back.
  *
  * Arguments:

@@ -24,7 +24,6 @@ class CfgFunctions
         {
             file = "\afcm_sim\addons\spawner\functions";
             class spawnPatient { file = "\afcm_sim\addons\spawner\functions\fnc_spawnPatient.sqf"; };
-            class spawnRandomPatient { file = "\afcm_sim\addons\spawner\functions\fnc_spawnRandomPatient.sqf"; };
             class clearAllPatients { file = "\afcm_sim\addons\spawner\functions\fnc_clearAllPatients.sqf"; };
             class newSessionId { file = "\afcm_sim\addons\spawner\functions\fnc_newSessionId.sqf"; };
             class getSessions { file = "\afcm_sim\addons\spawner\functions\fnc_getSessions.sqf"; };

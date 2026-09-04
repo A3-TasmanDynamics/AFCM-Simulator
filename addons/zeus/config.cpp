@@ -130,13 +130,14 @@ class CfgVehicles
         class Attributes: AFCM_SIM_CasualtyTypeAttributes {};
     };
 
-    // Live, Zeus-side counterpart to AFCM_SIM_ModuleMciSpawnerPlacement (addons/eden/config.cpp) -
     // "select a place on the map" is placing this module; "select a preset" happens right after,
     // via the "Assign MCI Preset" scroll action added to the spawned batch
-    // (afcm_sim_ui_fnc_addMciPresetAction) rather than a static Attribute here, since Zeus placement
-    // is a live, interactive moment that can reach the full real-time preset library (built-in +
-    // the placing operator's own saved presets) - not just the 5 built-in ones Eden's design-time
-    // version is limited to.
+    // (afcm_sim_ui_fnc_addMciPresetAction) rather than a static Attribute, since Zeus placement is a
+    // live, interactive moment that can reach the full real-time preset library (built-in + the
+    // placing operator's own saved presets). Used to have a design-time Eden counterpart
+    // (AFCM_SIM_ModuleMciSpawnerPlacement, limited to the 5 built-in presets only) - removed on
+    // request along with AFCM MASCAL Zone/Medical Tent, keeping only AFCM Patient + Interactive
+    // Terminal in eden/config.cpp; this Zeus module is unaffected.
     class AFCM_SIM_ModuleMciSpawner: Module_F
     {
         scope = 0;

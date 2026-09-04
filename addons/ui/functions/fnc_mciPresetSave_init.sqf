@@ -3,7 +3,7 @@
  * onLoad handler for RscDisplayAFCM_SIM_MciPresetSave - just wires the Save button. Cancel is a
  * plain `action = "closeDialog 0;"` in config.cpp.
  *
- * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryEditor_init.sqf.
+ * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryAuthor_init.sqf.
  *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_MciPresetSave <DISPLAY>

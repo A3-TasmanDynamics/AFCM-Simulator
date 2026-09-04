@@ -1,18 +1,23 @@
 /*
  * Author: Tasman Dynamics
  * ButtonClick handler for the Preset Library's Apply button (RscDisplayAFCM_SIM_PresetLibrary).
- * Looks up the selected preset (afcm_sim_scenario_fnc_findPreset) and remoteExecs its injuries
- * (plus any KAT extras/cardiac state - the Preset shape's optional 7th element,
- * fnc_exportPatientState.sqf) to the server (afcm_sim_scenario_fnc_serverApplyPreset) - never
- * applies locally (DESIGN.md §6, same pattern as the injury editor's own Apply).
+ * Looks up the selected preset (afcm_sim_scenario_fnc_findPreset) and, depending on mode, either
+ * loads it into the Injury Author dialog's staging form or remoteExecs its injuries (plus any KAT
+ * extras/cardiac state - the Preset shape's optional 7th element, fnc_exportPatientState.sqf) to
+ * the server (afcm_sim_scenario_fnc_serverApplyPreset) - never applies locally except via that
+ * server round trip (DESIGN.md §6).
  *
- * Two modes, depending on which target variable is set when this dialog was opened:
+ * Three modes, checked in this order:
+ *  - Staging: AFCM_SIM_UI_targetStaging (bool) - set by the Injury Author dialog's own Load Preset
+ *    button (fnc_injuryAuthor_onLoadPreset.sqf). Loads the preset straight into that dialog's
+ *    staged arrays (fnc_injuryAuthor_loadPresetArrays.sqf) instead of touching any live unit -
+ *    checked first since it's a real, separate destination, not a live-unit apply at all.
  *  - Batch (MCI): AFCM_SIM_UI_targetUnits (plural, non-empty) - set by the "Assign MCI Preset"
  *    action on a freshly-spawned MCI batch (fnc_addMciPresetAction.sqf). Applies the same preset
  *    to every unit in the array, one serverApplyPreset request per unit.
- *  - Single: AFCM_SIM_UI_targetUnit (singular) - the normal flow from the limb-select screen's
- *    Presets button (fnc_limbSelect_onOpenPresets.sqf, which always clears the plural variable
- *    first so a stale batch from an earlier MCI spawn can never leak in here).
+ *  - Single: AFCM_SIM_UI_targetUnit (singular) - the normal flow from the Injury Author dialog's
+ *    Load Preset button in edit mode isn't reached here (that's staging, above) - this is presets
+ *    opened some other way with a single live target already set.
  *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Apply button <CONTROL>
@@ -37,6 +42,14 @@ private _injuries = _preset select 4;
 // katExtras - the Preset shape's optional 7th element (fnc_exportPatientState.sqf), absent on
 // every built-in/older preset.
 private _katExtras = if (count _preset >= 7) then { _preset select 6 } else { [] };
+
+if (missionNamespace getVariable ["AFCM_SIM_UI_targetStaging", false]) exitWith {
+    missionNamespace setVariable ["AFCM_SIM_UI_targetStaging", false];
+    diag_log text format ["[AFCM-Simulator][UI] Loading preset '%1' into Injury Author staging.", _preset select 1];
+    [_injuries, _katExtras] call afcm_sim_ui_fnc_injuryAuthor_loadPresetArrays;
+    closeDialog 0;
+};
+
 private _targetUnits = missionNamespace getVariable ["AFCM_SIM_UI_targetUnits", []];
 
 if (_targetUnits isNotEqualTo []) then {

@@ -1,7 +1,7 @@
 /*
  * Author: Tasman Dynamics
  * ButtonClick handler for RscDisplayAFCM_SIM_PresetSave's Save button. Reads the entered name and
- * the pending injury stashed by fnc_injuryEditor_onSavePreset.sqf
+ * the pending injury stashed by fnc_injuryAuthor_onSavePreset.sqf
  * (AFCM_SIM_UI_pendingPresetInjuries), saves it via afcm_sim_scenario_fnc_saveUserPreset - client-
  * side (profileNamespace), not a server request, since this never touches a patient - then closes.
  *

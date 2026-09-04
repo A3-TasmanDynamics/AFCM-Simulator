@@ -8,7 +8,7 @@
  * which safely no-ops via the backend registry lookup instead).
  *
  * Arms/legs only - rejects head/chest server-side too, not just in the UI
- * (fnc_injuryEditor_init.sqf only shows the control for arm/leg selections), so this stays true
+ * (fnc_injuryAuthor_refreshActiveLimbForm.sqf only shows the control for arm/leg limbs), so this stays true
  * regardless of what calls it.
  *
  * Arguments:

@@ -1,22 +1,21 @@
 /*
  * Author: Tasman Dynamics
- * CBA_fnc_addPerFrameHandler callback for RscDisplayAFCM_SIM_InjuryEditor - polls
- * afcm_sim_fnc_backend_getState and updates the Status text control (idc 16) so the dialog shows
- * genuinely live medical state (consciousness, pain, injured, one limb's wound/bleed state) while
- * it's open, not just a one-time snapshot from when it was opened. getState is inherently
- * per-limb (DESIGN.md §4.2's per-limb wound detail), so with multiple limbs selected
- * (AFCM_SIM_UI_targetLimbs) this reports the first one and says so - consciousness/pain/injured
- * stay unit-wide and accurate regardless of how many limbs are selected.
+ * Updates the live medical-status readout (RscDisplayAFCM_SIM_InjuryAuthor, idc 35) from
+ * afcm_sim_fnc_backend_getState for AFCM_SIM_UI_targetUnit + AFCM_SIM_UI_activeLimb - a straight
+ * rekey of the old fnc_injuryEditor_refreshState.sqf, now genuinely accurate for whichever ONE limb
+ * is active in the navbar rather than always the first of a possibly-multi-selected array (the old
+ * dialog's real limitation, fixed here by construction). Edit-mode only (fnc_injuryAuthor_init.sqf
+ * only starts the CBA_fnc_addPerFrameHandler that calls this when AFCM_SIM_UI_authorNewPatient is
+ * false) - also called directly (not just from the PFH) by fnc_injuryAuthor_setActiveLimb.sqf so
+ * switching limbs updates the readout immediately rather than waiting up to 0.5s for the next tick.
  *
- * Self-removes if the dialog is no longer the active display (closed via Apply/Back/Escape) -
- * fnc_injuryEditor_cleanup.sqf (onUnload) is the primary removal path, this is a safety net.
+ * Called two ways: from the PFH (real CBA_fnc_addPerFrameHandler callback shape, `_this = [_args,
+ * _handle]`) and directly (`call`, `_this` = []) - both handled by defaulting params rather than
+ * requiring the PFH's two-argument shape.
  *
- * Real CBA_fnc_addPerFrameHandler callback signature (CBA_A3 source, not guessed):
- * _this = [_args, _handle], where _args is whatever was passed when the handler was added.
- *
- * Arguments (from CBA_fnc_addPerFrameHandler, not called directly):
- * 0: [_display] <ARRAY> - the args passed to CBA_fnc_addPerFrameHandler
- * 1: Handle <NUMBER>
+ * Arguments (from CBA_fnc_addPerFrameHandler, or none when called directly):
+ * 0: [] <ARRAY> (unused, present only in the PFH-call shape)
+ * 1: Handle <NUMBER> (unused, present only in the PFH-call shape)
  *
  * Return Value:
  * None
@@ -24,21 +23,21 @@
  * Public: No
 */
 
-params ["_args", "_handle"];
-_args params ["_display"];
+params [["_args", []], ["_handle", -1]];
 
-// 25602 = IDD_AFCM_SIM_INJURYEDITOR (addons/ui/config.cpp) - hardcoded since #defines aren't
+disableSerialization;
+
+// 25611 = IDD_AFCM_SIM_INJURYAUTHOR (addons/ui/config.cpp) - hardcoded since #defines aren't
 // available in SQF; keep in sync if that IDD ever changes.
-if (isNull (findDisplay 25602)) exitWith {
-    [_handle] call CBA_fnc_removePerFrameHandler;
+private _display = findDisplay 25611;
+if (isNull _display) exitWith {
+    if (_handle != -1) then { [_handle] call CBA_fnc_removePerFrameHandler; };
 };
 
 private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
-private _limbs = missionNamespace getVariable ["AFCM_SIM_UI_targetLimbs", [""]];
-private _limb = _limbs param [0, ""];
-
 if (isNull _targetUnit) exitWith {};
 
+private _limb = missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", "chest"];
 private _state = [_targetUnit, _limb] call afcm_sim_fnc_backend_getState;
 
 private _limbNames = createHashMapFromArray [
@@ -47,7 +46,6 @@ private _limbNames = createHashMapFromArray [
     ["leftLeg", "Left Leg"], ["rightLeg", "Right Leg"]
 ];
 private _limbLine = _limbNames getOrDefault [_limb, _limb];
-if (count _limbs > 1) then { _limbLine = _limbLine + format [" (+%1 more selected)", (count _limbs) - 1]; };
 
 private _text = "No live status available (no medical backend active).";
 if (count _state > 0) then {
@@ -66,14 +64,10 @@ if (count _state > 0) then {
         _state getOrDefault ["limbBleeding", false]
     ];
 
-    // Shared field (both ace_compat and kat_compat's getState - real ace_medical_vitals_
-    // inCardiacArrest, see fnc_applyCardiacState.sqf), unlike the KAT-only block below.
     if (_state getOrDefault ["inCardiacArrest", false]) then {
         _text = _text + "\nCardiac Arrest: YES";
     };
 
-    // KAT-only fields (kat_compat's getState, not ace_compat's - see fnc_getState.sqf) - only
-    // present at all when KAT is the active backend, so their presence alone gates showing this.
     if ("fracture" in _state) then {
         private _fractureNames = ["None", "Simple", "Compound", "Comminuted"];
         private _fractureVal = _state get "fracture";
@@ -84,24 +78,17 @@ if (count _state > 0) then {
 
         _text = _text + format ["\nFracture (KAT): %1 | Pneumothorax (KAT): %2", _fractureName, _pneumoName];
 
-        // Only present when the readout's limb is "head" (fnc_getState.sqf) - the first selected
-        // limb, same "first of possibly several" caveat the rest of this readout already has.
         if ("airwayStatus" in _state) then {
             private _airwayNames = ["Clear", "Obstruction", "Occlusion"];
             private _airwayName = _airwayNames param [_state get "airwayStatus", "Clear"];
             _text = _text + format ["\nAirway (KAT): %1", _airwayName];
         };
 
-        // Only worth a line when it's actually doing anything - 0 whenever Hemopneumothorax isn't
-        // active (fnc_updateInternalBleeding.sqf, KAT-Advanced-Medical/KAM).
         private _bleedRate = _state getOrDefault ["internalBleedingRate", 0];
         if (_bleedRate > 0) then {
             _text = _text + format ["\nInternal Bleeding (Hemothorax, KAT): %1L/s", _bleedRate];
         };
 
-        // Only worth a line while actually in arrest (0 = Normal otherwise) - real KAT rhythm enum,
-        // see fnc_applyCardiacState.sqf. The base "Cardiac Arrest: YES" line above already covers
-        // the shared ACE flag regardless of backend; this adds the KAT-specific rhythm detail.
         private _rhythm = _state getOrDefault ["cardiacRhythm", 0];
         if (_rhythm > 0) then {
             private _rhythmNames = ["Normal", "Asystole", "PEA", "Ventricular Fibrillation", "Ventricular Tachycardia"];
@@ -111,4 +98,4 @@ if (count _state > 0) then {
     };
 };
 
-(_display displayCtrl 16) ctrlSetText _text;
+(_display displayCtrl 35) ctrlSetText _text;

@@ -5,7 +5,7 @@
  * fnc_presetLibrary_onDelete.sqf/fnc_presetLibrary_onImport.sqf call populateList directly to
  * refresh after a change, not this function, specifically so handlers never get registered twice.
  *
- * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryEditor_init.sqf - ensures
+ * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryAuthor_init.sqf - ensures
  * controls exist before being touched.
  *
  * Arguments:

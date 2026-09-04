@@ -10,7 +10,7 @@
  * (afcm_sim_scenario_fnc_isPatientTreated) and on a stretcher (afcm_sim_scenario_fnc_
  * isPatientOnStretcher) - checked once every 5s, plain vanilla `spawn`/`sleep` loop rather than
  * CBA_fnc_addPerFrameHandler, since this is server-only bookkeeping with no per-frame UI to update
- * (unlike fnc_injuryEditor_refreshState.sqf's use of that API for a live-open dialog). Resolved
+ * (unlike fnc_injuryAuthor_refreshState.sqf's use of that API for a live-open dialog). Resolved
  * sessions are tracked in AFCM_SIM_resolvedSessionIds so the notification only ever fires once per
  * session, even if a patient later leaves the stretcher radius.
  *
