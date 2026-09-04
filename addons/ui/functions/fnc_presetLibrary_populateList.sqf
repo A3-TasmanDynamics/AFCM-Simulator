@@ -11,9 +11,10 @@
  * listbox row, read back with `lbData`) so later handlers can look the exact preset up without
  * re-parsing the display text.
  *
- * Also sets the Subtitle to reflect batch (MCI) vs single-patient mode, based on whether
- * AFCM_SIM_UI_targetUnits (plural) is non-empty - see fnc_presetLibrary_onApply.sqf for how that
- * variable actually drives which one Apply does.
+ * Also sets the Subtitle to reflect which of three modes Apply will actually do - staging (the
+ * Injury Author dialog's own Load Preset, AFCM_SIM_UI_targetStaging, checked first), batch (MCI,
+ * AFCM_SIM_UI_targetUnits non-empty), or single-patient (the default) - see
+ * fnc_presetLibrary_onApply.sqf for how those variables actually drive which one Apply does.
  *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_PresetLibrary <DISPLAY>
@@ -48,9 +49,13 @@ private _fnc_addRow = {
 (_display displayCtrl 13) ctrlEnable false;
 
 private _targetUnits = missionNamespace getVariable ["AFCM_SIM_UI_targetUnits", []];
-private _subtitle = if (_targetUnits isNotEqualTo []) then {
-    format ["MCI batch — select a preset to apply to all %1 patient(s)", count _targetUnits]
+private _subtitle = if (missionNamespace getVariable ["AFCM_SIM_UI_targetStaging", false]) then {
+    "Load a preset into the Injury Author dialog's staged injuries"
 } else {
-    "Apply a saved injury set, or export/import one below"
+    if (_targetUnits isNotEqualTo []) then {
+        format ["MCI batch — select a preset to apply to all %1 patient(s)", count _targetUnits]
+    } else {
+        "Apply a saved injury set, or export/import one below"
+    }
 };
 (_display displayCtrl 17) ctrlSetText _subtitle;

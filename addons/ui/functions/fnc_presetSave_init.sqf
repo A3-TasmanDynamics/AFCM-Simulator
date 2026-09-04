@@ -4,7 +4,7 @@
  * `action = "closeDialog 0;"` in config.cpp, same as several other Cancel/Close buttons in this
  * addon, so it doesn't need a handler here.
  *
- * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryEditor_init.sqf.
+ * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryAuthor_init.sqf.
  *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_PresetSave <DISPLAY>

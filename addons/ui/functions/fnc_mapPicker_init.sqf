@@ -4,7 +4,7 @@
  * (real control event, `_this = [_control, _button, _x, _y, _shift, _ctrl, _alt]`) and the Confirm
  * button. Cancel is a plain `action = "closeDialog 0;"` in config.cpp.
  *
- * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryEditor_init.sqf.
+ * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryAuthor_init.sqf.
  *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_MapPicker <DISPLAY>

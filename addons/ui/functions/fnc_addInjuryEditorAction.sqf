@@ -24,7 +24,7 @@ _unit addAction [
     "<t color='#c1272d'>AFCM: Edit Injuries</t>",
     {
         diag_log text format ["[AFCM-Simulator][UI] Edit Injuries action used on %1.", _this select 0];
-        [_this select 0] call afcm_sim_ui_fnc_limbSelect_open;
+        [_this select 0] call afcm_sim_ui_fnc_injuryAuthor_open;
     },
     [],
     1.5,

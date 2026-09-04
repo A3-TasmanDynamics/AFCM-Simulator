@@ -1,9 +1,9 @@
 /*
  * Author: Tasman Dynamics
  * Module function for AFCM_SIM_ModuleEditInjuries (Zeus). Drag this module directly onto any unit
- * in the Zeus interface (curatorCanAttach=1, zeus/config.cpp) to open the Injury Editor for that
- * unit immediately, same limb-select -> injury-editor flow the "Edit Injuries" scroll action opens
- * (afcm_sim_ui_fnc_limbSelect_open) - just reachable without needing that addAction to already
+ * in the Zeus interface (curatorCanAttach=1, zeus/config.cpp) to open the Injury Author dialog for
+ * that unit immediately, same dialog the "Edit Injuries" scroll action opens
+ * (afcm_sim_ui_fnc_injuryAuthor_open) - just reachable without needing that addAction to already
  * exist on the target, so it also works on units afcm_sim_spawner_fnc_spawnPatient never touched.
  *
  * Real, confirmed "drop directly onto a unit" pattern, grounded in ACE3's own Zeus module source
@@ -41,6 +41,6 @@ if (isNull _unit || {!(_unit isKindOf "CAManBase")}) exitWith {
     deleteVehicle _logic;
 };
 
-[_unit] call afcm_sim_ui_fnc_limbSelect_open;
+[_unit] call afcm_sim_ui_fnc_injuryAuthor_open;
 
 deleteVehicle _logic;

@@ -6,7 +6,7 @@
  * to refresh after a change, not this function, so handlers never get registered twice
  * (ctrlAddEventHandler adds, it doesn't replace).
  *
- * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryEditor_init.sqf.
+ * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryAuthor_init.sqf.
  *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_MciPresetLibrary <DISPLAY>

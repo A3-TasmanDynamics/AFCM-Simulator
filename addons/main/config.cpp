@@ -72,6 +72,7 @@ class CfgFunctions
             class settings_preInit { file = "\afcm_sim\addons\main\functions\fnc_settings_preInit.sqf"; preInit = 1; };
             class registerMciCreatorKeybind { file = "\afcm_sim\addons\main\functions\fnc_registerMciCreatorKeybind.sqf"; preInit = 1; };
             class registerSessionManagerKeybind { file = "\afcm_sim\addons\main\functions\fnc_registerSessionManagerKeybind.sqf"; preInit = 1; };
+            class registerInjuryAuthorKeybind { file = "\afcm_sim\addons\main\functions\fnc_registerInjuryAuthorKeybind.sqf"; preInit = 1; };
             // Not yet wired into backend_registerBackend/backend_selectBackend — those are already
             // verified working in-game and left untouched to avoid reintroducing risk; available
             // for new call sites (zeus/eden/spawner) going forward.

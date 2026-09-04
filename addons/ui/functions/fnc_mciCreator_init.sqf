@@ -11,7 +11,7 @@
  * subsequent refreshes (after Assign/Randomize All/patient count change/loading an MCI preset)
  * never re-register a handler a second time.
  *
- * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryEditor_init.sqf.
+ * Deferred via CBA_fnc_execNextFrame, same reasoning as fnc_injuryAuthor_init.sqf.
  *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_MciCreator <DISPLAY>

@@ -13,7 +13,8 @@
  *
  * Arguments:
  * 0: Target unit <OBJECT>
- * 1: Injuries <ARRAY of [limb, woundType, severity, bleeding]> - see fnc_getBuiltinPresets.sqf
+ * 1: Injuries <ARRAY of [limb, woundType, severity, bleeding, bleedRate]> - see
+ *    fnc_getBuiltinPresets.sqf (bleedRate is optional, 5th element, defaults to -1/"roll randomly")
  * 2: katExtras <ARRAY> (default []) - `[fractures <ARRAY[6]>, pneumothoraxType, airwayType,
  *    cardiacRhythm]`, see fnc_serverApplyKatExtras.sqf
  *
@@ -29,8 +30,8 @@ if !(isServer) exitWith {};
 if (isNull _unit) exitWith {};
 
 {
-    _x params ["_limb", "_woundType", ["_severity", 0.5], ["_bleeding", false]];
-    [_unit, _limb, _woundType, _severity, _bleeding] call afcm_sim_scenario_fnc_serverApplyInjury;
+    _x params ["_limb", "_woundType", ["_severity", 0.5], ["_bleeding", false], ["_bleedRate", -1]];
+    [_unit, _limb, _woundType, _severity, _bleeding, _bleedRate] call afcm_sim_scenario_fnc_serverApplyInjury;
 } forEach _injuries;
 
 [_unit, _katExtras] call afcm_sim_scenario_fnc_serverApplyKatExtras;

@@ -29,3 +29,9 @@
     "AFCM Medical Simulator",
     [[0, 1, 2, 3], ["Civilian", "Military (BLUFOR)", "Military (OPFOR)", "Military (Independent)"], 0]
 ] call CBA_fnc_addSetting;
+
+["afcm_sim_rememberLastInjuries", "CHECKBOX",
+    ["Remember Last-Used Injuries", "When authoring a new patient (Ctrl+Shift+I, no live unit yet), auto-restore whatever injuries/KAT extras were last applied instead of starting from a clean form. Use the Clear All button in that dialog to wipe the remembered set."],
+    "AFCM Medical Simulator",
+    false
+] call CBA_fnc_addSetting;

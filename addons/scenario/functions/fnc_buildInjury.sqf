@@ -16,6 +16,10 @@
  * 1: woundType <STRING>
  * 2: Severity <NUMBER> (default 0.5)
  * 3: Bleeding <BOOL> (default false)
+ * 4: bleedRate <NUMBER> (default -1) - explicit bleed rate, e.g. from the injury author dialog's
+ *    Light/Medium/Heavy/Severe combo. -1 is a sentinel meaning "not specified" - keeps the original
+ *    random-roll behaviour below for any caller that predates this (old preset entries, old
+ *    exported strings), so nothing needs migrating.
  *
  * Return Value:
  * Injury <HASHMAP>
@@ -23,12 +27,14 @@
  * Public: Yes
 */
 
-params ["_limb", "_woundType", ["_severity", 0.5], ["_bleeding", false]];
+params ["_limb", "_woundType", ["_severity", 0.5], ["_bleeding", false], ["_bleedRate", -1]];
 
 // Same 4 limbs as afcm_sim_scenario_fnc_randomizeInjuries - only arms/legs are tourniquetable,
 // never head/chest.
 private _tourniquetableLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
-private _bleedRate = if (_bleeding) then { 0.1 + random 0.3 } else { 0 };
+if (_bleedRate < 0) then {
+    _bleedRate = if (_bleeding) then { 0.1 + random 0.3 } else { 0 };
+};
 
 private _injury = createHashMap;
 _injury set ["limb", _limb];

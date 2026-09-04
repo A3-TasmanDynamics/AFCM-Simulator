@@ -33,9 +33,12 @@
  * 0: Exported string <STRING>
  *
  * Return Value:
- * [name <STRING>, injuries <ARRAY of [limb, woundType, severity, bleeding]>, author <STRING>,
- *  description <STRING>, tags <ARRAY of STRING>, katExtras <ARRAY>], or [] if the string didn't
- *  parse into either recognized shape. katExtras is [] when the source had none/an invalid one.
+ * [name <STRING>, injuries <ARRAY of [limb, woundType, severity, bleeding, bleedRate?]>,
+ *  author <STRING>, description <STRING>, tags <ARRAY of STRING>, katExtras <ARRAY>], or [] if the
+ *  string didn't parse into either recognized shape. katExtras is [] when the source had none/an
+ *  invalid one. bleedRate (5th tuple element, fnc_buildInjury.sqf) passes through unmodified when
+ *  present - the `count _x >= 4` validity check below already tolerates it, `select` doesn't
+ *  truncate extra elements, so nothing here needed to change for it.
  *
  * Public: Yes
 */

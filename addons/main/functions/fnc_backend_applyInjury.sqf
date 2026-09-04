@@ -7,8 +7,8 @@
  * on the server, so the per-limb bookkeeping below (AFCM_SIM_appliedInjuries, publicVariable'd) is
  * safe to write unconditionally rather than needing its own isServer guard.
  *
- * That bookkeeping - one tracked [limb, woundType, severity, bleeding] tuple per limb, a fresh
- * apply on the same limb overwriting its own entry rather than appending - is what
+ * That bookkeeping - one tracked [limb, woundType, severity, bleeding, bleedRate] tuple per limb, a
+ * fresh apply on the same limb overwriting its own entry rather than appending - is what
  * fnc_exportPatientState.sqf reads back to let a controller export a hand-authored patient's
  * current injuries for reuse elsewhere (an Eden AFCM Patient module's Injury Preset Import
  * attribute, or the Preset Library) - there's no reliable way to reverse-engineer this addon's
@@ -58,7 +58,7 @@ if (isNil "_fnc") exitWith {
 private _limb = _injury getOrDefault ["limb", ""];
 private _history = _unit getVariable ["AFCM_SIM_appliedInjuries", []];
 _history = _history select { (_x select 0) != _limb };
-_history pushBack [_limb, _injury getOrDefault ["woundType", ""], _injury getOrDefault ["severity", 0.5], _injury getOrDefault ["bleeding", false]];
+_history pushBack [_limb, _injury getOrDefault ["woundType", ""], _injury getOrDefault ["severity", 0.5], _injury getOrDefault ["bleeding", false], _injury getOrDefault ["bleedRate", -1]];
 _unit setVariable ["AFCM_SIM_appliedInjuries", _history, true];
 
 true
