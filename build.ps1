@@ -40,8 +40,8 @@ $hemttArgs = @("release")
 if (-not $Sign) { $hemttArgs += "--no-sign" }
 if ($NoArchive) { $hemttArgs += "--no-archive" }
 
-if ($Sign -and -not (Test-Path (Join-Path $root ".hemtt\*.pem")) -and -not (Get-ChildItem -Path $root -Filter "*.biprivatekey" -ErrorAction SilentlyContinue)) {
-    Write-Output "No signing key found. Generate one with: hemtt keys generate <KeyName>"
+if ($Sign -and -not (Test-Path (Join-Path $root ".hemtt\*.pem")) -and -not (Get-ChildItem -Path $root -Filter "*.biprivatekey" -ErrorAction SilentlyContinue) -and -not (Get-ChildItem -Path $root -Filter "*.hemttprivatekey" -ErrorAction SilentlyContinue)) {
+    Write-Output "No signing key found. Generate one with: hemtt keys generate"
 }
 
 Push-Location $root
