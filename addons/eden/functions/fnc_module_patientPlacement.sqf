@@ -65,10 +65,11 @@ if (count _units > 0) then {
     };
 };
 
-private _importString = _logic getVariable ["AFCM_SIM_injuryPresetImport", ""];
+private _importString = (_logic getVariable ["AFCM_SIM_injuryPresetImport", ""]) call CBA_fnc_trim;
 private _injuries = [];
 private _katExtras = [];
 if (_importString != "") then {
+    diag_log text format ["[AFCM-Simulator] AFCM Patient module - Injury Preset Import attribute: %1", _importString];
     private _cleaned = [_importString] call afcm_sim_scenario_fnc_parseExportedPreset;
     if (_cleaned isEqualTo []) then {
         diag_log text "[AFCM-Simulator] AFCM Patient module - Injury Preset Import didn't parse, spawning clean instead.";
@@ -78,6 +79,7 @@ if (_importString != "") then {
             [_limb, _woundType, _severity, _bleeding] call afcm_sim_scenario_fnc_buildInjury
         };
         _katExtras = _cleaned select 5;
+        diag_log text format ["[AFCM-Simulator] AFCM Patient module - parsed %1 injuries, katExtras=%2.", count _injuries, _katExtras];
     };
 };
 
