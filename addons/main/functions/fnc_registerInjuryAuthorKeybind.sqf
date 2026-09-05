@@ -15,6 +15,18 @@
  * stable regardless (standard XT keyboard scan code table: Q=16,W=17,E=18,R=19,T=20,Y=21,U=22,
  * I=23,O=24,P=25 - O and P already taken by the other two AFCM keybinds).
  *
+ * Real, confirmed bug fixed here: `call afcm_sim_ui_fnc_injuryAuthor_open;` (no explicit `[]`) lets
+ * `_this` pass through unchanged from CBA's own down-code context (whatever raw args
+ * CBA_fnc_addKeybind's callback receives) straight into `injuryAuthor_open`'s own `params` - unlike
+ * `fnc_registerSessionManagerKeybind.sqf`/`fnc_registerMciCreatorKeybind.sqf`'s identical-looking
+ * bare `call`, which is harmless there since neither `sessionManager_open` nor `mciCreator_open`
+ * ever reads `_this`. `injuryAuthor_open` does (`_targetUnit`/`_preserveStaged`), and `params`
+ * without an explicit per-argument type whitelist does NOT type-check an index that's actually
+ * present (only genuinely out-of-bounds indices fall back to the given default) - so leaked
+ * keybind args landed straight in `_preserveStaged`, confirmed from a real RPT crash: `Error !:
+ * Type Number, expected Bool` on `if !(_preserveStaged) then`. An explicit `[]` guarantees both
+ * params are genuinely missing, so their real defaults (`objNull`/`false`) apply.
+ *
  * Arguments:
  * None
  *
@@ -25,5 +37,5 @@
 */
 
 ["AFCM-Simulator", "OpenInjuryAuthor", "Open Injury Author (New Patient)", {
-    call afcm_sim_ui_fnc_injuryAuthor_open;
+    [] call afcm_sim_ui_fnc_injuryAuthor_open;
 }, {}, [23, [true, true, false]]] call CBA_fnc_addKeybind;
