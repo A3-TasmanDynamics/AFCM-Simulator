@@ -109,7 +109,12 @@ applyAceStyleInjuryLocal` (`addons/main/functions/`), registered once as that ev
    Logs (rather than silently defaulting) if `limb` doesn't match any known `LimbId`.
 2. Calls `ace_medical_fnc_addDamageToUnit` with `severity` as the damage amount — this drives ACE's
    normal damage-to-wound pipeline (a *random* wound chosen from that damage type's weighting
-   table).
+   table). The `Injury` object's `severity` field is populated from `afcm_sim_scenario_fnc_
+   buildInjury`'s `woundSeverity` param — renamed from a bare "Severity" for clarity (this addon has
+   several other unrelated "severity"-shaped concepts elsewhere), not a data-model change; the
+   `Injury` HashMap key itself is still `"severity"`. See [§4.3](#43-woundseverity--ace3-adddamagetounit-amount)
+   for how the Injury Author dialog's own Severity combo (including its "None" sentinel) maps to
+   the number that actually lands here.
 3. If the `Injury`'s `bleeding` flag is `true`, additionally calls `ace_medical_fnc_addWound`
    directly to **deterministically** guarantee a real, sized bleeding wound exists — see
    [§3](#3-why-two-ace-calls-not-one) for why this second call exists.
@@ -245,6 +250,28 @@ folding needed here (lowercase, real `ALL_BODY_PARTS` value):
 | `blast` | `shell` | `PunctureWound` |
 
 All six values above are real, confirmed `ACE_Medical_Injuries.hpp` classes — not guessed names.
+
+### 4.3 `woundSeverity` → ACE3 `addDamageToUnit` amount
+
+The Injury Author dialog's Severity combo maps directly to `addDamageToUnit`'s `_damage` argument
+(a plain `0.0`–`1.0` float, not an enum like `woundType` above or Bleeding ([§5](#5-known-gaps)) —
+ACE3 takes the number as-is, no bucketing involved):
+
+| Injury Author combo option | `woundSeverity` value |
+|---|---|
+| `None` | `-1` (sentinel) |
+| `Light` | `0.25` |
+| `Moderate` | `0.5` |
+| `Severe` | `0.75` |
+| `Critical` | `1.0` |
+
+`-1` is a **UI-only sentinel**, the same "not specified" convention `bleedRate` already used — it
+never reaches ACE3 itself. `afcm_sim_scenario_fnc_buildInjury` normalizes any `woundSeverity < 0` to
+`0.5` before the `Injury` HashMap is even built, so a limb staged with a real `woundType` but
+`Severity: None` still applies with a sensible default rather than an invalid negative damage
+amount. This mirrors `woundType`'s own `None` (§4.2) in spirit — both are ways to leave a field
+unconfigured — but behaves differently: `woundType: None` removes the limb's staged entry entirely,
+while `Severity: None` keeps the entry and just lets the severity default.
 
 ---
 
