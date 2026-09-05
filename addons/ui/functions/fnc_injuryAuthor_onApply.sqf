@@ -13,11 +13,22 @@
  *    - defensive, matches the same guard MCI Creator's own Spawn button has). Builds real Injury
  *    HashMaps from the staged tuples via afcm_sim_scenario_fnc_buildInjury (same pattern
  *    addons/eden/functions/fnc_module_patientPlacement.sqf already uses for its own Injury Preset
- *    Import attribute), then remoteExecs afcm_sim_spawner_fnc_spawnPatient directly. Casualty type
- *    is hardcoded to 0 (civilian) - no picker for it in this dialog. If afcm_sim_rememberLastInjuries
- *    is on, persists the staged set to profileNamespace (AFCM_SIM_lastUsedInjuries/
- *    lastUsedKatExtras) so the next author-new-patient open auto-restores it
- *    (fnc_injuryAuthor_open.sqf).
+ *    Import attribute), then remoteExecs afcm_sim_spawner_fnc_spawnPatient directly, passing
+ *    clientOwner as its trailing "callback owner" so fnc_spawnPatient.sqf remoteExecs the resulting
+ *    unit straight back to this specific client (afcm_sim_ui_fnc_injuryAuthor_onPatientSpawned) once
+ *    it's ready - what lets the dialog's "View Live State" button track whichever patient this
+ *    click actually produced. Casualty type is hardcoded to 0 (civilian) - no picker for it in this
+ *    dialog. If afcm_sim_rememberLastInjuries is on, persists the staged set to profileNamespace
+ *    (AFCM_SIM_lastUsedInjuries/lastUsedKatExtras) so the next author-new-patient open auto-restores
+ *    it (fnc_injuryAuthor_open.sqf).
+ *
+ * Deliberately does NOT closeDialog afterward, either branch - real feedback: applying/spawning was
+ * being treated as a one-shot action that always kicked you back out, so configuring several
+ * patients (or tweaking one limb at a time on the same patient) meant reopening the whole dialog
+ * every single time. The staged set is left exactly as it was just applied, so hitting Apply again
+ * re-applies/spawns-another with no extra setup; fnc_injuryAuthor_cleanup.sqf now snapshots whatever
+ * is staged whenever the dialog actually IS closed (Close button/Escape), so nothing is lost by
+ * leaving Apply as a non-closing action.
  *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Apply button <CONTROL>
@@ -46,7 +57,7 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
         [_limb, _woundType, _severity, _bleeding, _bleedRate] call afcm_sim_scenario_fnc_buildInjury
     };
 
-    [_pos, _builtInjuries, 0, "", "", _katExtras] remoteExec ["afcm_sim_spawner_fnc_spawnPatient", 2];
+    [_pos, _builtInjuries, 0, "", "", _katExtras, clientOwner] remoteExec ["afcm_sim_spawner_fnc_spawnPatient", 2];
 
     if (afcm_sim_rememberLastInjuries) then {
         profileNamespace setVariable ["AFCM_SIM_lastUsedInjuries", _injuries];
@@ -55,7 +66,6 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
     };
 
     ["Injury Author", "Patient spawned."] call afcm_sim_ui_fnc_showToast;
-    closeDialog 0;
 } else {
     private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
     if (isNull _targetUnit) exitWith {
@@ -68,5 +78,5 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
         ["injury.applied", [_targetUnit, _limb, _woundType, _severity, _bleeding]] call afcm_sim_ui_fnc_publish;
     } forEach _injuries;
 
-    closeDialog 0;
+    ["Injury Author", "Injuries applied."] call afcm_sim_ui_fnc_showToast;
 };
