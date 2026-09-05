@@ -19,6 +19,14 @@
  *    lastUsedKatExtras) so the next author-new-patient open auto-restores it
  *    (fnc_injuryAuthor_open.sqf).
  *
+ * Deliberately does NOT closeDialog afterward, either branch - real feedback: applying/spawning was
+ * being treated as a one-shot action that always kicked you back out, so configuring several
+ * patients (or tweaking one limb at a time on the same patient) meant reopening the whole dialog
+ * every single time. The staged set is left exactly as it was just applied, so hitting Apply again
+ * re-applies/spawns-another with no extra setup; fnc_injuryAuthor_cleanup.sqf now snapshots whatever
+ * is staged whenever the dialog actually IS closed (Close button/Escape), so nothing is lost by
+ * leaving Apply as a non-closing action.
+ *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Apply button <CONTROL>
  *
@@ -55,7 +63,6 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
     };
 
     ["Injury Author", "Patient spawned."] call afcm_sim_ui_fnc_showToast;
-    closeDialog 0;
 } else {
     private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
     if (isNull _targetUnit) exitWith {
@@ -68,5 +75,5 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
         ["injury.applied", [_targetUnit, _limb, _woundType, _severity, _bleeding]] call afcm_sim_ui_fnc_publish;
     } forEach _injuries;
 
-    closeDialog 0;
+    ["Injury Author", "Injuries applied."] call afcm_sim_ui_fnc_showToast;
 };

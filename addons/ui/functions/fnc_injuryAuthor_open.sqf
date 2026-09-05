@@ -1,12 +1,17 @@
 /*
  * Author: Tasman Dynamics
  * Opens RscDisplayAFCM_SIM_InjuryAuthor. Two modes, told apart by whether a target unit is given:
- *  - Edit an already-spawned patient (_targetUnit real) - pre-loads its current injuries/KAT
- *    extras (fnc_injuryAuthor_loadFromUnit.sqf).
+ *  - Edit an already-spawned patient (_targetUnit real) - if fnc_injuryAuthor_cleanup.sqf left a
+ *    same-session draft on this exact unit (AFCM_SIM_UI_hasDraft), restores that instead so
+ *    backing out of the dialog and reopening on the same patient picks up right where you left
+ *    off; otherwise pre-loads its current real injuries/KAT extras
+ *    (fnc_injuryAuthor_loadFromUnit.sqf).
  *  - Author a brand-new patient (_targetUnit objNull, the Ctrl+Shift+I keybind's own call) -
- *    starts empty, UNLESS afcm_sim_rememberLastInjuries is on, in which case it auto-restores
- *    whatever was last applied/spawned (profileNamespace AFCM_SIM_lastUsedInjuries/
- *    lastUsedKatExtras, written by fnc_injuryAuthor_onApply.sqf's author-new-patient branch) -
+ *    restores fnc_injuryAuthor_cleanup.sqf's own AFCM_SIM_UI_draftNewPatientInjuries/KatExtras if
+ *    one exists (same "pick up where you left off" reasoning, same-session); otherwise, if
+ *    afcm_sim_rememberLastInjuries is on, auto-restores whatever was last actually applied/spawned
+ *    (profileNamespace AFCM_SIM_lastUsedInjuries/lastUsedKatExtras, written by
+ *    fnc_injuryAuthor_onApply.sqf's author-new-patient branch); otherwise starts empty.
  *    fnc_injuryAuthor_onClearAll.sqf is the "quick clear/reset" the CBA setting's own tooltip
  *    promises for wiping that remembered set.
  *
@@ -38,16 +43,28 @@ missionNamespace setVariable ["AFCM_SIM_UI_authorNewPatient", isNull _targetUnit
 
 if !(_preserveStaged) then {
     if (isNull _targetUnit) then {
-        if (afcm_sim_rememberLastInjuries) then {
-            missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", profileNamespace getVariable ["AFCM_SIM_lastUsedInjuries", []]];
-            missionNamespace setVariable ["AFCM_SIM_UI_stagedKatExtras", profileNamespace getVariable ["AFCM_SIM_lastUsedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]]];
+        if (missionNamespace getVariable ["AFCM_SIM_UI_draftNewPatientValid", false]) then {
+            missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", missionNamespace getVariable ["AFCM_SIM_UI_draftNewPatientInjuries", []]];
+            missionNamespace setVariable ["AFCM_SIM_UI_stagedKatExtras", missionNamespace getVariable ["AFCM_SIM_UI_draftNewPatientKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]]];
+            // Spawn location deliberately left untouched here - it's part of the same in-progress
+            // session the draft came from; resetting it would re-disable Apply for no reason.
         } else {
-            missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", []];
-            missionNamespace setVariable ["AFCM_SIM_UI_stagedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]];
+            if (afcm_sim_rememberLastInjuries) then {
+                missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", profileNamespace getVariable ["AFCM_SIM_lastUsedInjuries", []]];
+                missionNamespace setVariable ["AFCM_SIM_UI_stagedKatExtras", profileNamespace getVariable ["AFCM_SIM_lastUsedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]]];
+            } else {
+                missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", []];
+                missionNamespace setVariable ["AFCM_SIM_UI_stagedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]];
+            };
+            missionNamespace setVariable ["AFCM_SIM_UI_authorSpawnPos", []];
         };
-        missionNamespace setVariable ["AFCM_SIM_UI_authorSpawnPos", []];
     } else {
-        [_targetUnit] call afcm_sim_ui_fnc_injuryAuthor_loadFromUnit;
+        if (_targetUnit getVariable ["AFCM_SIM_UI_hasDraft", false]) then {
+            missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", _targetUnit getVariable ["AFCM_SIM_UI_draftInjuries", []]];
+            missionNamespace setVariable ["AFCM_SIM_UI_stagedKatExtras", _targetUnit getVariable ["AFCM_SIM_UI_draftKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]]];
+        } else {
+            [_targetUnit] call afcm_sim_ui_fnc_injuryAuthor_loadFromUnit;
+        };
     };
 };
 
