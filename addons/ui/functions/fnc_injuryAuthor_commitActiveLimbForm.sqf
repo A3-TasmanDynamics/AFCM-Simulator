@@ -11,6 +11,12 @@
  * that case removes the limb's entry from AFCM_SIM_UI_stagedInjuries entirely rather than ever
  * writing "none" into a tuple that could reach afcm_sim_scenario_fnc_buildInjury.
  *
+ * Severity's own index 0 is now also "None" (-1), consistent with every other combo on this
+ * dialog - unlike WoundType's None, this does NOT remove the limb's entry (a real wound type can
+ * still be staged with "unspecified" severity); -1 is read straight through as the 3rd tuple
+ * element and normalized by afcm_sim_scenario_fnc_buildInjury itself (falls back to 0.5), same
+ * "not specified" sentinel convention bleedRate already used.
+ *
  * Bleeding is a 5-option severity combo (None/Light/Medium/Heavy/Severe), each option a real
  * [bleeding<BOOL>, bleedRate<NUMBER>] pair read directly by index - see
  * fnc_injuryAuthor_init.sqf's own comment for where those 4 non-None rate values come from.
@@ -41,11 +47,11 @@ private _limb = missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", ""];
 if (_limb == "") exitWith {};
 
 private _woundTypes = ["", "gunshot", "shrapnel", "blast"];
-private _severities = [0.25, 0.5, 0.75, 1.0];
+private _severities = [-1, 0.25, 0.5, 0.75, 1.0];
 private _bleedingLevels = [[false, 0], [true, 0.1], [true, 0.2], [true, 0.35], [true, 0.5]];
 
 private _woundType = _woundTypes param [lbCurSel (_display displayCtrl 20), ""];
-private _severity = _severities param [lbCurSel (_display displayCtrl 21), 0.5];
+private _severity = _severities param [lbCurSel (_display displayCtrl 21), -1];
 private _bleedPair = _bleedingLevels param [lbCurSel (_display displayCtrl 22), [false, 0]];
 _bleedPair params ["_bleeding", "_bleedRate"];
 

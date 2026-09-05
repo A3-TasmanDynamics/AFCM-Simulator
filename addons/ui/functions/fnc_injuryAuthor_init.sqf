@@ -57,7 +57,7 @@ params ["_display"];
     };
 
     [_display displayCtrl 20, ["None", "Gunshot", "Shrapnel", "Blast"], 0] call _fnc_populate;
-    [_display displayCtrl 21, ["Light", "Moderate", "Severe", "Critical"], 1] call _fnc_populate;
+    [_display displayCtrl 21, ["None", "Light", "Moderate", "Severe", "Critical"], 0] call _fnc_populate;
     [_display displayCtrl 22, ["None", "Light", "Medium", "Heavy", "Severe"], 0] call _fnc_populate;
     [_display displayCtrl 24, ["None", "Simple Fracture", "Compound Fracture", "Comminuted Fracture"], 0] call _fnc_populate;
     [_display displayCtrl 26, ["None", "Simple Pneumothorax", "Hemopneumothorax", "Tension Pneumothorax"], 0] call _fnc_populate;

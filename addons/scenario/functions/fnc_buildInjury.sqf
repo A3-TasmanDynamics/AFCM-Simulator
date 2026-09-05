@@ -14,7 +14,15 @@
  * Arguments:
  * 0: LimbId <STRING>
  * 1: woundType <STRING>
- * 2: Severity <NUMBER> (default 0.5)
+ * 2: woundSeverity <NUMBER> (default 0.5) - how bad the wound itself is, 0.0..1.0. Renamed from the
+ *    generic "Severity" this param used to be documented as - this addon has several other,
+ *    unrelated "severity"-shaped concepts (KAT fracture/pneumothorax type, the Random Damage
+ *    Easy/Medium/Hard/Insane level), so a bare "Severity" here was ambiguous about which one it
+ *    meant. -1 is a sentinel meaning "not specified" (e.g. the injury author dialog's own Severity
+ *    combo's new "None" option) - falls back to 0.5 below, same sentinel convention bleedRate
+ *    already uses. The actual Injury HashMap key stays "severity" (unchanged) - that's the
+ *    established wire format afcm_sim_fnc_backend_applyInjury/ace_compat/kat_compat all read;
+ *    renaming this param is purely a same-file/docstring clarity fix, not a data-model change.
  * 3: Bleeding <BOOL> (default false)
  * 4: bleedRate <NUMBER> (default -1) - explicit bleed rate, e.g. from the injury author dialog's
  *    Light/Medium/Heavy/Severe combo. -1 is a sentinel meaning "not specified" - keeps the original
@@ -27,11 +35,14 @@
  * Public: Yes
 */
 
-params ["_limb", "_woundType", ["_severity", 0.5], ["_bleeding", false], ["_bleedRate", -1]];
+params ["_limb", "_woundType", ["_woundSeverity", 0.5], ["_bleeding", false], ["_bleedRate", -1]];
 
 // Same 4 limbs as afcm_sim_scenario_fnc_randomizeInjuries - only arms/legs are tourniquetable,
 // never head/chest.
 private _tourniquetableLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
+if (_woundSeverity < 0) then {
+    _woundSeverity = 0.5;
+};
 if (_bleedRate < 0) then {
     _bleedRate = if (_bleeding) then { 0.1 + random 0.3 } else { 0 };
 };
@@ -39,7 +50,7 @@ if (_bleedRate < 0) then {
 private _injury = createHashMap;
 _injury set ["limb", _limb];
 _injury set ["woundType", _woundType];
-_injury set ["severity", _severity];
+_injury set ["severity", _woundSeverity];
 _injury set ["bleeding", _bleeding];
 _injury set ["bleedRate", _bleedRate];
 _injury set ["tourniquetable", _limb in _tourniquetableLimbs];
