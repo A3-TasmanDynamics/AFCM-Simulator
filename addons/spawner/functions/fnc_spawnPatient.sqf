@@ -30,6 +30,14 @@
  *    (fnc_exportPatientState.sqf - `[fractures <ARRAY[6]>, pneumothoraxType, airwayType,
  *    cardiacRhythm]`), applied via afcm_sim_scenario_fnc_serverApplyKatExtras alongside Injuries -
  *    the Eden AFCM Patient module's Injury Preset Import attribute is the real caller
+ * 6: Callback Owner <NUMBER> (default -1 - no callback) - if given, the spawned unit is
+ *    remoteExec'd back to exactly that client id (via clientOwner, the calling client's own id) once
+ *    it's fully ready (addActions wired, injuries applied) as
+ *    afcm_sim_ui_fnc_injuryAuthor_onPatientSpawned - remoteExec is fire-and-forget with no return
+ *    value, so this is how the Injury Author dialog's "View Live State" button (author-new-patient
+ *    mode) learns which real unit its own Apply & Spawn Patient click actually produced. Called by
+ *    name, no requiredAddons dependency on afcm_sim_ui - same reasoning already documented below for
+ *    the addInjuryEditorAction/addTreatedAction/addExportStateAction calls.
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -40,7 +48,7 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []]];
+params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1]];
 
 // Purely cosmetic - all four are real, base-game (no DLC/faction mod) Arma 3 classnames, so this
 // works with nothing but vanilla + CBA installed. Whatever's picked, gear is stripped down to bare
@@ -160,7 +168,7 @@ publicVariable "AFCM_SIM_spawnSessions";
 _unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
 
 [{
-    params ["_unit", "_injuries", "_katExtras"];
+    params ["_unit", "_injuries", "_katExtras", "_callbackOwner"];
     if (isNull _unit) exitWith {};
 
     // addAction is local to whichever machine calls it - every client (present + JIP) needs to run
@@ -180,6 +188,10 @@ _unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
 
     { [_unit, _x] call afcm_sim_fnc_backend_applyInjury; } forEach _injuries;
     [_unit, _katExtras] call afcm_sim_scenario_fnc_serverApplyKatExtras;
-}, [_unit, _injuries, _katExtras], 1] call CBA_fnc_waitAndExecute;
+
+    if (_callbackOwner != -1) then {
+        [_unit] remoteExec ["afcm_sim_ui_fnc_injuryAuthor_onPatientSpawned", _callbackOwner];
+    };
+}, [_unit, _injuries, _katExtras, _callbackOwner], 1] call CBA_fnc_waitAndExecute;
 
 _unit

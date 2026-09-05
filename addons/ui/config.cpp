@@ -59,6 +59,8 @@ class CfgFunctions
             class injuryAuthor_refreshLocationStatus { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_refreshLocationStatus.sqf"; };
             class injuryAuthor_refreshState { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_refreshState.sqf"; };
             class injuryAuthor_loadFromUnit { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_loadFromUnit.sqf"; };
+            class injuryAuthor_onPatientSpawned { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onPatientSpawned.sqf"; };
+            class injuryAuthor_onViewLiveState { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onViewLiveState.sqf"; };
             class addInjuryEditorAction { file = "\afcm_sim\addons\ui\functions\fnc_addInjuryEditorAction.sqf"; };
             class addTreatedAction { file = "\afcm_sim\addons\ui\functions\fnc_addTreatedAction.sqf"; };
             class addExportStateAction { file = "\afcm_sim\addons\ui\functions\fnc_addExportStateAction.sqf"; };
@@ -1301,6 +1303,7 @@ class RscDisplayAFCM_SIM_ConfirmDialog
 #define IDC_AFCM_SIM_IA_CHOOSELOCATION  51
 #define IDC_AFCM_SIM_IA_LOCATIONSTATUS  52
 #define IDC_AFCM_SIM_IA_CLOSE           53
+#define IDC_AFCM_SIM_IA_VIEWLIVESTATE   54
 
 // Replaces RscDisplayAFCM_SIM_LimbSelect + RscDisplayAFCM_SIM_InjuryEditor (both retired, IDD
 // 25601/25602 not reused) with one dialog: a persistent left-side limb navbar next to a single
@@ -1603,20 +1606,39 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             h = "0.09 * safeZoneH";
             colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
         };
-        // Live medical state (edit mode only, afcm_sim_fnc_backend_getState) - now genuinely keyed
-        // to whichever ONE limb is active in the navbar, fixing the old dialog's "always shows the
-        // first of possibly several selected limbs" limitation. Author-new-patient mode shows a
-        // static placeholder instead (fnc_injuryAuthor_init.sqf) - no live unit to query yet.
+        // Live medical state (afcm_sim_fnc_backend_getState) - now genuinely keyed to whichever ONE
+        // limb is active in the navbar, fixing the old dialog's "always shows the first of possibly
+        // several selected limbs" limitation. Edit mode auto-starts this on open; author-new-patient
+        // mode shows a static placeholder until ViewLiveState below is used
+        // (fnc_injuryAuthor_init.sqf/fnc_injuryAuthor_onViewLiveState.sqf) - no live unit to query
+        // until a patient has actually been spawned.
         class StatusText: RscText
         {
             idc = IDC_AFCM_SIM_IA_STATUS;
             text = "";
             x = "0.225 * safeZoneW + safeZoneX";
             y = "0.490 * safeZoneH + safeZoneY";
-            w = "0.555 * safeZoneW";
+            w = "0.43 * safeZoneW";
             h = "0.08 * safeZoneH";
             sizeEx = "0.019 * safeZoneH";
             colorText[] = AFCM_SIM_COLOR_TEXT_DIM;
+        };
+        // Author-new-patient mode only (hidden entirely in edit mode, which already auto-starts the
+        // live readout on open) - starts disabled, enabled once AFCM_SIM_UI_lastSpawnedPatient
+        // exists (fnc_injuryAuthor_onPatientSpawned.sqf, the callback Apply & Spawn Patient triggers
+        // once the server confirms a real unit exists). Clicking it points StatusText above at that
+        // unit (fnc_injuryAuthor_onViewLiveState.sqf) - added specifically because the dialog now
+        // stays open after spawning (fnc_injuryAuthor_onApply.sqf no longer closeDialogs) but never
+        // showed a live readout for what it just spawned.
+        class ViewLiveState: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_IA_VIEWLIVESTATE;
+            text = "View Live State";
+            x = "0.665 * safeZoneW + safeZoneX";
+            y = "0.490 * safeZoneH + safeZoneY";
+            w = "0.12 * safeZoneW";
+            h = "0.04 * safeZoneH";
+            sizeEx = "0.016 * safeZoneH";
         };
         // Text/mode set dynamically - "Apply" (edit mode, commits to AFCM_SIM_UI_targetUnit) or
         // "Apply & Spawn Patient" (author-new-patient mode, disabled until ChooseLocation below is
