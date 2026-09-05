@@ -286,6 +286,59 @@ from fully successful treatment until an instructor explicitly resets it, via
 
 ---
 
+## External design reference — "Bandages Gloss up" bleed-rate/bandage-tuning spreadsheet
+
+[Google Sheets — "Bandages Gloss up"](https://docs.google.com/spreadsheets/d/1piw-AWKP6HNNDoqZ-G7vsaK7kw9QN2lxAzUv6F9Z34s/edit?gid=0#gid=0)
+(publicly viewable; fetched via its raw CSV export, not a scrape of the rendered page — Sheets
+renders cell data via JavaScript, so an HTML fetch alone returned inconsistent, partially-guessed
+values across two attempts before switching to the real `/export?format=csv` endpoint). **Not ACE3
+or KAT source** — an external design/tuning reference, not vetted against or confirmed to be used
+by either mod; useful for `afcm_sim_scenario`'s own bleed-rate/severity tuning, not as a citation
+for how ACE/KAT actually behave.
+
+**Bandage effectiveness grid** — 4 bandage types (`Elastic`, `Quickclot`, `Packing`, `FB`) × 7 wound
+types (`Abrasion`, `Avulsion`, `P wound`, `Crush`, `V wound`, `Laceration`, `Cut`) × 3 severity
+tiers (`Minor`/`Medium`/`Large`), each cell rating **Effect** (a Low/Medium/High/Very High
+qualitative scale with a numeric weight, e.g. `4 Very High`), **Reopen Chance** (Low/Medium/High),
+and **Average Time** to fully treat, in seconds (many cells `1000+`, i.e. effectively "won't fully
+resolve with this bandage"). Broad pattern: `Elastic` is strongest on `Abrasion`/`Cut` but weak
+against `Crush`/`Laceration`; `FB` has the most consistently low Reopen Chance across the board;
+`Quickclot` is the weakest overall (mostly Low/Medium effect, `1000+` times on most wound types).
+
+**Bleed Rate / Bleed Severity / Blood Loss per sec** — same 7-wound-type × 3-severity-tier grid,
+real values:
+
+| Wound type | Minor rate | Minor sev. | Medium rate | Medium sev. | Large rate | Large sev. |
+|---|---|---|---|---|---|---|
+| Abrasion | `0.0003` | Low | `0.0007` | Low | `0.001` | Low |
+| Avulsion | `0.033` | Low | `0.067` | Medium | `0.1` | High |
+| P wound | `0.02` | Low | `0.04` | Low | `0.06` | Medium |
+| Crush | `0.017` | Low | `0.033` | Low | `0.05` | Medium |
+| V wound | `0.067` | Medium | `0.133` | Medium | `0.2` | High |
+| Laceration | `0.03` | Low | `0.06` | Medium | `0.09` | High |
+| Cut | `0.025` | Low | `0.05` | Medium | `0.075` | Medium |
+
+Blood loss per second scales with the same rate (roughly rate × 300, in mL — e.g. Avulsion/Large:
+`0.1` rate → `3.0mL/s`). The sheet's own note: **"contusions and abrasions have no bleed rate"**
+(Abrasion's near-zero values above are effectively a floor, not a real bleed).
+
+**Bleed-rate classification** (the sheet's own labels, real thresholds) — same tier *names* as
+ACE3's own real `Bleed_Rate1`–`4` strings ("Slow"/"Moderate"/"Severe"/"Massive" bleeding, confirmed
+above), but on a **different, absolute numeric scale** — not the same system, don't conflate them:
+
+| Label | This sheet's threshold | ACE3's real threshold (relative to knock-out point) |
+|---|---|---|
+| Slow | `0.0`–`0.5` | `< 10%` |
+| Moderate | `0.51`–`1.0` | `< 50%` |
+| Severe | `1.0`–`2.0` | `< 100%` |
+| Massive | `> 2.0` | `>= 100%` |
+
+**Blood loss / remaining volume** (real thresholds, `6.0 L` starting total — matches this repo's
+own `bloodVolume` status readout default): no loss `6.0 L`; some `6.0–5.1 L`; a lot `5.1–4.2 L`; a
+large amount `4.1–3.6 L`; fatal `< 3.5 L`.
+
+---
+
 <div align="center">
 
 **Tasman Dynamics** — Engineering high-fidelity systems for the future of multi-domain simulation.
