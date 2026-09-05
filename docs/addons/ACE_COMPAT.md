@@ -296,6 +296,14 @@ while `Severity: None` keeps the entry and just lets the severity default.
   (`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`) was built and reverted — see
   [KAT_COMPAT.md §5](KAT_COMPAT.md#5-known-gaps) — since this kind of state has no ACE equivalent
   to give `ace_compat` in the first place.
+- **`afcm_sim_ace_fnc_getState` doesn't surface ACE's own bleeding-rate classification.** ACE has a
+  real, separate 4-tier **Slow/Moderate/Severe/Massive** bleeding-rate readout (confirmed source:
+  [REFERENCES.md](../REFERENCES.md#ace3-medical-source-confirmed-directly-from-acemodace3-not-the-wiki))
+  — a live, computed, whole-unit value (total bleeding rate across every wound vs. that unit's own
+  cardiac output), distinct from the per-wound `Small`/`Medium`/`Large` size above. `getState`
+  currently only returns the raw `limbBleeding` (Bool) and unit-wide `bloodVolume` (liters) instead
+  — a real, more informative option for the Injury Author dialog's live status readout, not yet
+  implemented.
 
 ---
 
