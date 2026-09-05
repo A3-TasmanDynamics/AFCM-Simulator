@@ -6,6 +6,11 @@
  * via CBA_fnc_execNextFrame, same reasoning as the old fnc_injuryEditor_init.sqf: ensures controls
  * exist before being touched.
  *
+ * Author-new-patient mode's own "View Live State" button (idc 54,
+ * fnc_injuryAuthor_onViewLiveState.sqf) starts enabled only if AFCM_SIM_UI_lastSpawnedPatient
+ * already exists - a patient spawned via a PRIOR open of this same dialog this mission, not just
+ * this specific session, since the unit itself outlives the dialog closing.
+ *
  * WoundType now has a 4th "None" option at index 0 (Gunshot/Shrapnel/Blast shift to 1-3) - means
  * "no injury on this limb", handled as a UI-only sentinel by
  * fnc_injuryAuthor_commitActiveLimbForm.sqf.
@@ -78,13 +83,14 @@ params ["_display"];
         _ctrlApply ctrlSetText "Apply & Spawn Patient";
         _ctrlApply ctrlEnable ((missionNamespace getVariable ["AFCM_SIM_UI_authorSpawnPos", []]) isNotEqualTo []);
         (_display displayCtrl 50) ctrlShow false;
-        { (_display displayCtrl _x) ctrlShow true; } forEach [51, 52];
-        (_display displayCtrl 35) ctrlSetText "No live patient yet - status appears here once one exists.";
+        { (_display displayCtrl _x) ctrlShow true; } forEach [51, 52, 54];
+        (_display displayCtrl 54) ctrlEnable !(isNull (missionNamespace getVariable ["AFCM_SIM_UI_lastSpawnedPatient", objNull]));
+        (_display displayCtrl 35) ctrlSetText "No live patient yet - spawn one, or click View Live State if you already have.";
     } else {
         _ctrlApply ctrlSetText "Apply";
         _ctrlApply ctrlEnable (_backend in ["ace", "kat"]);
         (_display displayCtrl 50) ctrlShow true;
-        { (_display displayCtrl _x) ctrlShow false; } forEach [51, 52];
+        { (_display displayCtrl _x) ctrlShow false; } forEach [51, 52, 54];
     };
 
     {
@@ -100,7 +106,8 @@ params ["_display"];
         [47, afcm_sim_ui_fnc_injuryAuthor_onClearAll],
         [48, afcm_sim_ui_fnc_injuryAuthor_onRandomDamage],
         [50, afcm_sim_ui_fnc_injuryAuthor_onResetPatient],
-        [51, afcm_sim_ui_fnc_injuryAuthor_onChooseLocation]
+        [51, afcm_sim_ui_fnc_injuryAuthor_onChooseLocation],
+        [54, afcm_sim_ui_fnc_injuryAuthor_onViewLiveState]
     ];
 
     if (_authorNewPatient) then {
