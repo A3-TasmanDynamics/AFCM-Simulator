@@ -10,14 +10,15 @@
  * "no injury on this limb", handled as a UI-only sentinel by
  * fnc_injuryAuthor_commitActiveLimbForm.sqf.
  *
- * Bleeding is a 5-option severity combo now, not a checkbox: None/Light/Medium/Heavy/Severe,
- * mapping to real [bleeding<BOOL>, bleedRate<NUMBER>] pairs - None->[false,0], Light->[true,0.1],
- * Medium->[true,0.2], Heavy->[true,0.35], Severe->[true,0.5]. Grounded against
- * fnc_medical_applyAceStyleInjuryLocal.sqf's own real bleedRate->ACE-wound-size bucketing (0.15/0.3
- * thresholds, only 3 real sizes - small/medium/large - exist in ACE's own addWound): Light lands in
- * "small", Medium in "medium", Heavy and Severe both land in "large" (ACE has no 4th size) - Heavy
- * vs. Severe still differ in the stored bleedRate number itself, which matters to KAT's own
- * continuous internal-bleeding math even where ACE's own wound visual can't distinguish further.
+ * Bleeding is a 4-option combo now, not a checkbox: None/Small/Medium/Large - deliberately named
+ * and scaled to match ACE3's own real `addWound` size enum (0/1/2) directly, rather than an
+ * invented finer scale that then had to be bucketed down to ACE's 3 real sizes anyway (the old
+ * None/Light/Medium/Heavy/Severe 5-option version had exactly that problem - Heavy and Severe both
+ * silently collapsed into the same "large" bucket, which just confused matters). Maps to real
+ * [bleeding<BOOL>, bleedRate<NUMBER>] pairs - None->[false,0], Small->[true,0.1],
+ * Medium->[true,0.2], Large->[true,0.4] - each non-None rate picked to comfortably clear
+ * fnc_medical_applyAceStyleInjuryLocal.sqf's own real bucket thresholds (<0.15 small, 0.15-0.3
+ * medium, >=0.3 large), so what you pick here is exactly the ACE wound size that results.
  *
  * Fracture/Pneumothorax/Airway/CardiacState combos are populated in index-order-equals-value order
  * (same convention the old InjuryEditor used) so fnc_injuryAuthor_commitActiveLimbForm.sqf/
@@ -57,8 +58,8 @@ params ["_display"];
     };
 
     [_display displayCtrl 20, ["None", "Gunshot", "Shrapnel", "Blast"], 0] call _fnc_populate;
-    [_display displayCtrl 21, ["Light", "Moderate", "Severe", "Critical"], 1] call _fnc_populate;
-    [_display displayCtrl 22, ["None", "Light", "Medium", "Heavy", "Severe"], 0] call _fnc_populate;
+    [_display displayCtrl 21, ["None", "Light", "Moderate", "Severe", "Critical"], 0] call _fnc_populate;
+    [_display displayCtrl 22, ["None", "Small", "Medium", "Large"], 0] call _fnc_populate;
     [_display displayCtrl 24, ["None", "Simple Fracture", "Compound Fracture", "Comminuted Fracture"], 0] call _fnc_populate;
     [_display displayCtrl 26, ["None", "Simple Pneumothorax", "Hemopneumothorax", "Tension Pneumothorax"], 0] call _fnc_populate;
     [_display displayCtrl 28, ["None", "Obstruction", "Occlusion"], 0] call _fnc_populate;

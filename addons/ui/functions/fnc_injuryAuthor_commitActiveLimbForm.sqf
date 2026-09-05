@@ -11,9 +11,17 @@
  * that case removes the limb's entry from AFCM_SIM_UI_stagedInjuries entirely rather than ever
  * writing "none" into a tuple that could reach afcm_sim_scenario_fnc_buildInjury.
  *
- * Bleeding is a 5-option severity combo (None/Light/Medium/Heavy/Severe), each option a real
- * [bleeding<BOOL>, bleedRate<NUMBER>] pair read directly by index - see
- * fnc_injuryAuthor_init.sqf's own comment for where those 4 non-None rate values come from.
+ * Severity's own index 0 is now also "None" (-1), consistent with every other combo on this
+ * dialog - unlike WoundType's None, this does NOT remove the limb's entry (a real wound type can
+ * still be staged with "unspecified" severity); -1 is read straight through as the 3rd tuple
+ * element and normalized by afcm_sim_scenario_fnc_buildInjury itself (falls back to 0.5), same
+ * "not specified" sentinel convention bleedRate already used.
+ *
+ * Bleeding is a 4-option combo (None/Small/Medium/Large) matching ACE3's own real `addWound` size
+ * enum directly (0/1/2, ACE_COMPAT.md §5) rather than an invented finer scale - each option a real
+ * [bleeding<BOOL>, bleedRate<NUMBER>] pair read directly by index, with the 3 non-None rates picked
+ * to comfortably clear fnc_medical_applyAceStyleInjuryLocal.sqf's own real bucket thresholds
+ * (<0.15 small, 0.15-0.3 medium, >=0.3 large) - see fnc_injuryAuthor_init.sqf's own comment.
  *
  * Fracture/Pneumothorax/Airway/CardiacState combos are populated in index-order-equals-value order
  * (fnc_injuryAuthor_init.sqf, same convention the old InjuryEditor used), so `lbCurSel` is read
@@ -41,11 +49,11 @@ private _limb = missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", ""];
 if (_limb == "") exitWith {};
 
 private _woundTypes = ["", "gunshot", "shrapnel", "blast"];
-private _severities = [0.25, 0.5, 0.75, 1.0];
-private _bleedingLevels = [[false, 0], [true, 0.1], [true, 0.2], [true, 0.35], [true, 0.5]];
+private _severities = [-1, 0.25, 0.5, 0.75, 1.0];
+private _bleedingLevels = [[false, 0], [true, 0.1], [true, 0.2], [true, 0.4]];
 
 private _woundType = _woundTypes param [lbCurSel (_display displayCtrl 20), ""];
-private _severity = _severities param [lbCurSel (_display displayCtrl 21), 0.5];
+private _severity = _severities param [lbCurSel (_display displayCtrl 21), -1];
 private _bleedPair = _bleedingLevels param [lbCurSel (_display displayCtrl 22), [false, 0]];
 _bleedPair params ["_bleeding", "_bleedRate"];
 

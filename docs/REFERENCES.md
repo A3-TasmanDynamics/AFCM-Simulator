@@ -94,6 +94,27 @@ their real internals or exact string requirements — pulled the real source via
   class's own `bleeding`/`pain` config values — it's the only lever this function gives over
   bleeding severity. Used in `afcm_sim_ace_compat` to deterministically guarantee a bleeding wound
   when the Injury object says `bleeding: true`, since `addDamageToUnit` alone leaves that to chance.
+- **`addons/medical_gui/functions/fnc_updateInjuryList.sqf` + `addons/medical_engine/
+  script_macros_medical.hpp`** — a real, separate ACE concept from `addWound`'s `_size` above,
+  confirmed while double-checking whether "Small/Medium/Large" (ACE's own real `addWound` size
+  labels — `STR_ACE_Medical_GUI_Small`/`_Medium`/`_Large`, `medical_gui/stringtable.xml`) was the
+  right term to borrow, or whether ACE had a different official bleeding-specific scale: ACE also
+  has a **bleeding-rate** classification, `STR_ACE_Medical_GUI_Bleed_Rate1`–`4` ("Slow bleeding" /
+  "Moderate bleeding" / "Severe bleeding" / "Massive bleeding"), shown by the medical GUI's optional
+  "Show Bleeding Rate" setting. Real thresholds (`script_macros_medical.hpp`):
+  `BLEED_RATE_SLOW = 0.1`, `BLEED_RATE_MODERATE = 0.5`, `BLEED_RATE_SEVERE = 1.0` (Massive is
+  `default`, i.e. `>= 1.0`) — each compared against `GET_BLOOD_LOSS(unit)` (the unit's live, total
+  bleeding rate across every wound, `ace_medical_fnc_getBloodLoss`) relative to
+  `BLOOD_LOSS_KNOCK_OUT_THRESHOLD * cardiacOutput` (the unit's own personal "about to pass out from
+  blood loss" threshold), **not** a fixed absolute number.
+  **Important distinction, not to conflate the two**: `addWound`'s `_size` (Small/Medium/Large) is a
+  per-wound **authored input** — what you set when creating one specific wound. This bleeding-rate
+  scale (Slow/Moderate/Severe/Massive) is a **computed, whole-unit readout** — the live, aggregate
+  outcome of every wound currently on that unit, weighed against their own cardiac output. There's
+  no per-wound "set it to Severe" lever; it only exists as a status a unit's bleeding *becomes*, not
+  a slider you author. Not currently surfaced anywhere in `afcm_sim_ace_compat`/
+  `fnc_injuryAuthor_refreshState.sqf`'s live status readout, which shows raw `limbBleeding`
+  (Bool)/`bloodVolume` (liters) instead — see [ACE_COMPAT.md §5](addons/ACE_COMPAT.md#5-known-gaps).
 
 ## KAT - Advanced Medical (KAM) — official sources, now confirmed
 

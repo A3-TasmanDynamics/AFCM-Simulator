@@ -17,6 +17,22 @@
  * (`Error max: Type String, expected Number, Not a Number`). Explicit parens now force the
  * intended grouping.
  *
+ * Severity's own index 0 is now "None" (-1, afcm_sim_scenario_fnc_buildInjury's own "not specified"
+ * sentinel) - a totally unconfigured limb now defaults every combo (WoundType/Severity/Bleeding) to
+ * its own index 0/None consistently, rather than Severity alone defaulting to "Moderate" while the
+ * other two showed "None". `_severityIdx == -1` below is `findIf`'s own "not found" sentinel (an
+ * INDEX), not the searched -1 VALUE, so there's no collision with the new None entry actually being
+ * -1 - a real staged -1 severity is found at index 0 like any other value.
+ *
+ * Bleeding's None/Small/Medium/Large options match 4 exact, canonical bleedRate numbers
+ * (fnc_injuryAuthor_commitActiveLimbForm.sqf), so a limb staged BY THIS DIALOG always finds an exact
+ * `_bleedIdx` match below. A bleedRate that DOESN'T exactly match one of those 4 - a continuous
+ * value from afcm_sim_scenario_fnc_randomizeInjuries, an imported/older preset, or anything crafted
+ * outside this dialog - now buckets by the same real ACE thresholds
+ * fnc_medical_applyAceStyleInjuryLocal.sqf itself uses (<0.15 small, 0.15-0.3 medium, >=0.3 large)
+ * rather than crudely guessing "Small" for any non-exact match, so the combo always shows the ACE
+ * wound size that value will actually produce.
+ *
  * Arguments:
  * None
  *
@@ -46,20 +62,26 @@ private _limbNames = createHashMapFromArray [
 private _injuries = missionNamespace getVariable ["AFCM_SIM_UI_stagedInjuries", []];
 private _staged = _injuries select { (_x select 0) == _limb };
 private _woundTypes = ["", "gunshot", "shrapnel", "blast"];
-private _severities = [0.25, 0.5, 0.75, 1.0];
-private _bleedingLevels = [[false, 0], [true, 0.1], [true, 0.2], [true, 0.35], [true, 0.5]];
+private _severities = [-1, 0.25, 0.5, 0.75, 1.0];
+private _bleedingLevels = [[false, 0], [true, 0.1], [true, 0.2], [true, 0.4]];
 
 if (_staged isEqualTo []) then {
     (_display displayCtrl 20) lbSetCurSel 0;
-    (_display displayCtrl 21) lbSetCurSel 1;
+    (_display displayCtrl 21) lbSetCurSel 0;
     (_display displayCtrl 22) lbSetCurSel 0;
 } else {
     (_staged select 0) params ["", "_woundType", "_severity", "_bleeding", ["_bleedRate", -1]];
     (_display displayCtrl 20) lbSetCurSel ((_woundTypes find _woundType) max 0);
     private _severityIdx = _severities findIf { abs (_x - _severity) < 0.001 };
-    (_display displayCtrl 21) lbSetCurSel ([_severityIdx, 1] select (_severityIdx == -1));
+    (_display displayCtrl 21) lbSetCurSel ([_severityIdx, 0] select (_severityIdx == -1));
     private _bleedIdx = _bleedingLevels findIf { (_x select 0) isEqualTo _bleeding && {abs ((_x select 1) - (_bleedRate max 0)) < 0.001} };
-    (_display displayCtrl 22) lbSetCurSel (if (_bleedIdx == -1) then { [0, 1] select _bleeding } else { _bleedIdx });
+    if (_bleedIdx == -1) then {
+        // No exact match - bucket by the same real ACE addWound thresholds
+        // fnc_medical_applyAceStyleInjuryLocal.sqf uses, not a guess.
+        _bleedIdx = if (_bleeding) then { [1, 2] select (_bleedRate >= 0.15) } else { 0 };
+        if (_bleeding && {_bleedRate >= 0.3}) then { _bleedIdx = 3; };
+    };
+    (_display displayCtrl 22) lbSetCurSel _bleedIdx;
 };
 
 private _katExtras = missionNamespace getVariable ["AFCM_SIM_UI_stagedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]];
