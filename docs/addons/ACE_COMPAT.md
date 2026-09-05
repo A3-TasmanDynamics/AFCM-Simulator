@@ -254,7 +254,7 @@ All six values above are real, confirmed `ACE_Medical_Injuries.hpp` classes — 
 ### 4.3 `woundSeverity` → ACE3 `addDamageToUnit` amount
 
 The Injury Author dialog's Severity combo maps directly to `addDamageToUnit`'s `_damage` argument
-(a plain `0.0`–`1.0` float, not an enum like `woundType` above or Bleeding ([§5](#5-known-gaps)) —
+(a plain `0.0`–`1.0` float, not an enum like `woundType` above or Bleeding ([§4.4](#44-bleeding--ace3-addwound-size-vs-aces-own-bleeding-rate-readout)) —
 ACE3 takes the number as-is, no bucketing involved):
 
 | Injury Author combo option | `woundSeverity` value |
@@ -272,6 +272,44 @@ never reaches ACE3 itself. `afcm_sim_scenario_fnc_buildInjury` normalizes any `w
 amount. This mirrors `woundType`'s own `None` (§4.2) in spirit — both are ways to leave a field
 unconfigured — but behaves differently: `woundType: None` removes the limb's staged entry entirely,
 while `Severity: None` keeps the entry and just lets the severity default.
+
+### 4.4 Bleeding — ACE3 `addWound` size vs. ACE's own bleeding-rate readout
+
+Two genuinely different real ACE3 concepts share the word "bleeding" here — worth keeping straight,
+confirmed directly from `acemod/ACE3` source ([REFERENCES.md](../REFERENCES.md#ace3-medical-source-confirmed-directly-from-acemodace3-not-the-wiki)):
+
+**What the Injury Author dialog's Bleeding combo actually sets** — a per-wound *authored input*,
+`addWound`'s `_size` enum (§3), named after ACE's own real `medical_gui` stringtable labels:
+
+| Injury Author combo option | `bleedRate` value | ACE `addWound` `_size` |
+|---|---|---|
+| `None` | `0` | *(no wound added)* |
+| `Small` | `0.1` | `0` |
+| `Medium` | `0.2` | `1` |
+| `Large` | `0.4` | `2` |
+
+Thresholds bucketing a non-canonical `bleedRate` (e.g. a continuous roll from
+`afcm_sim_scenario_fnc_randomizeInjuries`, or an older/imported preset) into one of these three,
+applied by `fnc_medical_applyAceStyleInjuryLocal.sqf`: `< 0.15` → `Small`, `0.15`–`0.3` → `Medium`,
+`>= 0.3` → `Large`.
+
+**What ACE itself separately calls "bleeding rate"** — a real, *computed, whole-unit readout*, not
+an authored input at all. ACE's `medical_gui` shows a 4-tier classification
+(`STR_ACE_Medical_GUI_Bleed_Rate1`–`4`, real `script_macros_medical.hpp` thresholds) comparing a
+unit's live total bleeding rate across every current wound (`ace_medical_fnc_getBloodLoss`) against
+that unit's own cardiac-output-scaled knock-out threshold:
+
+| ACE label | Threshold (relative to that unit's own knock-out point) |
+|---|---|
+| Slow bleeding | `< 10%` |
+| Moderate bleeding | `< 50%` |
+| Severe bleeding | `< 100%` |
+| Massive bleeding | `>= 100%` |
+
+There's no lever here to "set" a wound to Severe — it's an outcome of everything currently applied
+to that unit, not a per-wound parameter. `afcm_sim_ace_fnc_getState` doesn't currently surface it
+(see [§5](#5-known-gaps)) — a real, more informative option for the Injury Author dialog's live
+status readout than the current raw `limbBleeding` Bool.
 
 ---
 
@@ -296,14 +334,11 @@ while `Severity: None` keeps the entry and just lets the severity default.
   (`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`) was built and reverted — see
   [KAT_COMPAT.md §5](KAT_COMPAT.md#5-known-gaps) — since this kind of state has no ACE equivalent
   to give `ace_compat` in the first place.
-- **`afcm_sim_ace_fnc_getState` doesn't surface ACE's own bleeding-rate classification.** ACE has a
-  real, separate 4-tier **Slow/Moderate/Severe/Massive** bleeding-rate readout (confirmed source:
-  [REFERENCES.md](../REFERENCES.md#ace3-medical-source-confirmed-directly-from-acemodace3-not-the-wiki))
-  — a live, computed, whole-unit value (total bleeding rate across every wound vs. that unit's own
-  cardiac output), distinct from the per-wound `Small`/`Medium`/`Large` size above. `getState`
-  currently only returns the raw `limbBleeding` (Bool) and unit-wide `bloodVolume` (liters) instead
-  — a real, more informative option for the Injury Author dialog's live status readout, not yet
-  implemented.
+- **`afcm_sim_ace_fnc_getState` doesn't surface ACE's own bleeding-rate classification.** See
+  [§4.4](#44-bleeding--ace3-addwound-size-vs-aces-own-bleeding-rate-readout) — ACE's real
+  Slow/Moderate/Severe/Massive readout is a live, computed, whole-unit value `getState` doesn't
+  currently return (only raw `limbBleeding` Bool and unit-wide `bloodVolume` liters) — a real, more
+  informative option for the Injury Author dialog's live status readout, not yet implemented.
 
 ---
 
