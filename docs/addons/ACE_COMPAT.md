@@ -256,14 +256,13 @@ All six values above are real, confirmed `ACE_Medical_Injuries.hpp` classes — 
   `Injury` object's `bleedRate` at real, confirmed thresholds: `< 0.15` → small, `0.15`–`0.3` →
   medium, `>= 0.3` → large — there's no finer-grained lever ACE exposes here. `bleedRate` reaches
   this function from two real sources now, both funneled through
-  `afcm_sim_scenario_fnc_buildInjury`: `afcm_sim_scenario_fnc_randomizeInjuries`'s own roll, or the
-  Injury Author dialog's explicit Bleeding combo (None/Light/Medium/Heavy/Severe →
-  `0`/`0.1`/`0.2`/`0.35`/`0.5`) — Light lands in ACE's "small" bucket, Medium in "medium", and Heavy
-  *and* Severe both land in "large" (ACE has no 4th size to distinguish them further, though the two
-  still differ in the stored number itself, which matters to `kat_compat`'s own continuous internal
-  math). [DESIGN.md §4.4](../DESIGN.md#44-injury-levels-randomization-difficulty)'s Easy–F\*CKED!
-  severity ranges are a starting proposal, not yet tuned against how "Hard" actually feels in
-  practice on this backend specifically.
+  `afcm_sim_scenario_fnc_buildInjury`: `afcm_sim_scenario_fnc_randomizeInjuries`'s own continuous
+  roll, or the Injury Author dialog's own **None/Small/Medium/Large** Bleeding combo
+  (`0`/`0.1`/`0.2`/`0.4`) — deliberately named and scaled to match this exact enum 1:1 rather than
+  an invented finer scale that then needed collapsing back down to 3 real sizes anyway.
+  [DESIGN.md §4.4](../DESIGN.md#44-injury-levels-randomization-difficulty)'s Easy–F\*CKED! severity
+  ranges are a starting proposal, not yet tuned against how "Hard" actually feels in practice on
+  this backend specifically.
 - **No fracture/airway/breathing handling.** `ace_medical_engine` supports fractures and airway
   state; nothing in `ace_compat` touches either yet, even though DESIGN.md's Extreme/F\*CKED!
   profiles mention "airway/breathing involvement." A real, KAT-only implementation of this

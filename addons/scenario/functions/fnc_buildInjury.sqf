@@ -25,7 +25,8 @@
  *    renaming this param is purely a same-file/docstring clarity fix, not a data-model change.
  * 3: Bleeding <BOOL> (default false)
  * 4: bleedRate <NUMBER> (default -1) - explicit bleed rate, e.g. from the injury author dialog's
- *    Light/Medium/Heavy/Severe combo. -1 is a sentinel meaning "not specified" - keeps the original
+ *    None/Small/Medium/Large combo (named and scaled to match ACE3's own real addWound size enum
+ *    directly - ACE_COMPAT.md §5). -1 is a sentinel meaning "not specified" - keeps the original
  *    random-roll behaviour below for any caller that predates this (old preset entries, old
  *    exported strings), so nothing needs migrating.
  *
