@@ -129,8 +129,10 @@ per-wound removal — unconfirmed which fits the `Injury` object shape) hasn't b
 ```sqf
 [_unit, _limb] call afcm_sim_ace_fnc_getState
 ```
-**Real implementation.** Backs the injury editor's live medical-status readout
-(`afcm_sim_ui`/`RscDisplayAFCM_SIM_InjuryEditor`) via `afcm_sim_fnc_backend_getState`. Read-only and
+**Real implementation.** Backs the Injury Author dialog's live medical-status readout
+(`afcm_sim_ui`/`RscDisplayAFCM_SIM_InjuryAuthor` — the merged limb-select + injury-editor screen
+that replaced the old two-dialog `LimbSelect`/`InjuryEditor` flow) via
+`afcm_sim_fnc_backend_getState`. Read-only and
 deliberately only uses ACE3 getters that don't require `local _unit` —
 `ace_medical_fnc_isInjured` and `ace_medical_fnc_getOpenWounds` — since, unlike `applyInjury`, this
 needs to work when called from any client, not just the server. `ace_medical_fnc_getBloodLoss` is
@@ -144,9 +146,11 @@ real and confirmed (REFERENCES.md) but explicitly **not** used here for that rea
 ```sqf
 [_unit] call afcm_sim_ace_fnc_reset
 ```
-**Real implementation.** Backs the limb-select ("main") screen's Reset Patient button — moved there
-from the injury editor, which now has its own purely-local "Reset Limb" that only clears the form
-(DESIGN.md §5). Calls the real, confirmed `ace_medical_fnc_fullHeal` (REFERENCES.md) to wipe all
+**Real implementation.** Backs the Injury Author dialog's **Reset Patient** button (edit mode only —
+hidden entirely when authoring a brand-new patient, since there's no live unit yet to reset) —
+distinct from that same dialog's purely-local **Reset Limb**, which only clears the active limb's
+staged form and never touches a live unit (DESIGN.md §5). Calls the real, confirmed
+`ace_medical_fnc_fullHeal` (REFERENCES.md) to wipe all
 wounds/damage/drugs, then immediately re-locks via `afcm_sim_ace_fnc_setUnconscious` — a reset
 hands back the same "just spawned" unconscious baseline DESIGN.md §5 establishes for every patient,
 not a fully awake, healthy unit.
@@ -248,9 +252,14 @@ All six values above are real, confirmed `ACE_Medical_Injuries.hpp` classes — 
 
 - **`removeInjury` is a stub.** No real ACE3 removal call is wired up yet.
 - **`bleedRate` is bucketed, not continuous.** ACE's `addWound` only accepts a `_size` enum
-  (`0`/`1`/`2`), so the `Injury` object's `bleedRate` (roughly `0.1`–`0.4` from
-  `afcm_sim_scenario_fnc_randomizeInjuries`) is bucketed into small/medium/large rather than
-  scaled 1:1 — there's no finer-grained lever ACE exposes here.
+  (`0`/`1`/`2` — small/medium/large), so `fnc_medical_applyAceStyleInjuryLocal.sqf` buckets the
+  `Injury` object's `bleedRate` at real, confirmed thresholds: `< 0.15` → small, `0.15`–`0.3` →
+  medium, `>= 0.3` → large — there's no finer-grained lever ACE exposes here. `bleedRate` reaches
+  this function from two real sources now, both funneled through
+  `afcm_sim_scenario_fnc_buildInjury`: `afcm_sim_scenario_fnc_randomizeInjuries`'s own continuous
+  roll, or the Injury Author dialog's own **None/Small/Medium/Large** Bleeding combo
+  (`0`/`0.1`/`0.2`/`0.4`) — deliberately named and scaled to match this exact enum 1:1 rather than
+  an invented finer scale that then needed collapsing back down to 3 real sizes anyway.
   [DESIGN.md §4.4](../DESIGN.md#44-injury-levels-randomization-difficulty)'s Easy–F\*CKED! severity
   ranges are a starting proposal, not yet tuned against how "Hard" actually feels in practice on
   this backend specifically.
