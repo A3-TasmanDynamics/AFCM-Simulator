@@ -272,6 +272,23 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
     colorBackground[] = AFCM_SIM_COLOR_DANGER_BG;
     colorBackgroundActive[] = AFCM_SIM_COLOR_DANGER_HOVER;
 };
+// Data-driven selection button (the 6 InjuryAuthor navbar entries) - unlike every other button
+// here, its background isn't a fixed "rest vs. hover" pair, it's one of 3 runtime states
+// (empty/has-staged-injury/active) written by fnc_injuryAuthor_refreshNavbar.sqf via
+// ctrlSetBackgroundColor. Real, confirmed bug: with AFCM_SIM_RscButton's own
+// colorBackgroundActive[]/colorFocused[] (both opaque ACCENT_HOVER), the engine paints THAT color
+// over whatever ctrlSetBackgroundColor set the instant the control is merely moused-over or holds
+// input focus - regardless of which of the 3 real states that particular button is actually in.
+// That's what read as "still flickering" / "highlighted when not selected or hovered over": an
+// empty or dim staged-only button lights up fully bright on a passing mouse-over (looking exactly
+// like the true active limb), and reverts the moment the mouse leaves. Fully transparent
+// colorBackgroundActive[]/colorFocused[] means hover/focus paint nothing on top, so the
+// script-driven color underneath is the only thing ever shown - deterministic, no flicker.
+class AFCM_SIM_RscButtonNav: AFCM_SIM_RscButton
+{
+    colorBackgroundActive[] = {0, 0, 0, 0};
+    colorFocused[] = {0, 0, 0, 0};
+};
 
 #define IDD_AFCM_SIM_PRESETLIBRARY 25603
 
@@ -1379,8 +1396,10 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // old dialog's 2D "rough body" button grid, since that layout doesn't fit a narrow single
         // column - and a straight top-to-bottom list is literally "go down the body limb list",
         // the exact request this replaces the old back-and-forth flow with. Recolored 3 ways
-        // (unselected/has-staged-injury/active) by fnc_injuryAuthor_refreshNavbar.sqf.
-        class NavHead: AFCM_SIM_RscButton
+        // (unselected/has-staged-injury/active) by fnc_injuryAuthor_refreshNavbar.sqf via
+        // ctrlSetBackgroundColor - AFCM_SIM_RscButtonNav (not the plain AFCM_SIM_RscButton every
+        // other button here uses) keeps native hover/focus from painting over that.
+        class NavHead: AFCM_SIM_RscButtonNav
         {
             idc = IDC_AFCM_SIM_IA_NAV_HEAD;
             text = "Head";
@@ -1390,7 +1409,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             h = "0.045 * safeZoneH";
             action = "[""head""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavChest: AFCM_SIM_RscButton
+        class NavChest: AFCM_SIM_RscButtonNav
         {
             idc = IDC_AFCM_SIM_IA_NAV_CHEST;
             text = "Chest";
@@ -1400,7 +1419,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             h = "0.045 * safeZoneH";
             action = "[""chest""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavArmLeft: AFCM_SIM_RscButton
+        class NavArmLeft: AFCM_SIM_RscButtonNav
         {
             idc = IDC_AFCM_SIM_IA_NAV_ARM_L;
             text = "Left Arm";
@@ -1410,7 +1429,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             h = "0.045 * safeZoneH";
             action = "[""leftArm""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavArmRight: AFCM_SIM_RscButton
+        class NavArmRight: AFCM_SIM_RscButtonNav
         {
             idc = IDC_AFCM_SIM_IA_NAV_ARM_R;
             text = "Right Arm";
@@ -1420,7 +1439,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             h = "0.045 * safeZoneH";
             action = "[""rightArm""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavLegLeft: AFCM_SIM_RscButton
+        class NavLegLeft: AFCM_SIM_RscButtonNav
         {
             idc = IDC_AFCM_SIM_IA_NAV_LEG_L;
             text = "Left Leg";
@@ -1430,7 +1449,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             h = "0.045 * safeZoneH";
             action = "[""leftLeg""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavLegRight: AFCM_SIM_RscButton
+        class NavLegRight: AFCM_SIM_RscButtonNav
         {
             idc = IDC_AFCM_SIM_IA_NAV_LEG_R;
             text = "Right Leg";
