@@ -86,11 +86,18 @@ for the full explanation.
 ### `afcm_sim_kat_fnc_getState`
 **Real implementation.** Identical in substance to `afcm_sim_ace_fnc_getState` (see
 [ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_getstate)) — same read-only, any-machine-safe ACE3
-getters, since KAT extends the same underlying state ACE3 tracks rather than replacing it. Also
-reports `bloodVolume` (real `ace_medical_bloodVolume`, litres — `afcm_sim_ace_fnc_getState` reports
-the same field), `internalBleedingRate` (real `kat_circulation_internalBleeding`, litres/second —
-0 whenever Hemopneumothorax isn't active), and, only when the given limb is `"head"`,
-`airwayStatus` (0=Clear/1=Obstruction/2=Occlusion, real `kat_airway_obstruction`/`_occluded`).
+getters, since KAT extends the same underlying state ACE3 tracks rather than replacing it, including
+`stable` and `spO2` (ACE's real oxygen-saturation "Airway Management" concept), reused/read
+identically to the ACE backend. Also reports `bloodVolume` (real `ace_medical_bloodVolume`, litres —
+`afcm_sim_ace_fnc_getState` reports the same field), `internalBleedingRate` (real
+`kat_circulation_internalBleeding`, litres/second — 0 whenever Hemopneumothorax isn't active), and,
+only when the given limb is `"head"`, `airwayStatus` (0=Clear/1=Obstruction/2=Occlusion, real
+`kat_airway_obstruction`/`_occluded` - a genuinely different, discrete concept from ACE's own
+continuous `spO2` above, not the same thing exposed twice). `fracture` is **not** identical to the
+ACE backend's own field of the same name - here it's KAT's real 0-3 severity
+(`kat_surgery_fractures`), an entirely separate variable from ACE's own binary `ace_medical_fractures`.
+`bleedingStatus` also differs slightly - it folds in `internalBleedingRate` here so a Hemothorax
+bleeding internally with little/no external wound bleeding isn't under-reported.
 
 ### `afcm_sim_kat_fnc_reset`
 **Real implementation** — `ace_medical_fnc_fullHeal` (which already correctly exits cardiac arrest
@@ -120,9 +127,14 @@ what `ace_medical_ai`'s state machine actually checks before letting a unit self
 [_unit, _limb, _severity] call afcm_sim_kat_fnc_applyFracture
 ```
 **Real implementation.** Sets `kat_surgery_fractures` (confirmed 6-element array,
-`ALL_BODY_PARTS`-indexed — full detail: [INJURY_CODES.md §6](../INJURY_CODES.md#6-kat-specific-coding--fracture--pneumothorax--airway-wired-in)).
-KAT-only, no ACE equivalent — called directly by
-`afcm_sim_scenario_fnc_serverApplyKatFracture`, not through the generic `applyInjury` dispatch.
+`ALL_BODY_PARTS`-indexed — full detail: [INJURY_CODES.md §6](../INJURY_CODES.md#6-fracture-shared-ace--kat--pneumothorax--airway-kat-specific)).
+KAT's own real 0-3 severity scale is **not** the only fracture mechanic anymore - ACE3 has its own,
+real, native (binary) one too, `ace_medical_fractures` (see
+[ACE_COMPAT.md](ACE_COMPAT.md#afcm_sim_ace_fnc_applyfracture)), an entirely separate variable, not
+the same state. Called directly by `afcm_sim_scenario_fnc_serverApplyFracture` (renamed from the
+old KAT-hardcoded `fnc_serverApplyKatFracture`, which now dispatches to whichever of
+`afcm_sim_ace_fnc_applyFracture`/this function is actually active), not through the generic
+`applyInjury` dispatch.
 
 ### `afcm_sim_kat_fnc_applyPneumothorax`
 ```sqf
@@ -154,15 +166,19 @@ no companion "apply" call needed (unlike Pneumothorax), since neither variable d
 physiological rate the way pneumothorax severity does. Head/neck-wide, not per-limb. Called
 directly by `afcm_sim_scenario_fnc_serverApplyKatAirway`.
 
-All three are wired into the injury editor UI, shown only when KAT is the active backend
-(Pneumothorax also only for the "chest" limb, Airway also only for the "head" limb) —
-`afcm_sim_ui/functions/fnc_injuryEditor_init.sqf`.
+All three are wired into the Injury Author dialog (`afcm_sim_ui/functions/
+fnc_injuryAuthor_init.sqf`/`fnc_injuryAuthor_refreshActiveLimbForm.sqf`) - Pneumothorax and Airway
+only when KAT is the active backend (genuinely KAT-only, no ACE equivalent), Pneumothorax also only
+for the "chest" limb, Airway also only for the "head" limb. Fracture is shown for **both** backends
+now (ACE has its own real, native fracture mechanic too - see above), just with a different, shorter
+option list under ACE.
 
 ### `afcm_sim_kat_fnc_applyCardiacState`
 ```sqf
 [_unit, _rhythm] call afcm_sim_kat_fnc_applyCardiacState
 ```
-**Real implementation.** Unlike Fracture/Pneumothorax/Airway, this is **not** KAT-exclusive — sets
+**Real implementation.** Like Fracture, and unlike Pneumothorax/Airway, this is **not**
+KAT-exclusive — sets
 the shared, genuinely ACE-native `ace_medical_vitals_inCardiacArrest` (via the same real
 `ace_medical_status_fnc_setCardiacArrestState` `afcm_sim_ace_fnc_applyCardiacState` uses) *and*
 KAT's own real `kat_circulation_cardiacArrestType` (0=Normal/1=Asystole/2=PEA/

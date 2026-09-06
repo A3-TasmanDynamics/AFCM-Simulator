@@ -23,6 +23,16 @@
  * also whole-unit, not to be confused with "Bleeding" below it which is still the active LIMB's
  * own local bool (any of that limb's open wounds actively bleeding).
  *
+ * "Fracture" and "SpO2" are both genuinely ACE-native now (REFERENCES.md), not KAT-exclusive -
+ * Fracture's own name list is backend-dependent (None/Fractured under ACE vs. KAT's own None/
+ * Simple/Compound/Comminuted - two entirely separate variables under the hood, ace_medical_
+ * fractures vs. kat_surgery_fractures), detected via "pneumothoraxType" being present in the state
+ * HashMap (only kat_compat's own getState ever sets it - "fracture"/"spO2" no longer reliably
+ * signal which backend is active, both compat addons report them now). SpO2 is ACE's real
+ * continuous "Airway Management" concept (oxygen saturation, altitude/gear/exertion-driven) -
+ * genuinely different from KAT's own discrete Obstruction/Occlusion airway states below, not a
+ * stand-in for them.
+ *
  * Arguments (from CBA_fnc_addPerFrameHandler, or none when called directly):
  * 0: [] <ARRAY> (unused, present only in the PFH-call shape)
  * 1: Handle <NUMBER> (unused, present only in the PFH-call shape)
@@ -81,15 +91,31 @@ if (count _state > 0) then {
         _text = _text + "\nCardiac Arrest: YES";
     };
 
-    if ("fracture" in _state) then {
-        private _fractureNames = ["None", "Simple", "Compound", "Comminuted"];
-        private _fractureVal = _state get "fracture";
-        private _fractureName = _fractureNames param [floor _fractureVal, format ["%1", _fractureVal]];
+    // "pneumothoraxType" is only ever set by kat_compat's own getState (never ace_compat's) - a
+    // reliable "is KAT actually active" signal, unlike "fracture" which both backends now report.
+    private _isKat = "pneumothoraxType" in _state;
 
+    private _fractureLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
+    if (_limb in _fractureLimbs) then {
+        private _fractureVal = _state getOrDefault ["fracture", 0];
+        // ACE's own real fracture state can be -1 (splinted, ace_medical_treatment_fnc_
+        // splintLocal) on a LIVE patient even though this dialog's own applyFracture never writes
+        // that - this is live state, not just what was authored here.
+        private _fractureName = if (_fractureVal < 0) then {
+            "Splinted"
+        } else {
+            (if (_isKat) then { ["None", "Simple", "Compound", "Comminuted"] } else { ["None", "Fractured"] })
+                param [floor _fractureVal, format ["%1", _fractureVal]]
+        };
+        _text = _text + format ["\nFracture: %1", _fractureName];
+    };
+
+    _text = _text + format ["\nSpO2: %1%%", _state getOrDefault ["spO2", 97]];
+
+    if (_isKat) then {
         private _pneumoNames = ["None", "Simple", "Hemopneumothorax", "Tension"];
         private _pneumoName = _pneumoNames param [_state getOrDefault ["pneumothoraxType", 0], "None"];
-
-        _text = _text + format ["\nFracture (KAT): %1 | Pneumothorax (KAT): %2", _fractureName, _pneumoName];
+        _text = _text + format ["\nPneumothorax (KAT): %1", _pneumoName];
 
         if ("airwayStatus" in _state) then {
             private _airwayNames = ["Clear", "Obstruction", "Occlusion"];

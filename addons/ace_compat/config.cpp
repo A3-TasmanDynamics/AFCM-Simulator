@@ -44,6 +44,12 @@ class CfgFunctions
             // place in the backend-agnostic Injury object. Genuinely ACE-native (not KAT-specific),
             // so it lives here too, not just in kat_compat.
             class applyCardiacState { file = "\afcm_sim\addons\ace_compat\functions\fnc_applyCardiacState.sqf"; };
+            // Real ACE3-native fracture toggle (REFERENCES.md) - applyFracture is the public
+            // dispatcher (CBA_fnc_targetEvent), applyFractureLocal is the actual work, registered
+            // as that event's handler in this addon's own fnc_preInit.sqf (not shared with
+            // kat_compat, which tracks its own entirely separate fracture state).
+            class applyFracture { file = "\afcm_sim\addons\ace_compat\functions\fnc_applyFracture.sqf"; };
+            class applyFractureLocal { file = "\afcm_sim\addons\ace_compat\functions\fnc_applyFractureLocal.sqf"; };
             class preInit { file = "\afcm_sim\addons\ace_compat\functions\fnc_preInit.sqf"; preInit = 1; };
         };
     };

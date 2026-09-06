@@ -43,6 +43,14 @@
  *     ace_medical_status_fnc_getBloodLoss/getCardiacOutput directly rather than reimplementing
  *     ACE's own blood-loss formula by hand (peripheral resistance/bleeding coefficient etc.),
  *     already confirmed neither has a local-only restriction (REFERENCES.md)
+ *   "fracture": Number - real `ace_medical_fractures` value (0/1 - fnc_applyFracture.sqf never
+ *     writes `-1`/splinted, a live treatment outcome not staged here) for whichever `LimbId` was
+ *     passed, `0` if no limb given or the limb isn't an arm/leg (ACE fractures never apply to
+ *     head/chest, REFERENCES.md)
+ *   "spO2": Number 0..100 - real ACE3 variable (ace_medical_spo2, default 97), plain getVariable
+ *     read, not local-restricted. ACE's real "Airway Management" concept - continuous oxygen
+ *     saturation driven by altitude/gear/exertion (REFERENCES.md) - genuinely different from KAT's
+ *     discrete Obstruction/Occlusion airway states, not a stand-in for them
  *
  * Public: No
 */
@@ -90,4 +98,13 @@ if (_bleedRate > 0) then {
     _bleedingStatus = ["Slow Bleeding", "Moderate Bleeding", "Severe Bleeding", "Massive Bleeding"] select _tier;
 };
 _state set ["bleedingStatus", _bleedingStatus];
+
+private _fractureLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
+private _fractureVal = 0;
+if (_limb in _fractureLimbs) then {
+    private _limbIndex = ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"] find _limb;
+    _fractureVal = (_unit getVariable ["ace_medical_fractures", [0, 0, 0, 0, 0, 0]]) select _limbIndex;
+};
+_state set ["fracture", _fractureVal];
+_state set ["spO2", _unit getVariable ["ace_medical_spo2", 97]];
 _state

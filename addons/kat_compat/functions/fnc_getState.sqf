@@ -31,10 +31,15 @@
  *
  * Return Value:
  * State <HASHMAP> - same shape as afcm_sim_ace_fnc_getState (including "stable" -
- *   ace_medical_fnc_isInStableCondition, reused as-is - not KAT-specific, KAT extends ACE's vitals
- *   rather than replacing them, REFERENCES.md), plus "fracture" (given limb),
- *   "pneumothoraxType"/"internalBleedingRate"/"cardiacRhythm" (whole-unit), and "airwayStatus"
- *   (only set when the given limb is "head" - 0=Clear, 1=Obstruction, 2=Occlusion).
+ *   ace_medical_fnc_isInStableCondition - and "spO2" - real ace_medical_spo2, ACE's own continuous
+ *   oxygen-saturation "Airway Management" concept, genuinely different from KAT's own discrete
+ *   Obstruction/Occlusion airway states below - both reused/read as-is, not KAT-specific, KAT
+ *   extends ACE's vitals rather than replacing them, REFERENCES.md), plus "fracture" (given limb -
+ *   KAT's own real 0-3 Simple/Compound/Comminuted severity, tracked in `kat_surgery_fractures`,
+ *   an entirely separate variable from ACE's own binary `ace_medical_fractures` -
+ *   afcm_sim_ace_fnc_getState's own "fracture" field), "pneumothoraxType"/"internalBleedingRate"/
+ *   "cardiacRhythm" (whole-unit), and "airwayStatus" (only set when the given limb is "head" -
+ *   0=Clear, 1=Obstruction, 2=Occlusion).
  *   "bleedingStatus" ("No Bleeding"/"Slow"/"Moderate"/"Severe"/"Massive Bleeding", ACE3's own real
  *   classification) is the one field NOT computed identically to afcm_sim_ace_fnc_getState - here
  *   it also folds in "internalBleedingRate" (KAT's own Hemothorax bleeding, tracked entirely
@@ -73,6 +78,7 @@ _state set ["internalBleedingRate", _unit getVariable ["kat_circulation_internal
 _state set ["inCardiacArrest", _unit getVariable ["ace_medical_vitals_inCardiacArrest", false]];
 _state set ["cardiacRhythm", _unit getVariable ["kat_circulation_cardiacArrestType", 0]];
 _state set ["stable", [_unit] call ace_medical_fnc_isInStableCondition];
+_state set ["spO2", _unit getVariable ["ace_medical_spo2", 97]];
 
 // KAT's own internal (Hemothorax) bleeding is tracked entirely separately from ACE's own wound
 // bleeding accounting (see "internalBleedingRate" above) - ace_medical_status_fnc_getBloodLoss

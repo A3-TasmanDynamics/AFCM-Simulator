@@ -88,7 +88,10 @@ private _katExtras = missionNamespace getVariable ["AFCM_SIM_UI_stagedKatExtras"
 _katExtras params [["_fractures", [0, 0, 0, 0, 0, 0]], ["_pneumoType", 0], ["_airwayType", 0], ["_rhythm", 0]];
 
 private _fractureLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
-private _showFracture = (_backend == "kat") && {_limb in _fractureLimbs};
+// Fracture shown for ACE too now - ACE3 has its own real, native (binary) fracture mechanic
+// (REFERENCES.md), not just KAT's own 0-3 severity scale. Pneumothorax/Airway stay KAT-only below -
+// no real ACE equivalent exists for either (REFERENCES.md).
+private _showFracture = (_backend in ["ace", "kat"]) && {_limb in _fractureLimbs};
 private _showPneumo = (_backend == "kat") && {_limb == "chest"};
 private _showAirway = (_backend == "kat") && {_limb == "head"};
 private _showCardiac = (_backend in ["ace", "kat"]) && {_limb == "chest"};
@@ -100,7 +103,11 @@ private _showCardiac = (_backend in ["ace", "kat"]) && {_limb == "chest"};
 
 if (_showFracture) then {
     private _limbIndex = ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"] find _limb;
-    (_display displayCtrl 24) lbSetCurSel (_fractures param [_limbIndex, 0]);
+    // min-clamped against the combo's own real option count (2 under ACE, 4 under KAT) - a staged
+    // KAT-severity value (2/3, Compound/Comminuted) read back under a plain-ACE session would
+    // otherwise be out of range for ACE's own 2-option combo, same safe idiom CardiacState below
+    // already uses for the same reason.
+    (_display displayCtrl 24) lbSetCurSel ((_fractures param [_limbIndex, 0]) min ((lbSize (_display displayCtrl 24)) - 1));
 };
 if (_showPneumo) then { (_display displayCtrl 26) lbSetCurSel _pneumoType; };
 if (_showAirway) then { (_display displayCtrl 28) lbSetCurSel _airwayType; };

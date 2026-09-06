@@ -38,9 +38,11 @@ class CfgFunctions
             class reset { file = "\afcm_sim\addons\kat_compat\functions\fnc_reset.sqf"; };
             class setUnconscious { file = "\afcm_sim\addons\kat_compat\functions\fnc_setUnconscious.sqf"; };
             // Not part of the backend interface hashmap below - called directly by
-            // afcm_sim_scenario_fnc_serverApplyKatFracture/serverApplyKatPneumothorax, since
+            // afcm_sim_scenario_fnc_serverApplyFracture/serverApplyKatPneumothorax, since
             // fracture/pneumothorax have no equivalent in the backend-agnostic Injury object
-            // (INJURY_CODES.md §6).
+            // (INJURY_CODES.md §6). Fracture isn't KAT-exclusive anymore - ACE3 has its own real,
+            // native (binary) fracture mechanic, afcm_sim_ace_fnc_applyFracture - see
+            // fnc_serverApplyFracture.sqf's own header.
             class applyFracture { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyFracture.sqf"; };
             class applyPneumothorax { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyPneumothorax.sqf"; };
             class applyPneumothoraxLocal { file = "\afcm_sim\addons\kat_compat\functions\fnc_applyPneumothoraxLocal.sqf"; };

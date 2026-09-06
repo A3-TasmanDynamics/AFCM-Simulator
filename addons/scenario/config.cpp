@@ -28,11 +28,15 @@ class CfgFunctions
             class serverApplyInjury { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyInjury.sqf"; };
             class serverReset { file = "\afcm_sim\addons\scenario\functions\fnc_serverReset.sqf"; };
             class buildInjury { file = "\afcm_sim\addons\scenario\functions\fnc_buildInjury.sqf"; };
-            class serverApplyKatFracture { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatFracture.sqf"; };
+            // Unlike Pneumothorax/Airway below, fracture (like cardiac state) is NOT KAT-only -
+            // ACE3 has its own real, native fracture mechanic (REFERENCES.md), so this dispatches
+            // to whichever of "ace"/"kat" is actually active. See fnc_serverApplyFracture.sqf's own
+            // header - renamed from the old KAT-hardcoded fnc_serverApplyKatFracture.sqf.
+            class serverApplyFracture { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyFracture.sqf"; };
             class serverApplyKatPneumothorax { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatPneumothorax.sqf"; };
             class serverApplyKatAirway { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatAirway.sqf"; };
-            // Unlike the three above, NOT KAT-only - the base cardiac arrest flag is genuinely
-            // ACE-native, so this dispatches to whichever of "ace"/"kat" is actually active. See
+            // NOT KAT-only either - the base cardiac arrest flag is genuinely ACE-native, so this
+            // also dispatches to whichever of "ace"/"kat" is actually active. See
             // fnc_serverApplyCardiacState.sqf's own header.
             class serverApplyCardiacState { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyCardiacState.sqf"; };
             class serverApplyKatExtras { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyKatExtras.sqf"; };
