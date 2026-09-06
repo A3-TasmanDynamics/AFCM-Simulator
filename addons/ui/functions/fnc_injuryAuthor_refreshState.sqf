@@ -13,6 +13,16 @@
  * _handle]`) and directly (`call`, `_this` = []) - both handled by defaulting params rather than
  * requiring the PFH's two-argument shape.
  *
+ * "Stable" is ACE3's own real ace_medical_fnc_isInStableCondition (both backends' own getState -
+ * REFERENCES.md has the full traced call chain/thresholds) - alive, conscious, zero active wound
+ * bleeding, and vitals (blood volume/pressure/heart rate/blood-loss rate) all within ACE's own real
+ * "stable" bounds. A whole-unit summary, not specific to the active limb.
+ *
+ * "Bleeding Status" is ACE3's own real No/Slow/Moderate/Severe/Massive Bleeding classification
+ * (medical_gui's "Show Bleeding Rate" display - REFERENCES.md has the real thresholds/source),
+ * also whole-unit, not to be confused with "Bleeding" below it which is still the active LIMB's
+ * own local bool (any of that limb's open wounds actively bleeding).
+ *
  * Arguments (from CBA_fnc_addPerFrameHandler, or none when called directly):
  * 0: [] <ARRAY> (unused, present only in the PFH-call shape)
  * 1: Handle <NUMBER> (unused, present only in the PFH-call shape)
@@ -54,8 +64,9 @@ if (count _state > 0) then {
     if (_incap != "") then { _consciousness = _consciousness + format [" (%1)", _incap]; };
 
     _text = format [
-        "Consciousness: %1\nPain: %2 | Injured: %3\nBlood Volume: %4L\n%5 — open wounds: %6 | Bleeding: %7",
+        "Consciousness: %1 | Stable: %2\nPain: %3 | Injured: %4\nBlood Volume: %5L\n%6 — open wounds: %7 | Bleeding: %8",
         _consciousness,
+        ["NO", "YES"] select (_state getOrDefault ["stable", false]),
         _state getOrDefault ["pain", 0],
         _state getOrDefault ["injured", false],
         _state getOrDefault ["bloodVolume", 6.0],
@@ -63,6 +74,8 @@ if (count _state > 0) then {
         _state getOrDefault ["limbWoundCount", 0],
         _state getOrDefault ["limbBleeding", false]
     ];
+
+    _text = _text + format ["\nBleeding Status: %1", _state getOrDefault ["bleedingStatus", "No Bleeding"]];
 
     if (_state getOrDefault ["inCardiacArrest", false]) then {
         _text = _text + "\nCardiac Arrest: YES";

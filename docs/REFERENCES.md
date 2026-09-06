@@ -77,13 +77,37 @@ their real internals or exact string requirements — pulled the real source via
   `CBA_fnc_localEvent` (`ace_medical_woundReceived`) that ACE's own wound-selection logic (below)
   turns into a *random* wound per the chosen `_typeOfDamage`'s weighting table — it does not create
   a specific, predictable wound.
-- **`addons/medical_damage/ACE_Medical_Injuries.hpp`** — the real wound/damage-type config.
-  Confirmed real wound classes (case-sensitive, used by `addWound` below): `Abrasion`, `Avulsion`,
-  `Contusion`, `Crush`, `Cut`, `Laceration`, `VelocityWound`, `PunctureWound`, `ThermalBurn`.
-  Confirmed real `damageTypes` classes (what `_typeOfDamage` must be): `bullet`, `grenade`,
-  `explosive`, `shell`, `vehiclehit`, `vehiclecrash`, `collision`, `falling`, `backblast`, `stab`,
-  `punch`, `ropeburn`, `drowning`, `fire`, `burn`, `unknown` — confirms `afcm_sim_ace_compat`'s
-  existing `gunshot→bullet`/`shrapnel→grenade`/`blast→shell` mapping was already using real classes.
+- **`addons/medical_damage/ACE_Medical_Injuries.hpp`** — the real wound/damage-type config
+  ([full file, user-linked](https://github.com/acemod/ACE3/blob/master/addons/medical_damage/ACE_Medical_Injuries.hpp),
+  re-fetched via `gh api` for the exact current source rather than trusting the link's rendered
+  view). Confirmed real wound classes (case-sensitive, used by `addWound` below): `Abrasion`,
+  `Avulsion`, `Contusion`, `Crush`, `Cut`, `Laceration`, `VelocityWound`, `PunctureWound`,
+  `ThermalBurn`. Confirmed real `damageTypes` classes (what `_typeOfDamage` must be): `bullet`,
+  `grenade`, `explosive`, `shell`, `vehiclehit`, `vehiclecrash`, `collision`, `falling`,
+  `backblast`, `stab`, `punch`, `ropeburn`, `drowning`, `fire`, `burn`, `unknown` — confirms
+  `afcm_sim_ace_compat`'s existing `gunshot→bullet`/`shrapnel→grenade`/`blast→shell` mapping was
+  already using real classes.
+
+  **Which specific wounds each of those 3 mapped types can actually roll** — each `damageTypes`
+  entry only nests the wound classes it can produce, each with its own `weighting[]` (damage-level
+  → relative likelihood, ACE's own random pick from what's still eligible at that damage) and
+  optional per-wound `sizeMultiplier`/`painMultiplier` overrides:
+
+  | Our `woundType` | ACE `damageType` | Producible wounds (real, exhaustive per this config) | `selectionSpecific` |
+  |---|---|---|---|
+  | `gunshot` | `bullet` | `Avulsion`, `Contusion` (3.2× size, 2.2× pain — plate-hit bruises are deliberately big/painful), `VelocityWound` (0.9× size — skews medium/large) | `1` — only the single hitpoint that took the *most* damage gets wounded |
+  | `shrapnel` | `grenade` | `Avulsion`, `VelocityWound`, `PunctureWound`, `Cut`, `Contusion` (2× size, 0.9× pain) | `0` — spread across every damaged hitpoint |
+  | `blast` | `shell` | Identical wound set to `grenade` above (shell literally shares `grenade`'s per-wound table, just its own `thresholds[]` — "fewer and larger wounds", real comment in the source) | `0` |
+
+  Confirms the `ace_compat`/`kat_compat` reasoning already documented in [§3](addons/ACE_COMPAT.md#3-why-two-ace-calls-not-one)
+  with real numbers, not just "some wound in the table doesn't bleed": `Contusion` (`bleeding = 0`
+  in the `wounds` block above) is a real, always-possible outcome for **all three** of our mapped
+  types, not a rare edge case — confirming `addDamageToUnit` alone can genuinely land a
+  `bleeding: true` `Injury` on a non-bleeding bruise for any woundType, not just occasionally.
+  `bullet`'s own `selectionSpecific = 1` is also worth knowing on its own: a `gunshot` injury only
+  ever wounds the ONE hitpoint that took the most damage, never spreads to others the way
+  `shrapnel`/`blast` do — real ACE behavior, not something `afcm_sim_ace_compat` controls or could
+  override without bypassing `addDamageToUnit` entirely.
 - **`addons/medical/functions/fnc_addWound.sqf`** — a separate, lower-level real function the wiki
   page doesn't explain: `[_unit, _bodyPart, [_woundType, _amountOf, _size, _woundDamage]] call
   ace_medical_fnc_addWound`. Unlike `addDamageToUnit`, `_bodyPart` here is **not** lowercased
@@ -115,6 +139,32 @@ their real internals or exact string requirements — pulled the real source via
   a slider you author. Not currently surfaced anywhere in `afcm_sim_ace_compat`/
   `fnc_injuryAuthor_refreshState.sqf`'s live status readout, which shows raw `limbBleeding`
   (Bool)/`bloodVolume` (liters) instead — see [ACE_COMPAT.md §5](addons/ACE_COMPAT.md#5-known-gaps).
+- **`addons/medical/functions/fnc_isInStableCondition.sqf`** ([user-linked](https://github.com/acemod/ACE3/blob/master/addons/medical/functions/fnc_isInStableCondition.sqf))
+  — `ace_medical_fnc_isInStableCondition`, real signature `[_unit] call
+  ace_medical_fnc_isInStableCondition` → `Bool`. Traced the FULL real call chain (every function
+  below, `gh api`, none of them wiki-documented) to confirm this is genuinely safe to call from any
+  client, matching the same "no `local _unit` requirement" bar `afcm_sim_ace_fnc_getState.sqf`
+  already holds every getter in it to:
+  - `false` immediately if `!alive`; otherwise defers to `ace_medical_status_fnc_isInStableCondition`
+    (`addons/medical_status/functions/fnc_isInStableCondition.sqf`), which is:
+    `alive && !unconscious && (total wound bleeding == 0) && hasStableVitals`.
+  - `hasStableVitals` (`addons/medical_status/functions/fnc_hasStableVitals.sqf`) requires ALL of:
+    blood volume `>= 5.1 L` (`BLOOD_VOLUME_CLASS_2_HEMORRHAGE`, the real Class II hemorrhage
+    boundary — `script_macros_medical.hpp`, default blood volume is `6.0 L`); not in cardiac arrest;
+    live blood loss rate `<= (knock-out threshold × cardiac output) / 2` (half the rate that would
+    actually cause unconsciousness); blood pressure diastolic `>= 50` and systolic `>= 60`; heart
+    rate `>= 40`.
+  - Critically, this whole chain calls `ace_medical_status_fnc_getBloodLoss` (an internal,
+    `Public: No` function) for the blood-loss check, **not** the public `ace_medical_fnc_getBloodLoss`
+    that this addon's own `getState` docstrings already flag as `local`-restricted (confirmed
+    directly: the public one has `if (!local _unit) exitWith { ERROR(...); -1 };`, the internal one
+    used here has no such guard at all) — so `isInStableCondition` itself never hits that
+    restriction, even though it transitively computes the same real blood-loss value.
+  - Not KAT-specific and not reimplemented by KAT (confirmed absent from KAT's own real source,
+    same "extends ACE3's vitals, doesn't replace them" relationship already established in the
+    [KAT section below](#kat---advanced-medical-kam--official-sources-now-confirmed)) — safe to
+    call as-is under either backend, same precedent `afcm_sim_kat_fnc_getState.sqf` already sets by
+    reusing `ace_medical_fnc_isInjured`/`getOpenWounds` directly rather than reimplementing them.
 
 ## KAT - Advanced Medical (KAM) — official sources, now confirmed
 

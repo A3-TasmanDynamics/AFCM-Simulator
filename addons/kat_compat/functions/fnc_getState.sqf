@@ -30,9 +30,16 @@
  * 1: LimbId <STRING> (default "") - if given, includes wound detail for that limb specifically
  *
  * Return Value:
- * State <HASHMAP> - same shape as afcm_sim_ace_fnc_getState, plus "fracture" (given limb),
+ * State <HASHMAP> - same shape as afcm_sim_ace_fnc_getState (including "stable" -
+ *   ace_medical_fnc_isInStableCondition, reused as-is - not KAT-specific, KAT extends ACE's vitals
+ *   rather than replacing them, REFERENCES.md), plus "fracture" (given limb),
  *   "pneumothoraxType"/"internalBleedingRate"/"cardiacRhythm" (whole-unit), and "airwayStatus"
- *   (only set when the given limb is "head" - 0=Clear, 1=Obstruction, 2=Occlusion)
+ *   (only set when the given limb is "head" - 0=Clear, 1=Obstruction, 2=Occlusion).
+ *   "bleedingStatus" ("No Bleeding"/"Slow"/"Moderate"/"Severe"/"Massive Bleeding", ACE3's own real
+ *   classification) is the one field NOT computed identically to afcm_sim_ace_fnc_getState - here
+ *   it also folds in "internalBleedingRate" (KAT's own Hemothorax bleeding, tracked entirely
+ *   separately from ACE's own wound-bleeding accounting), so it doesn't under-report a unit
+ *   bleeding out internally with little/no external wound bleeding.
  *
  * Public: No
 */
@@ -65,6 +72,26 @@ _state set ["bloodVolume", _unit getVariable ["ace_medical_bloodVolume", 6.0]];
 _state set ["internalBleedingRate", _unit getVariable ["kat_circulation_internalBleeding", 0]];
 _state set ["inCardiacArrest", _unit getVariable ["ace_medical_vitals_inCardiacArrest", false]];
 _state set ["cardiacRhythm", _unit getVariable ["kat_circulation_cardiacArrestType", 0]];
+_state set ["stable", [_unit] call ace_medical_fnc_isInStableCondition];
+
+// KAT's own internal (Hemothorax) bleeding is tracked entirely separately from ACE's own wound
+// bleeding accounting (see "internalBleedingRate" above) - ace_medical_status_fnc_getBloodLoss
+// alone would under-report true severity while a Hemothorax bleeds internally with little/no
+// external wound bleeding, so it's added in here for a genuinely complete classification.
+private _bleedRate = ([_unit] call ace_medical_status_fnc_getBloodLoss) + (_unit getVariable ["kat_circulation_internalBleeding", 0]);
+private _bleedingStatus = "No Bleeding";
+if (_bleedRate > 0) then {
+    private _cardiacOutput = [_unit] call ace_medical_status_fnc_getCardiacOutput;
+    // 0.05 min cardiac output and the 0.1/0.5/1.0 multipliers below are real, confirmed values from
+    // ACE3's own fnc_updateInjuryList.sqf (REFERENCES.md) - not guessed.
+    private _bleedRateKO = (missionNamespace getVariable ["ace_medical_const_bloodLossKnockOutThreshold", 0.5]) * (_cardiacOutput max 0.05);
+    private _tier = 0;
+    if (_bleedRate >= _bleedRateKO * 0.1) then { _tier = 1; };
+    if (_bleedRate >= _bleedRateKO * 0.5) then { _tier = 2; };
+    if (_bleedRate >= _bleedRateKO) then { _tier = 3; };
+    _bleedingStatus = ["Slow Bleeding", "Moderate Bleeding", "Severe Bleeding", "Massive Bleeding"] select _tier;
+};
+_state set ["bleedingStatus", _bleedingStatus];
 
 private _limbIndex = ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"] find _limb;
 if (_limbIndex != -1) then {
