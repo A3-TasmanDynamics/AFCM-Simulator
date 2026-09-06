@@ -143,9 +143,21 @@ deliberately only uses ACE3 getters that don't require `local _unit` —
 needs to work when called from any client, not just the server. `ace_medical_fnc_getBloodLoss` is
 real and confirmed (REFERENCES.md) but explicitly **not** used here for that reason. Returns a
 `HashMap`: `injured` (Bool), `pain` (direct `ace_medical_pain` variable read), `lifeState`/
-`incapacitatedState` (vanilla engine commands, not ACE-specific), and `limbWoundCount`/
-`limbBleeding` for whichever `LimbId` was passed (folded to an ACE body part the same way
-`applyInjury` does — [§4.1](#41-limbid--ace3-body-part)).
+`incapacitatedState` (vanilla engine commands, not ACE-specific), `limbWoundCount`/`limbBleeding`
+for whichever `LimbId` was passed (folded to an ACE body part the same way `applyInjury` does —
+[§4.1](#41-limbid--ace3-body-part)), and `stable` — ACE3's own real `ace_medical_fnc_isInStableCondition`
+(REFERENCES.md has the full traced call chain and real thresholds). Despite transitively computing
+the same blood-loss value `ace_medical_fnc_getBloodLoss` does, `isInStableCondition`'s own real
+internals route through an unguarded, `Public: No` `ace_medical_status_fnc_getBloodLoss` instead —
+confirmed safe to call from any client here too, same bar every other getter above already holds.
+
+Also returns `bleedingStatus` — ACE3's own real "No Bleeding"/"Slow"/"Moderate"/"Severe"/"Massive
+Bleeding" whole-unit classification ([§4.4](#44-bleeding--ace3-addwound-size-vs-aces-own-bleeding-rate-readout)
+has the real thresholds). ACE only exposes this as inline GUI logic (`medical_gui/functions/
+fnc_updateInjuryList.sqf`), not a reusable public function, so this calls the two internal,
+`Public: No` functions that logic itself calls directly (`ace_medical_status_fnc_getBloodLoss`/
+`getCardiacOutput`) rather than reimplementing ACE's own blood-loss formula by hand — both already
+confirmed to have no `local _unit` restriction, same bar as everything else in this function.
 
 ### `afcm_sim_ace_fnc_reset`
 ```sqf
@@ -307,9 +319,10 @@ that unit's own cardiac-output-scaled knock-out threshold:
 | Massive bleeding | `>= 100%` |
 
 There's no lever here to "set" a wound to Severe — it's an outcome of everything currently applied
-to that unit, not a per-wound parameter. `afcm_sim_ace_fnc_getState` doesn't currently surface it
-(see [§5](#5-known-gaps)) — a real, more informative option for the Injury Author dialog's live
-status readout than the current raw `limbBleeding` Bool.
+to that unit, not a per-wound parameter. `afcm_sim_ace_fnc_getState`/`afcm_sim_kat_fnc_getState`
+both surface it as `bleedingStatus` (§2 above) — the Injury Author dialog's live status readout
+shows it as "Bleeding Status," alongside (not instead of) the active limb's own local `limbBleeding`
+Bool.
 
 ---
 
@@ -334,12 +347,6 @@ status readout than the current raw `limbBleeding` Bool.
   (`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`) was built and reverted — see
   [KAT_COMPAT.md §5](KAT_COMPAT.md#5-known-gaps) — since this kind of state has no ACE equivalent
   to give `ace_compat` in the first place.
-- **`afcm_sim_ace_fnc_getState` doesn't surface ACE's own bleeding-rate classification.** See
-  [§4.4](#44-bleeding--ace3-addwound-size-vs-aces-own-bleeding-rate-readout) — ACE's real
-  Slow/Moderate/Severe/Massive readout is a live, computed, whole-unit value `getState` doesn't
-  currently return (only raw `limbBleeding` Bool and unit-wide `bloodVolume` liters) — a real, more
-  informative option for the Injury Author dialog's live status readout, not yet implemented.
-
 ---
 
 <div align="center">

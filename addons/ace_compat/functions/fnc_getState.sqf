@@ -28,6 +28,21 @@
  *   "inCardiacArrest": Bool - real ACE3 variable (ace_medical_vitals_inCardiacArrest, set via
  *     ace_medical_status_fnc_setCardiacArrestState - see fnc_applyCardiacState.sqf), plain
  *     getVariable read, not local-restricted
+ *   "stable": Bool - ace_medical_fnc_isInStableCondition (alive, conscious, zero active wound
+ *     bleeding, and "stable vitals" - blood volume/pressure/heart rate/cardiac-output-scaled
+ *     blood-loss-rate all within real ACE3 thresholds, REFERENCES.md). Traced its full real call
+ *     chain specifically to confirm it does NOT hit the same local-only restriction
+ *     ace_medical_fnc_getBloodLoss does, despite transitively computing the same blood-loss value -
+ *     it goes through an internal, unguarded ace_medical_status_fnc_getBloodLoss instead - so this
+ *     is safe to call from any client here too, same bar as every other getter above
+ *   "bleedingStatus": String - "No Bleeding"/"Slow Bleeding"/"Moderate Bleeding"/"Severe Bleeding"/
+ *     "Massive Bleeding" - ACE3's own real, whole-unit bleeding-rate classification (medical_gui's
+ *     "Show Bleeding Rate" display, REFERENCES.md has the real thresholds/source), computed here
+ *     the same way ACE's own fnc_updateInjuryList.sqf does since ACE exposes this only as inline
+ *     GUI logic, not a reusable public function - deliberately calls the internal, `Public: No`
+ *     ace_medical_status_fnc_getBloodLoss/getCardiacOutput directly rather than reimplementing
+ *     ACE's own blood-loss formula by hand (peripheral resistance/bleeding coefficient etc.),
+ *     already confirmed neither has a local-only restriction (REFERENCES.md)
  *
  * Public: No
 */
@@ -59,4 +74,20 @@ _state set ["limbWoundCount", count _wounds];
 _state set ["limbBleeding", _bleeding];
 _state set ["bloodVolume", _unit getVariable ["ace_medical_bloodVolume", 6.0]];
 _state set ["inCardiacArrest", _unit getVariable ["ace_medical_vitals_inCardiacArrest", false]];
+_state set ["stable", [_unit] call ace_medical_fnc_isInStableCondition];
+
+private _bleedRate = [_unit] call ace_medical_status_fnc_getBloodLoss;
+private _bleedingStatus = "No Bleeding";
+if (_bleedRate > 0) then {
+    private _cardiacOutput = [_unit] call ace_medical_status_fnc_getCardiacOutput;
+    // 0.05 min cardiac output and the 0.1/0.5/1.0 multipliers below are real, confirmed values from
+    // ACE3's own fnc_updateInjuryList.sqf (REFERENCES.md) - not guessed.
+    private _bleedRateKO = (missionNamespace getVariable ["ace_medical_const_bloodLossKnockOutThreshold", 0.5]) * (_cardiacOutput max 0.05);
+    private _tier = 0;
+    if (_bleedRate >= _bleedRateKO * 0.1) then { _tier = 1; };
+    if (_bleedRate >= _bleedRateKO * 0.5) then { _tier = 2; };
+    if (_bleedRate >= _bleedRateKO) then { _tier = 3; };
+    _bleedingStatus = ["Slow Bleeding", "Moderate Bleeding", "Severe Bleeding", "Massive Bleeding"] select _tier;
+};
+_state set ["bleedingStatus", _bleedingStatus];
 _state
