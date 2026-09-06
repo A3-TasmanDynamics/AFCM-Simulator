@@ -82,13 +82,20 @@ class CfgVehicles
     // Shared attributes common to every AFCM spawn module (not just Casualty Type anymore, despite
     // the name kept for continuity - renaming would only churn the config, since no placed mission
     // actually references this intermediate class name, only the final resolved attribute list).
-    class AFCM_SIM_CasualtyTypeAttributes
+    class AFCM_SIM_CasualtyTypeAttributes: Module_F
     {
-        // scope=0 - this is a plain nested-class template for Attributes inheritance, never a
-        // real placeable object, but without an explicit scope the engine still treats any direct
-        // CfgVehicles member as a candidate vehicle/object and logs "No entry ...scope/model/..."
-        // warnings for every standard vehicle property it doesn't have (real, confirmed RPT noise,
-        // harmless but spammy). scope=0 is the standard fix.
+        // Real, confirmed bug fixed here: this had NO base class at all (a bare CfgVehicles
+        // member) - every other real module class in this file inherits `: Module_F` (see
+        // AFCM_SIM_ModulePatientPlacement/ModuleInteractiveTerminal below), which is what actually
+        // supplies a real `model` entry from the engine's own base config chain. Without any
+        // inheritance, this class had no `model` anywhere in its lineage, which surfaced as a real,
+        // visible "No entry 'bin\config.bin/CfgVehicles/AFCM_SIM_CasualtyTypeAttributes.model'"
+        // error dialog on the main menu (confirmed from a client screenshot) - `scope=0` only hides
+        // a class from the Zeus/Eden object browser, it does NOT exempt a class from the engine's
+        // own property validation, contrary to what this comment used to claim. `: Module_F` fixes
+        // that at the source; `scope = 0` is kept for its real, original purpose - this is still
+        // never meant to be a placeable object in its own right, purely a template the two real
+        // modules below inherit their shared Attributes from.
         scope = 0;
         class AFCM_SIM_CasualtyType
         {

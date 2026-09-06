@@ -4,11 +4,17 @@
  * currently active (AFCM_SIM_UI_activeLimb) and which already have something staged
  * (AFCM_SIM_UI_stagedInjuries, or a relevant nonzero AFCM_SIM_UI_stagedKatExtras slice) - 3 visual
  * states, not the old LimbSelect's 2 (unselected/selected), since this is single-active-limb
- * navigation rather than a multi-toggle.
+ * navigation rather than a multi-toggle. This is also what fnc_injuryAuthor_init.sqf's own
+ * MouseExit handler calls to restore the correct color after a 4th, purely transient hover tint
+ * (script-driven too, same file - see its own comment for why native hover/focus colors can't do
+ * this correctly) - re-running this is always safe/idempotent, it just recomputes all 6 from
+ * scratch regardless of why it was called.
  *
  * Literal RGBA values, not the AFCM_SIM_COLOR_* #defines (preprocessor-only, unreachable from
  * SQF) - same duplication fnc_limbSelect_refreshButtons.sqf already had. Keep in sync with
- * addons/ui/config.cpp if the brand palette ever changes.
+ * addons/ui/config.cpp if the brand palette ever changes, and with the hover tint
+ * fnc_injuryAuthor_init.sqf sets directly ([0.757, 0.153, 0.176, 0.5] - deliberately between this
+ * file's own _colorStaged 0.28 alpha and _colorActive 0.85, so it reads as distinct from both).
  *
  * Arguments:
  * None
