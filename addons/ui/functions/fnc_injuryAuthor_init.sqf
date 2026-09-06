@@ -111,6 +111,42 @@ params ["_display"];
         [54, afcm_sim_ui_fnc_injuryAuthor_onViewLiveState]
     ];
 
+    // Navbar hover, driven entirely by script rather than native colorBackgroundActive/colorFocused
+    // (both deliberately transparent on AFCM_SIM_RscButtonNav, addons/ui/config.cpp) - real reason:
+    // those two natively can't both (a) show a hover cue on inactive buttons that's visibly
+    // different from the bright "active" color, so hovering never looks like a false selection, AND
+    // (b) stay perfectly identical to the runtime "active" color specifically when hovering the
+    // ALREADY-active button (which also natively holds focus after being clicked), to avoid the
+    // original focus/hover toggle-flicker bug - a single static class-level color can't be both
+    // "distinct from active" and "identical to active" at once. Scripting it sidesteps the
+    // contradiction entirely: MouseEnter only applies the hover tint to a button that ISN'T the
+    // active limb (so hovering the active one is always a no-op, no flicker), and MouseExit just
+    // re-runs the real 3-state refresh (empty/staged/active) to restore the correct color exactly,
+    // idempotent even if it fires right after a click already changed which limb is active.
+    {
+        _x params ["_idc", "_limbId"];
+        private _ctrlNav = _display displayCtrl _idc;
+        // Tagged directly on the control (setVariable/getVariable, real Control-type feature) rather
+        // than relied on as a closure over this loop's own _limbId - a native ctrlAddEventHandler
+        // callback is stored and fired later by the engine's own UI event dispatch, not guaranteed
+        // to still see this scope's private variables by then (HEMTT's own linter correctly flagged
+        // _limbId as unresolved when this first tried to close over it directly).
+        _ctrlNav setVariable ["AFCM_SIM_navLimbId", _limbId];
+        _ctrlNav ctrlAddEventHandler ["MouseEnter", {
+            params ["_ctrlHover"];
+            private _limbId = _ctrlHover getVariable ["AFCM_SIM_navLimbId", ""];
+            if (_limbId != (missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", ""])) then {
+                _ctrlHover ctrlSetBackgroundColor [0.757, 0.153, 0.176, 0.5];
+            };
+        }];
+        _ctrlNav ctrlAddEventHandler ["MouseExit", {
+            call afcm_sim_ui_fnc_injuryAuthor_refreshNavbar;
+        }];
+    } forEach [
+        [10, "head"], [11, "chest"], [12, "leftArm"],
+        [13, "rightArm"], [14, "leftLeg"], [15, "rightLeg"]
+    ];
+
     if (_authorNewPatient) then {
         call afcm_sim_ui_fnc_injuryAuthor_refreshLocationStatus;
     };
