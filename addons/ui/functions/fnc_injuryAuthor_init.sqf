@@ -6,6 +6,11 @@
  * via CBA_fnc_execNextFrame, same reasoning as the old fnc_injuryEditor_init.sqf: ensures controls
  * exist before being touched.
  *
+ * Opens on the first limb that actually has something staged, not a hardcoded "chest" - real,
+ * confirmed bug: reopening on an already-configured patient always landed on chest regardless of
+ * which limb was actually injured, making an intact, correctly-restored/reloaded injury on any
+ * other limb look like it had vanished. See the comment further down where this is computed.
+ *
  * Author-new-patient mode's own "View Live State" button (idc 54,
  * fnc_injuryAuthor_onViewLiveState.sqf) starts enabled only if AFCM_SIM_UI_lastSpawnedPatient
  * already exists - a patient spawned via a PRIOR open of this same dialog this mission, not just
@@ -150,7 +155,37 @@ params ["_display"];
     if (_authorNewPatient) then {
         call afcm_sim_ui_fnc_injuryAuthor_refreshLocationStatus;
     };
-    ["chest"] call afcm_sim_ui_fnc_injuryAuthor_setActiveLimb;
+
+    // Real, confirmed bug fixed here: this used to unconditionally open on "chest" regardless of
+    // which limb actually has anything staged/applied - the staged data itself (restored via a
+    // draft or loadFromUnit, both already run in fnc_injuryAuthor_open.sqf by this point) was
+    // always intact, but reopening on an unrelated empty limb made it LOOK like an already-applied
+    // injury had vanished. Now opens on the first limb (head/chest/arms/legs order) that actually
+    // has something staged - a real injury, a fracture, pneumothorax/cardiac state on chest, or
+    // airway state on head - same "has anything staged" checks fnc_injuryAuthor_refreshNavbar.sqf
+    // already does per-limb, just used here to pick where to land instead of just to color a
+    // button. Falls back to "chest" only when nothing at all is staged (a genuinely fresh session).
+    private _limbOrder = ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"];
+    private _stagedInjuries = missionNamespace getVariable ["AFCM_SIM_UI_stagedInjuries", []];
+    private _stagedKatExtras = missionNamespace getVariable ["AFCM_SIM_UI_stagedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]];
+    _stagedKatExtras params [["_fractures", [0, 0, 0, 0, 0, 0]], ["_pneumoType", 0], ["_airwayType", 0], ["_rhythm", 0]];
+    private _fractureLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
+
+    private _fnc_limbHasStaged = {
+        params ["_limb"];
+        if ((_stagedInjuries findIf { (_x select 0) == _limb }) != -1) exitWith { true };
+        if (_limb in _fractureLimbs) then {
+            private _limbIndex = _limbOrder find _limb;
+            if ((_fractures param [_limbIndex, 0]) > 0) exitWith { true };
+        };
+        if (_limb == "chest" && {_pneumoType > 0 || {_rhythm > 0}}) exitWith { true };
+        if (_limb == "head" && {_airwayType > 0}) exitWith { true };
+        false
+    };
+
+    private _initialLimbIdx = _limbOrder findIf { [_x] call _fnc_limbHasStaged };
+    private _initialLimb = _limbOrder param [_initialLimbIdx, "chest"];
+    [_initialLimb] call afcm_sim_ui_fnc_injuryAuthor_setActiveLimb;
 
     if !(_authorNewPatient) then {
         // Live status readout, 0.5s interval - removed on close by
