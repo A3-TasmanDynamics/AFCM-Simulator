@@ -159,6 +159,43 @@ fnc_updateInjuryList.sqf`), not a reusable public function, so this calls the tw
 `getCardiacOutput`) rather than reimplementing ACE's own blood-loss formula by hand — both already
 confirmed to have no `local _unit` restriction, same bar as everything else in this function.
 
+Also returns `fracture` — ACE3's own real, native `ace_medical_fractures` value (`0`/`1`, `-1` only
+ever from a live splint treatment - see [`applyFracture`](#afcm_sim_ace_fnc_applyfracture) below)
+for whichever `LimbId` was passed, `0` if that limb isn't an arm/leg (ACE fractures never apply to
+head/chest, same rule KAT's own real data model independently enforces). And `spO2` — real
+`ace_medical_spo2` (0-100, default 97, plain getVariable), ACE's own real "Airway Management"
+concept: continuous oxygen saturation driven by altitude/gear/exertion. Genuinely different from
+KAT's discrete Obstruction/Occlusion airway states (`kat_compat`-only, no ACE equivalent) — not a
+stand-in for them, a real ACE mechanic in its own right.
+
+### `afcm_sim_ace_fnc_applyFracture`
+```sqf
+[_unit, _limb, _fractured] call afcm_sim_ace_fnc_applyFracture
+```
+**Real implementation.** Not part of the interface hashmap above (called directly by
+`afcm_sim_scenario_fnc_serverApplyFracture`, same pattern as `applyCardiacState` - fracture has no
+place in the backend-agnostic `Injury` object). ACE3 has its own real, native per-limb fracture
+mechanic (confirmed directly from `acemod/ACE3`, REFERENCES.md has the full traced mechanism) - a
+plain per-limb value (`0` none, `1` fractured, `-1` fractured-but-splinted, only ever set by
+`ace_medical_treatment_fnc_splintLocal`, never authored here), tracked in `ace_medical_fractures` -
+an entirely separate variable from `kat_compat`'s own `kat_surgery_fractures`, not the same state
+under two names. Only arms/legs ever fracture under real ACE gameplay (body part index `> 1` in
+`ALL_BODY_PARTS`); `afcm_sim_scenario_fnc_serverApplyFracture` rejects head/chest before this is
+ever called.
+
+Dispatched via `CBA_fnc_targetEvent` to `fnc_applyFractureLocal.sqf` (registered as the
+`"afcm_sim_ace_applyFractureLocal"` event in this addon's own `fnc_preInit.sqf`, not
+`afcm_sim_main` - unlike the shared injury-application event, this one is ACE-only, so there's no
+risk of the double-registration `afcm_sim_main`'s own event-registration comment warns about) -
+same real reason as `applyInjury`: `ace_medical_engine_fnc_updateDamageEffects` (which the real work
+calls, to make the actual limping/sprint-block effects apply) requires `local _unit`.
+
+Real settings that gate whether ACE's own fracture mechanic does anything at all when wounds are
+applied naturally (not relevant to this function's own direct, explicit fracture-setting, which
+always takes effect regardless): `ace_medical_fractures` (0=disabled, 1/2/3 = different real
+splint-recovery/movement-penalty behavior, default `1`), `ace_medical_fractureChance` (0-1 slider,
+default `0.8`), `ace_medical_const_fractureDamageThreshold` (default `0.5`).
+
 ### `afcm_sim_ace_fnc_reset`
 ```sqf
 [_unit] call afcm_sim_ace_fnc_reset
@@ -341,12 +378,17 @@ Bool.
   [DESIGN.md §4.4](../DESIGN.md#44-injury-levels-randomization-difficulty)'s Easy–F\*CKED! severity
   ranges are a starting proposal, not yet tuned against how "Hard" actually feels in practice on
   this backend specifically.
-- **No fracture/airway/breathing handling.** `ace_medical_engine` supports fractures and airway
-  state; nothing in `ace_compat` touches either yet, even though DESIGN.md's Extreme/F\*CKED!
-  profiles mention "airway/breathing involvement." A real, KAT-only implementation of this
-  (`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`) was built and reverted — see
-  [KAT_COMPAT.md §5](KAT_COMPAT.md#5-known-gaps) — since this kind of state has no ACE equivalent
-  to give `ace_compat` in the first place.
+- **Fracture is now real and implemented** ([§2](#afcm_sim_ace_fnc_applyfracture) above) - this used
+  to say fracture had "no ACE equivalent," which turned out to be wrong: `ace_medical_engine` has
+  its own real, native (binary) fracture mechanic, now wired up here too, dispatched alongside
+  KAT's own richer 0-3 severity scale via `afcm_sim_scenario_fnc_serverApplyFracture`.
+- **No pneumothorax/breathing handling.** Unlike fracture, this really does have no ACE equivalent
+  - confirmed after a full search of ACE3's own source for any discrete, trauma-caused
+  pneumothorax/breathing-obstruction concept, found nothing. ACE's real "Airway Management" system
+  (`ace_medical_spo2`, surfaced in `getState` above) is a continuous oxygen-saturation simulation
+  driven by altitude/gear/exertion, not a discrete injury state - genuinely a different concept,
+  not a stand-in for KAT's own Obstruction/Occlusion/Pneumothorax states
+  ([KAT_COMPAT.md §4](KAT_COMPAT.md#4-confirmed-kat-specific-variables)).
 ---
 
 <div align="center">

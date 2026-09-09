@@ -27,7 +27,10 @@
  * (fnc_injuryAuthor_init.sqf, same convention the old InjuryEditor used), so `lbCurSel` is read
  * directly as the value with no separate mapping array needed - only read when the row is actually
  * `ctrlShown` (same per-limb gating fnc_injuryAuthor_setActiveLimb.sqf just set), so a hidden row's
- * stale/default selection never overwrites an unrelated staged value.
+ * stale/default selection never overwrites an unrelated staged value. Fracture's own option count
+ * is backend-dependent (2 under ACE - None/Fractured, 4 under KAT - None/Simple/Compound/
+ * Comminuted, fnc_injuryAuthor_init.sqf) but this still works unchanged either way, since the
+ * index-equals-value convention holds regardless of how many options exist.
  *
  * Arguments:
  * None

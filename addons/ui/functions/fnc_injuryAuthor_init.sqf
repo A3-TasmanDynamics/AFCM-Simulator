@@ -70,7 +70,16 @@ params ["_display"];
     [_display displayCtrl 20, ["None", "Gunshot", "Shrapnel", "Blast"], 0] call _fnc_populate;
     [_display displayCtrl 21, ["None", "Light", "Moderate", "Severe", "Critical"], 0] call _fnc_populate;
     [_display displayCtrl 22, ["None", "Small", "Medium", "Large"], 0] call _fnc_populate;
-    [_display displayCtrl 24, ["None", "Simple Fracture", "Compound Fracture", "Comminuted Fracture"], 0] call _fnc_populate;
+    // Fracture options are backend-dependent, same pattern as CardiacState below: ACE3 has its own
+    // real, native fracture mechanic, but it's a plain fractured/not Bool (REFERENCES.md), not
+    // KAT's own 0-3 Simple/Compound/Comminuted severity scale - a separate variable under the hood
+    // (ace_medical_fractures vs kat_surgery_fractures), not the same state read two ways.
+    private _fractureOptions = if (_backend == "kat") then {
+        ["None", "Simple Fracture", "Compound Fracture", "Comminuted Fracture"]
+    } else {
+        ["None", "Fractured"]
+    };
+    [_display displayCtrl 24, _fractureOptions, 0] call _fnc_populate;
     [_display displayCtrl 26, ["None", "Simple Pneumothorax", "Hemopneumothorax", "Tension Pneumothorax"], 0] call _fnc_populate;
     [_display displayCtrl 28, ["None", "Obstruction", "Occlusion"], 0] call _fnc_populate;
 

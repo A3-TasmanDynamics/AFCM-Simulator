@@ -165,6 +165,45 @@ their real internals or exact string requirements — pulled the real source via
     [KAT section below](#kat---advanced-medical-kam--official-sources-now-confirmed)) — safe to
     call as-is under either backend, same precedent `afcm_sim_kat_fnc_getState.sqf` already sets by
     reusing `ace_medical_fnc_isInjured`/`getOpenWounds` directly rather than reimplementing them.
+- **Fracture — genuinely real, native ACE3 mechanic, not KAT-exclusive.** Confirmed by tracing the
+  real wound-application source after the user linked ACE's public `ACE_Medical_Injuries.hpp`
+  (`addons/medical_damage/functions/fnc_woundsHandlerBase.sqf`,
+  `addons/medical_engine/script_macros_medical.hpp`, `addons/medical/initSettings.inc.sqf`,
+  `addons/medical_treatment/functions/fnc_splintLocal.sqf`/`fnc_canSplint.sqf`,
+  `addons/medical_engine/functions/fnc_updateDamageEffects.sqf` — all `gh api`-fetched, none
+  wiki-documented):
+  - `ace_medical_fractures` (`VAR_FRACTURES`) is a 6-element array, `ALL_BODY_PARTS` order - `0`
+    none, `1` fractured, `-1` fractured-but-splinted. Only body part index `> 1` (arms/legs) ever
+    fractures — a natural wound roll checks `_causeFracture && {EGVAR(medical,fractures) > 0} &&
+    {_bodyPartNToAdd > 1} && {_woundDamage > FRACTURE_DAMAGE_THRESHOLD} && {random 1 < (_fracture
+    Multiplier * EGVAR(medical,fractureChance))}` — real settings `ace_medical_fractures`
+    (0=disabled, 1/2/3 = different splint-recovery/movement-penalty modes, default `1`),
+    `ace_medical_fractureChance` (0-1 slider, default `0.8`),
+    `ace_medical_const_fractureDamageThreshold` (default `0.5`).
+  - A live fracture forces limping (legs) or reduces aim (arms), optionally blocking
+    sprint/forcing walk depending on the `ace_medical_fractures` mode — computed by
+    `ace_medical_engine_fnc_updateDamageEffects`, which **requires `local _unit`** (confirmed:
+    `if (!local _unit) exitWith { ERROR(...) };`) — same class of problem `addDamageToUnit` already
+    has, solved here the same way (`CBA_fnc_targetEvent`, registered in `ace_compat`'s own
+    `fnc_preInit.sqf` rather than `afcm_sim_main`, since this event is ACE-only and unshared with
+    `kat_compat`, so there's no double-registration risk the shared injury-application event has
+    to avoid).
+  - Only cleared by a real splint (`ace_medical_treatment_fnc_splintLocal` sets the value to `-1`,
+    `fnc_canSplint.sqf` requires exactly `1` to allow splinting at all) — `afcm_sim_ace_fnc_
+    applyFracture` never writes `-1` itself, that's a live treatment outcome, not something staged.
+  - This is a **separate, independently-tracked variable** from KAT's own `kat_surgery_fractures` —
+    not the same state exposed two ways, two genuinely different mechanics that happen to share a
+    body-part index convention.
+- **ACE's real "Airway Management" ≠ KAT's discrete airway states.** Searched ACE3's full source
+  for `obstruction`/`occlusion`/`choking`-style trauma-caused airway blockage after confirming KAT's
+  own Obstruction/Occlusion states had no ACE equivalent - found nothing. ACE's real "Airway
+  Management" feature (`addons/medical_vitals/functions/fnc_updateOxygen.sqf`,
+  `addons/medical_vitals/initSettings.inc.sqf`) is `ace_medical_spo2` (`VAR_SPO2`, default `97`,
+  plain getVariable, no locality restriction) — a continuous oxygen-saturation simulation driven by
+  altitude, ambient/weather-derived partial pressure of oxygen, gear (oxygen masks), heart rate, and
+  fatigue, gated by the real `ace_medical_vitals_simulateSpO2` setting (checkbox, default `true`).
+  Genuinely a different concept from a discrete "this wound blocked the airway" state — there's no
+  ACE equivalent to author here, only a live readout to surface.
 
 ## KAT - Advanced Medical (KAM) — official sources, now confirmed
 

@@ -4,12 +4,13 @@
  * rather than through the generic afcm_sim_fnc_backend_applyInjury dispatch - a whole-patient
  * vitals state with no equivalent in the backend-agnostic Injury object.
  *
- * Unlike serverApplyKatFracture/Pneumothorax/Airway, this is NOT KAT-only - the base cardiac arrest
- * flag is genuinely ACE-native (real, confirmed ace_medical_status_fnc_setCardiacArrestState, see
- * afcm_sim_ace_fnc_applyCardiacState's own header), so this dispatches to whichever of "ace"/"kat"
- * is actually active rather than guarding on one specific backend. KAT additionally tracks a real
- * rhythm type on top of the shared base flag (afcm_sim_kat_fnc_applyCardiacState); ACE has no
- * equivalent concept, so its own version only takes the base arrest bool (rhythm > 0).
+ * Like serverApplyFracture (and unlike serverApplyKatPneumothorax/Airway, which really are
+ * KAT-only), this is NOT KAT-only - the base cardiac arrest flag is genuinely ACE-native (real,
+ * confirmed ace_medical_status_fnc_setCardiacArrestState, see afcm_sim_ace_fnc_applyCardiacState's
+ * own header), so this dispatches to whichever of "ace"/"kat" is actually active rather than
+ * guarding on one specific backend. KAT additionally tracks a real rhythm type on top of the
+ * shared base flag (afcm_sim_kat_fnc_applyCardiacState); ACE has no equivalent concept, so its own
+ * version only takes the base arrest bool (rhythm > 0).
  *
  * Arguments:
  * 0: Target unit <OBJECT>

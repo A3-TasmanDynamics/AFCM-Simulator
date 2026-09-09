@@ -214,7 +214,7 @@ No `afcm_compat` row — not being pursued at this stage, no AFCM to target yet 
 
 ---
 
-## 6. KAT-Specific Coding — Fracture / Pneumothorax / Airway (Wired In)
+## 6. Fracture (Shared, ACE + KAT) / Pneumothorax / Airway (KAT-Specific)
 
 KAT tracks some state that has no equivalent in the backend-agnostic `Injury` object at all — real,
 KAT-internal state, not something `afcm_sim_scenario`'s randomizer or a future preset produces. An
@@ -222,21 +222,39 @@ earlier pass built this, then reverted it in favour of keeping the UI simple; it
 grounded directly against real source fetched from `KAT-Advanced-Medical/KAM` (not the prior
 working prototype's comments) — full context:
 [KAT_COMPAT.md §4](addons/KAT_COMPAT.md#4-confirmed-kat-specific-variables). All three are exposed
-in the injury editor UI, shown only when KAT is the active backend — Fracture also only when at
-least one selected limb is an arm or a leg (deliberately excludes head/chest, see below),
-Pneumothorax also only when "chest" is among the selected limbs (it's torso-wide, not per-limb),
-Airway also only when "head" is among the selected limbs (it's head/neck-wide, not per-limb) —
-`afcm_sim_kat_fnc_applyFracture`/`applyPneumothorax`/`applyAirway`, called directly rather than
-through the generic `Injury`/backend-interface dispatch, since none of the three fit that schema.
+in the Injury Author dialog — Fracture also only when the active limb is an arm or a leg
+(deliberately excludes head/chest, see below), Pneumothorax also only when the active limb is
+"chest" (it's torso-wide, not per-limb), Airway also only when the active limb is "head" (it's
+head/neck-wide, not per-limb) — `afcm_sim_kat_fnc_applyPneumothorax`/`applyAirway`, called directly
+rather than through the generic `Injury`/backend-interface dispatch, since neither fits that schema.
 
-**Fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb — and each
-entry is a **severity/treatment-stage scale, not a boolean**. This array's own index order is
-**KAT/ACE's** 6 body parts (`head, torso, leftArm, rightArm, leftLeg, rightLeg`) — the exact same 6
-values AFCM-Simulator's own `LimbId` (§1) uses 1:1, so `afcm_sim_kat_fnc_applyFracture` is a direct
-index lookup, no `LimbId` → ACE body-part folding needed at all. **AFCM-Simulator's own UI/server
-dispatch (`fnc_serverApplyKatFracture.sqf`) deliberately only allows arms/legs**, not head/chest,
-even though the real array has a slot for both — a scope choice to keep this UI focused on the
-limb-fracture/tourniquet-and-splint training case, not a limitation of KAT's actual data model:
+**Fracture is the one exception here — it's genuinely shared, not KAT-specific**, same real
+situation Cardiac State already has ([§7](#7-cardiac-state--shared-ace--kat-not-kat-specific)):
+ACE3's own `ace_medical_engine` has a real, native per-limb fracture mechanic (confirmed directly
+from `acemod/ACE3`, REFERENCES.md), tracked in `ace_medical_fractures` - an entirely separate
+variable from KAT's own `kat_surgery_fractures` below, not the same state read two ways. ACE's own
+scale is a plain per-limb value: `0` none, `1` fractured, `-1` fractured-but-splinted (set only by
+`ace_medical_treatment_fnc_splintLocal`, a live treatment outcome the Injury Author dialog never
+stages). Dispatch is `afcm_sim_scenario_fnc_serverApplyFracture.sqf` (renamed from the old
+KAT-hardcoded `fnc_serverApplyKatFracture.sqf`) - it now dispatches to whichever of
+`afcm_sim_ace_fnc_applyFracture`/`afcm_sim_kat_fnc_applyFracture` is actually active, same
+dispatch-by-active-backend shape `fnc_serverApplyCardiacState.sqf` already uses. The Injury Author
+dialog's own Fracture combo shows different real options depending on which is active: **None/
+Fractured** under ACE, **None/Simple/Compound/Comminuted** under KAT (below) - the single staged
+`_severity` value (0-3) is always what's threaded through regardless of active backend;
+`afcm_sim_ace_fnc_applyFracture` just collapses it to a Bool (`_severity > 0`) at the final dispatch
+step, so a preset authored under one backend still applies sensibly under the other.
+
+**KAT's own fracture severity** (`kat_surgery_fractures`) is a 6-element array, one entry per limb —
+and each entry is a **severity/treatment-stage scale, not a boolean**. This array's own index order
+is **KAT/ACE's** 6 body parts (`head, torso, leftArm, rightArm, leftLeg, rightLeg`) — the exact same
+6 values AFCM-Simulator's own `LimbId` (§1) uses 1:1, so `afcm_sim_kat_fnc_applyFracture` is a
+direct index lookup, no `LimbId` → ACE body-part folding needed at all. **AFCM-Simulator's own
+UI/server dispatch (`fnc_serverApplyFracture.sqf`) deliberately only allows arms/legs**, not
+head/chest, even though the real array has a slot for both — a scope choice to keep this UI focused
+on the limb-fracture/tourniquet-and-splint training case, not a limitation of KAT's actual data
+model. (ACE's own real fracture mechanic independently enforces the exact same arms/legs-only rule
+at the engine level itself, not just as a UI/dispatch scope choice - REFERENCES.md.)
 
 ```sqf
 /*
@@ -293,8 +311,14 @@ mod models it as one whole-body volume draining faster, not a second, chest-scop
 fields are exposed in the injury editor's live status readout (`afcm_sim_kat_fnc_getState`) whenever
 KAT is active — Blood Volume always, Internal Bleeding Rate only while it's actually nonzero.
 
-**Airway** (`kat_airway_obstruction` / `kat_airway_occluded`) — two **mutually-exclusive** Bools,
-confirmed from `addons/airway/functions/fnc_checkAirway.sqf` and
+**Airway** (`kat_airway_obstruction` / `kat_airway_occluded`) — genuinely KAT-specific, not a
+different name for something ACE also has. ACE3 *does* have its own real "Airway Management"
+system (`ace_medical_spo2`, REFERENCES.md), but it's a continuous oxygen-saturation simulation
+driven by altitude/gear/exertion, with no discrete trauma-caused obstruction/occlusion concept at
+all - confirmed absent from ACE3's own source after a full search. `afcm_sim_ace_fnc_getState`/
+`afcm_sim_kat_fnc_getState` both report it as `spO2` (a plain 0-100 number, not staged/authored
+here - a live readout only), entirely separate from the two Bools below. Two **mutually-exclusive**
+Bools, confirmed from `addons/airway/functions/fnc_checkAirway.sqf` and
 `fnc_treatmentAdvanced_airwayLocal.sqf`, with genuinely different real treatment paths rather than
 two severities of the same thing:
 
@@ -325,13 +349,14 @@ Pneumothorax, this isn't per-limb — it's a head/neck-wide condition, shown in 
 
 ## 7. Cardiac State — Shared (ACE + KAT), Not KAT-Specific
 
-Unlike §6, cardiac arrest is **genuinely ACE-native**, not a KAT invention — confirmed directly
-from `acemod/ACE3`'s own source (`addons/medical_status/functions/fnc_setCardiacArrestState.sqf`,
-`addons/medical_engine/script_macros_medical.hpp`'s `IN_CRDC_ARRST` macro), and doubly confirmed
-from KAT's own repo, which vendors a copy of that exact same ACE header (`include/z/ace/addons/
-medical_engine/script_macros_medical.hpp`) rather than defining its own arrest flag — KAT's vitals
-loop reads the identical real variable. That's why `afcm_sim_ace_fnc_applyCardiacState` exists at
-all, unlike Fracture/Pneumothorax/Airway which only exist under `kat_compat`.
+Like Fracture (§6), cardiac arrest is **genuinely ACE-native**, not a KAT invention — confirmed
+directly from `acemod/ACE3`'s own source (`addons/medical_status/functions/
+fnc_setCardiacArrestState.sqf`, `addons/medical_engine/script_macros_medical.hpp`'s `IN_CRDC_ARRST`
+macro), and doubly confirmed from KAT's own repo, which vendors a copy of that exact same ACE
+header (`include/z/ace/addons/medical_engine/script_macros_medical.hpp`) rather than defining its
+own arrest flag — KAT's vitals loop reads the identical real variable. That's why
+`afcm_sim_ace_fnc_applyCardiacState` exists at all, unlike Pneumothorax/Airway which only exist
+under `kat_compat` (§6) - no ACE equivalent for either.
 
 **Base arrest** (`ace_medical_vitals_inCardiacArrest`, `Bool`) — set via the real
 `ace_medical_status_fnc_setCardiacArrestState`, which also zeroes heart rate (or restores it to 40

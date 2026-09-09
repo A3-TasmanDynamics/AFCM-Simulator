@@ -494,10 +494,12 @@ is still the plan, not the state of the repo.
   shared return tuple always has one (irrelevant to the module's own import, which never reads it).
   Applying katExtras itself is factored into `afcm_sim_scenario_fnc_serverApplyKatExtras`
   (dispatches to the same
-  serverApplyKatFracture/serverApplyKatPneumothorax/serverApplyKatAirway/serverApplyCardiacState
-  handlers the injury editor's own controls use — each already no-ops safely under a non-KAT
-  backend), reused by `fnc_serverApplyPreset.sqf` (Preset Library Apply, including the MCI batch
-  path) and `afcm_sim_spawner_fnc_spawnPatient` (the AFCM Patient module's spawn-time import). An
+  serverApplyFracture/serverApplyKatPneumothorax/serverApplyKatAirway/serverApplyCardiacState
+  handlers the Injury Author dialog's own controls use — serverApplyFracture/serverApplyCardiacState
+  dispatch to whichever backend is active since both are genuinely ACE-native too, not KAT-only;
+  serverApplyKatPneumothorax/Airway stay KAT-only and no-op safely under a non-KAT backend), reused
+  by `fnc_serverApplyPreset.sqf` (Preset Library Apply, including the MCI batch path) and
+  `afcm_sim_spawner_fnc_spawnPatient` (the AFCM Patient module's spawn-time import). An
   export carrying only katExtras and no base injuries (e.g. "just a cardiac arrest, no wound") is
   valid on its own either way — export/parse both check injuries-empty-AND-katExtras-empty, not
   either alone. **Scope note**: `fnc_getBuiltinPresets.sqf`'s built-ins and the injury editor's own
