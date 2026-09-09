@@ -190,6 +190,11 @@ class CfgFunctions
 #define AFCM_SIM_COLOR_ACCENT         {0.757, 0.153, 0.176, 1}
 #define AFCM_SIM_COLOR_ACCENT_DIM     {0.757, 0.153, 0.176, 0.28}
 #define AFCM_SIM_COLOR_ACCENT_HOVER   {0.757, 0.153, 0.176, 0.85}
+// Deliberately darker/less saturated than AFCM_SIM_COLOR_ACCENT_HOVER above - the Injury Author
+// navbar's own "selected" (active limb) color, distinct on purpose from its "hovering another
+// limb" color (which reuses ACCENT_HOVER) so the two read as clearly different states rather than
+// the same red at a glance - real user feedback, see AFCM_SIM_RscButtonNav's own comment.
+#define AFCM_SIM_COLOR_ACCENT_SELECTED {0.42, 0.08, 0.09, 0.95}
 #define AFCM_SIM_COLOR_TEXT           {0.949, 0.937, 0.902, 1}
 #define AFCM_SIM_COLOR_TEXT_DIM       {0.75, 0.72, 0.68, 1}
 #define AFCM_SIM_COLOR_BTN_BG         {0.12, 0.12, 0.135, 0.92}
@@ -279,21 +284,30 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
 // (empty/has-staged-injury/active) written by fnc_injuryAuthor_refreshNavbar.sqf via
 // ctrlSetBackgroundColor.
 //
-// Real history, 3 attempts: (1) opaque colorBackgroundActive[]/colorFocused[] painted over the
-// runtime state on hover/focus. (2) made them transparent instead - fixed the false-highlight-on-
-// hover bug, but left 2 real, confirmed bugs of its own (clicking to select didn't reliably show
-// the highlight; a button could stay highlighted with no mouse over it and not being the active
-// limb). (3) rebuilt as a plain RscText (CT_STATIC), reasoning that removing all native button
-// state would remove the whole bug class - instead broke the navbar completely: RscText controls
-// don't reliably receive MouseButtonClick/MouseEnter/MouseExit the way CT_BUTTON does, so nothing
-// was clickable or hoverable at all. Reverted back to a real RscButton (this class) - transparent
-// colorBackgroundActive[]/colorFocused[] (attempt 2's state) is the known-working baseline; the
-// remaining click-reliability/stuck-highlight bug is still open, to be revisited without breaking
-// basic interactivity again.
+// Real history, 4 attempts: (1) opaque colorBackgroundActive[]/colorFocused[] both bright/identical
+// - painted over the runtime state on hover/focus regardless of true empty/staged/active status
+// ("highlighted when not selected"). (2) made them transparent instead - engine behavior turned out
+// to be "replace the runtime ctrlSetBackgroundColor value while hovered/focused", not "let it show
+// through": with alpha 0 that means "show nothing/whatever's behind" for as long as hover/focus
+// holds, THEN reveal the (possibly stale, one-tick-behind) runtime value the instant it ends. That
+// single mechanism was the real cause of every symptom reported against attempt 2 - dark flash on
+// select (focus masking the real color), hover "removing the box" instead of tinting (transparent
+// masking the tint), old button flashing red on deselect (focus lifting to reveal its last-set color
+// a frame before the refresh function runs). (3) rebuilt as a plain RscText (CT_STATIC), reasoning
+// that removing all native button state would remove the whole bug class - instead broke the navbar
+// completely: RscText controls don't reliably receive MouseButtonClick/MouseEnter/MouseExit the way
+// CT_BUTTON does, so nothing was clickable or hoverable at all; reverted to a real RscButton.
+// (4, current) stopped fighting the "replace, don't blend" rendering model and aligned with it
+// instead: colorBackgroundActive[]/colorFocused[] are opaque, intentional, and deliberately
+// different colors matching what hover/selected should actually look like, so the native
+// replace-on-hover/replace-on-focus behavior now paints the *correct* color rather than a stale or
+// blank one. colorFocused (selected) is deliberately darker than colorBackgroundActive (hover) per
+// explicit user request, so the two states stay visually distinct even while overlapping (hovering
+// the already-selected button).
 class AFCM_SIM_RscButtonNav: AFCM_SIM_RscButton
 {
-    colorBackgroundActive[] = {0, 0, 0, 0};
-    colorFocused[] = {0, 0, 0, 0};
+    colorBackgroundActive[] = AFCM_SIM_COLOR_ACCENT_HOVER;
+    colorFocused[] = AFCM_SIM_COLOR_ACCENT_SELECTED;
 };
 
 #define IDD_AFCM_SIM_PRESETLIBRARY 25603
@@ -1404,10 +1418,11 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // column - and a straight top-to-bottom list is literally "go down the body limb list",
         // the exact request this replaces the old back-and-forth flow with. Recolored 3 ways
         // (unselected/has-staged-injury/active) by fnc_injuryAuthor_refreshNavbar.sqf via
-        // ctrlSetBackgroundColor - AFCM_SIM_RscButtonNav (not the plain AFCM_SIM_RscButton every
-        // other button here uses) keeps native hover/focus from painting over that. A real
-        // RscButton (see its own comment for why, not a plain RscText - that broke click/hover
-        // entirely).
+        // ctrlSetBackgroundColor for the "not currently hovered/focused" case; native hover/select
+        // (colorBackgroundActive[]/colorFocused[] on AFCM_SIM_RscButtonNav, not the plain
+        // AFCM_SIM_RscButton every other button here uses) paint the other two states - see that
+        // class's own comment for the real history of why. A real RscButton, not a plain RscText -
+        // that broke click/hover entirely.
         class NavHead: AFCM_SIM_RscButtonNav
         {
             idc = IDC_AFCM_SIM_IA_NAV_HEAD;
