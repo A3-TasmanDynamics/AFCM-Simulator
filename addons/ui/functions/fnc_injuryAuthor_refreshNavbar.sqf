@@ -1,15 +1,15 @@
 /*
  * Author: Tasman Dynamics
- * Recolors the 6 limb navbar buttons on RscDisplayAFCM_SIM_InjuryAuthor to reflect which one is
- * currently active (AFCM_SIM_UI_activeLimb) and which already have something staged
- * (AFCM_SIM_UI_stagedInjuries, or a relevant nonzero AFCM_SIM_UI_stagedKatExtras slice) - 3 visual
- * states, not the old LimbSelect's 2 (unselected/selected), since this is single-active-limb
- * navigation rather than a multi-toggle. This is the runtime (ctrlSetBackgroundColor) value each
- * button shows whenever it's neither hovered nor focused - AFCM_SIM_RscButtonNav's own
- * colorBackgroundActive[]/colorFocused[] (addons/ui/config.cpp) natively replace it on hover/select,
- * so _colorActive below is kept equal to that class's colorFocused[] value so the button looks
- * identical whether it's showing its "selected" color via native focus or via this runtime value
- * (e.g. after focus moves elsewhere, like clicking into a form field).
+ * Recolors the 6 limb navbar entries (Nav*, idc 10-15, AFCM_SIM_RscTextNavBg - plain RscText, no
+ * native button color states at all, see that class's own comment in config.cpp for why) on
+ * RscDisplayAFCM_SIM_InjuryAuthor to reflect which one is currently active (AFCM_SIM_UI_activeLimb)
+ * and which already have something staged (AFCM_SIM_UI_stagedInjuries, or a relevant nonzero
+ * AFCM_SIM_UI_stagedKatExtras slice) - 3 visual states, not the old LimbSelect's 2 (unselected/
+ * selected), since this is single-active-limb navigation rather than a multi-toggle. Since the
+ * target is a plain RscText, whatever this sets via ctrlSetBackgroundColor is exactly what's shown,
+ * always - nothing native can ever override it, unlike when this used to target a real RscButton.
+ * Also what the navbar's own MouseExit handler (fnc_injuryAuthor_init.sqf, on the separate Nav*Hit
+ * click-region controls) calls to clear a transient hover tint back to the real state.
  *
  * Literal RGBA values, not the AFCM_SIM_COLOR_* #defines (preprocessor-only, unreachable from
  * SQF) - same duplication fnc_limbSelect_refreshButtons.sqf already had. Keep in sync with

@@ -125,16 +125,45 @@ params ["_display"];
         [54, afcm_sim_ui_fnc_injuryAuthor_onViewLiveState]
     ];
 
-    // Navbar hover/selected are native now (colorBackgroundActive[]/colorFocused[] on
-    // AFCM_SIM_RscButtonNav, addons/ui/config.cpp), not scripted - a prior version of this dialog
-    // scripted MouseEnter/MouseExit hover instead, because an earlier attempt made those two config
-    // properties transparent and needed something else to paint a hover cue. That transparency was
-    // itself the bug (see AFCM_SIM_RscButtonNav's own comment for the full history): both properties
-    // REPLACE the runtime ctrlSetBackgroundColor value while their condition holds rather than
-    // blending with it, so a transparent value showed nothing/stale color instead of being inert.
-    // Now that both are opaque, intentional colors, native hover/focus rendering is correct on its
-    // own and the script layer is redundant (worse, it would fight the native repaint). Click
-    // handling stays on the real `action=` in config.cpp (native ButtonClick) as before.
+    // Navbar hover tint, scripted against the click-only Nav*Hit controls (idc 60-65,
+    // AFCM_SIM_RscButtonNavHit, addons/ui/config.cpp) - each one is tagged with its limb id AND a
+    // direct reference to its matching color-only Nav control (idc 10-15, AFCM_SIM_RscTextNavBg),
+    // both via setVariable/getVariable (a ctrlAddEventHandler callback is stored and fired later by
+    // the engine's own UI event dispatch, not guaranteed to still see this loop's own private
+    // variables by then - HEMTT's own linter caught this the first time this was tried as a direct
+    // closure). MouseEnter only tints a limb that ISN'T currently active (so hovering the already-
+    // selected one is a no-op, no flicker); MouseExit just re-runs the real 3-state refresh to
+    // restore the correct color exactly, idempotent even right after a click already changed which
+    // limb is active. See AFCM_SIM_RscTextNavBg's own comment (config.cpp) for why the hover/select
+    // color is painted on a plain RscText via a separate hit-region button, rather than through any
+    // of the real RscButton's own native color states - 6 attempts at the latter (opaque, then
+    // transparent, then a plain RscText for everything, then opaque-but-different, then two attempts
+    // at dropping native focus) each fixed part of the problem while breaking something else; this
+    // split is what finally makes the color immune to native hover/focus rendering entirely, rather
+    // than trying to out-guess it.
+    //
+    // Click handling itself stays on the real `action=` on each Nav*Hit control in config.cpp
+    // (native ButtonClick), unchanged from before.
+    {
+        _x params ["_hitIdc", "_bgIdc", "_limbId"];
+        private _ctrlHit = _display displayCtrl _hitIdc;
+        private _ctrlBg = _display displayCtrl _bgIdc;
+        _ctrlHit setVariable ["AFCM_SIM_navLimbId", _limbId];
+        _ctrlHit setVariable ["AFCM_SIM_navBgCtrl", _ctrlBg];
+        _ctrlHit ctrlAddEventHandler ["MouseEnter", {
+            params ["_ctrlHit"];
+            private _limbId = _ctrlHit getVariable ["AFCM_SIM_navLimbId", ""];
+            if (_limbId != (missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", ""])) then {
+                (_ctrlHit getVariable ["AFCM_SIM_navBgCtrl", controlNull]) ctrlSetBackgroundColor [0.757, 0.153, 0.176, 0.5];
+            };
+        }];
+        _ctrlHit ctrlAddEventHandler ["MouseExit", {
+            call afcm_sim_ui_fnc_injuryAuthor_refreshNavbar;
+        }];
+    } forEach [
+        [60, 10, "head"], [61, 11, "chest"], [62, 12, "leftArm"],
+        [63, 13, "rightArm"], [64, 14, "leftLeg"], [65, 15, "rightLeg"]
+    ];
 
     if (_authorNewPatient) then {
         call afcm_sim_ui_fnc_injuryAuthor_refreshLocationStatus;
