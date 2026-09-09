@@ -125,19 +125,23 @@ params ["_display"];
         [54, afcm_sim_ui_fnc_injuryAuthor_onViewLiveState]
     ];
 
-    // Navbar buttons (idc 10-15) are plain RscText, not real CT_BUTTON controls at all
-    // (AFCM_SIM_RscButtonNav, addons/ui/config.cpp - see its own comment for the full history: two
-    // real attempts to fix this on an actual RscButton both left confirmed bugs - clicking to
-    // select not reliably showing the highlight, and a button staying highlighted with no mouse
-    // over it and not being the active limb - real native focus/hover/click-processing internals
-    // interacting with this control's own 3-state runtime coloring in ways config alone couldn't
-    // fully control). Every bit of visual/interactive behavior is scripted here instead, all three
-    // wired in the one loop below: MouseButtonClick replaces the old `action=` for selecting a
-    // limb, MouseEnter applies a transient hover tint only when the hovered button isn't the
-    // active limb (so hovering the active one is always a no-op, no flicker), MouseExit re-runs
-    // the real 3-state refresh (empty/staged/active, fnc_injuryAuthor_refreshNavbar.sqf) to
-    // restore the correct color exactly - idempotent even if it fires right after a click already
-    // changed which limb is active.
+    // Navbar hover, driven entirely by script rather than native colorBackgroundActive/colorFocused
+    // (both deliberately transparent on AFCM_SIM_RscButtonNav, addons/ui/config.cpp) - real reason:
+    // those two natively can't both (a) show a hover cue on inactive buttons that's visibly
+    // different from the bright "active" color, so hovering never looks like a false selection, AND
+    // (b) stay perfectly identical to the runtime "active" color specifically when hovering the
+    // ALREADY-active button (which also natively holds focus after being clicked), to avoid the
+    // original focus/hover toggle-flicker bug - a single static class-level color can't be both
+    // "distinct from active" and "identical to active" at once. Scripting it sidesteps the
+    // contradiction entirely: MouseEnter only applies the hover tint to a button that ISN'T the
+    // active limb (so hovering the active one is always a no-op, no flicker), and MouseExit just
+    // re-runs the real 3-state refresh (empty/staged/active) to restore the correct color exactly,
+    // idempotent even if it fires right after a click already changed which limb is active.
+    //
+    // Click handling itself stays on the real `action=` in config.cpp (native ButtonClick), not
+    // scripted here - a real, confirmed attempt to move click handling to a scripted
+    // MouseButtonClick on a plain RscText broke the navbar completely (nothing was clickable or
+    // hoverable at all), so AFCM_SIM_RscButtonNav is a real RscButton again; see its own comment.
     {
         _x params ["_idc", "_limbId"];
         private _ctrlNav = _display displayCtrl _idc;
@@ -147,10 +151,6 @@ params ["_display"];
         // to still see this scope's private variables by then (HEMTT's own linter correctly flagged
         // _limbId as unresolved when this first tried to close over it directly).
         _ctrlNav setVariable ["AFCM_SIM_navLimbId", _limbId];
-        _ctrlNav ctrlAddEventHandler ["MouseButtonClick", {
-            params ["_ctrlClicked"];
-            [_ctrlClicked getVariable ["AFCM_SIM_navLimbId", ""]] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;
-        }];
         _ctrlNav ctrlAddEventHandler ["MouseEnter", {
             params ["_ctrlHover"];
             private _limbId = _ctrlHover getVariable ["AFCM_SIM_navLimbId", ""];

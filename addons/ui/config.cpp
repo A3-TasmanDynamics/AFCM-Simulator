@@ -274,27 +274,26 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
     colorBackground[] = AFCM_SIM_COLOR_DANGER_BG;
     colorBackgroundActive[] = AFCM_SIM_COLOR_DANGER_HOVER;
 };
-// Data-driven selection "button" (the 6 InjuryAuthor navbar entries) - NOT a real CT_BUTTON
-// (RscButton) at all, unlike every other button here. Two real attempts at fixing this on a real
-// RscButton (opaque colorBackgroundActive[]/colorFocused[] painting over the runtime state on
-// hover/focus; then making them transparent instead) both left real, confirmed bugs: clicking to
-// select didn't reliably show the highlight, and a button could stay highlighted with no mouse
-// over it and not being the active limb - real native CT_BUTTON focus/hover/pressed-state
-// internals interacting with this control's own 3-state runtime coloring (empty/staged/active,
-// fnc_injuryAuthor_refreshNavbar.sqf) in ways not fully controllable from config alone. Rebuilt as
-// a plain RscText (CT_STATIC) instead - no native button state exists AT ALL on this control type,
-// so there is nothing left to fight: background is 100% and only ever whatever
-// ctrlSetBackgroundColor last set (refreshNavbar.sqf for empty/staged/active, a MouseEnter handler
-// for the transient hover tint, fnc_injuryAuthor_init.sqf). Click handling moves from this class's
-// own (now removed) `action=` - meaningless on a non-button control - to a scripted
-// `MouseButtonClick` handler, same file.
-class AFCM_SIM_RscButtonNav: RscText
+// Data-driven selection button (the 6 InjuryAuthor navbar entries) - unlike every other button
+// here, its background isn't a fixed "rest vs. hover" pair, it's one of 3 runtime states
+// (empty/has-staged-injury/active) written by fnc_injuryAuthor_refreshNavbar.sqf via
+// ctrlSetBackgroundColor.
+//
+// Real history, 3 attempts: (1) opaque colorBackgroundActive[]/colorFocused[] painted over the
+// runtime state on hover/focus. (2) made them transparent instead - fixed the false-highlight-on-
+// hover bug, but left 2 real, confirmed bugs of its own (clicking to select didn't reliably show
+// the highlight; a button could stay highlighted with no mouse over it and not being the active
+// limb). (3) rebuilt as a plain RscText (CT_STATIC), reasoning that removing all native button
+// state would remove the whole bug class - instead broke the navbar completely: RscText controls
+// don't reliably receive MouseButtonClick/MouseEnter/MouseExit the way CT_BUTTON does, so nothing
+// was clickable or hoverable at all. Reverted back to a real RscButton (this class) - transparent
+// colorBackgroundActive[]/colorFocused[] (attempt 2's state) is the known-working baseline; the
+// remaining click-reliability/stuck-highlight bug is still open, to be revisited without breaking
+// basic interactivity again.
+class AFCM_SIM_RscButtonNav: AFCM_SIM_RscButton
 {
-    style = 2; // ST_CENTER - RscText's own real default isn't centered, unlike RscButton's
-    colorText[] = AFCM_SIM_COLOR_TEXT;
-    colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
-    sizeEx = "0.022 * safeZoneH";
-    shadow = 1;
+    colorBackgroundActive[] = {0, 0, 0, 0};
+    colorFocused[] = {0, 0, 0, 0};
 };
 
 #define IDD_AFCM_SIM_PRESETLIBRARY 25603
@@ -1405,10 +1404,10 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // column - and a straight top-to-bottom list is literally "go down the body limb list",
         // the exact request this replaces the old back-and-forth flow with. Recolored 3 ways
         // (unselected/has-staged-injury/active) by fnc_injuryAuthor_refreshNavbar.sqf via
-        // ctrlSetBackgroundColor - AFCM_SIM_RscButtonNav is a plain RscText, not a real button at
-        // all (see its own comment), so there's no native hover/focus/click state to fight. No
-        // `action=` on any of the 6 below - click handling is wired in
-        // fnc_injuryAuthor_init.sqf via a scripted MouseButtonClick handler instead.
+        // ctrlSetBackgroundColor - AFCM_SIM_RscButtonNav (not the plain AFCM_SIM_RscButton every
+        // other button here uses) keeps native hover/focus from painting over that. A real
+        // RscButton (see its own comment for why, not a plain RscText - that broke click/hover
+        // entirely).
         class NavHead: AFCM_SIM_RscButtonNav
         {
             idc = IDC_AFCM_SIM_IA_NAV_HEAD;
@@ -1417,6 +1416,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.170 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+            action = "[""head""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
         class NavChest: AFCM_SIM_RscButtonNav
         {
@@ -1426,6 +1426,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.221 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+            action = "[""chest""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
         class NavArmLeft: AFCM_SIM_RscButtonNav
         {
@@ -1435,6 +1436,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.272 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+            action = "[""leftArm""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
         class NavArmRight: AFCM_SIM_RscButtonNav
         {
@@ -1444,6 +1446,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.323 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+            action = "[""rightArm""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
         class NavLegLeft: AFCM_SIM_RscButtonNav
         {
@@ -1453,6 +1456,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.374 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+            action = "[""leftLeg""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
         class NavLegRight: AFCM_SIM_RscButtonNav
         {
@@ -1462,6 +1466,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.425 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+            action = "[""rightLeg""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
         // Text/color set dynamically (fnc_injuryAuthor_setActiveLimb.sqf) - shows which limb the
         // form on the right is currently editing.
