@@ -35,3 +35,15 @@
     "AFCM Medical Simulator",
     false
 ] call CBA_fnc_addSetting;
+
+// Governs the "AFCM: <Title>"/"AFCM: Spawn Patient" interaction added to an object synced to an
+// Eden AFCM Patient module (addons/eden/functions/fnc_module_patientPlacement.sqf,
+// addons/ui/functions/fnc_addSpawnPatientAction.sqf). Scroll Wheel is the default since ACE's
+// interaction menu isn't guaranteed loaded - fnc_addSpawnPatientAction.sqf falls back to the scroll
+// action per-client if ACE Interaction Menu is picked but ace_interact_menu isn't actually present
+// on that specific client, so this setting can never leave someone with no way to trigger the spawn.
+["afcm_sim_terminalInteractionMethod", "LIST",
+    ["Patient Terminal Interaction Method", "How a player triggers the ""Spawn Patient"" interaction on an object synced to an AFCM Patient module. ACE Interaction Menu requires ACE3's interaction menu addon - falls back to Scroll Wheel per-client if it's not actually loaded."],
+    "AFCM Medical Simulator",
+    [[0, 1, 2], ["Scroll Wheel", "ACE Interaction Menu", "Both"], 0]
+] call CBA_fnc_addSetting;
