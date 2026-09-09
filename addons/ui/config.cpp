@@ -284,7 +284,7 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
 // (empty/has-staged-injury/active) written by fnc_injuryAuthor_refreshNavbar.sqf via
 // ctrlSetBackgroundColor.
 //
-// Real history, 4 attempts: (1) opaque colorBackgroundActive[]/colorFocused[] both bright/identical
+// Real history, 5 attempts: (1) opaque colorBackgroundActive[]/colorFocused[] both bright/identical
 // - painted over the runtime state on hover/focus regardless of true empty/staged/active status
 // ("highlighted when not selected"). (2) made them transparent instead - engine behavior turned out
 // to be "replace the runtime ctrlSetBackgroundColor value while hovered/focused", not "let it show
@@ -297,17 +297,23 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
 // that removing all native button state would remove the whole bug class - instead broke the navbar
 // completely: RscText controls don't reliably receive MouseButtonClick/MouseEnter/MouseExit the way
 // CT_BUTTON does, so nothing was clickable or hoverable at all; reverted to a real RscButton.
-// (4, current) stopped fighting the "replace, don't blend" rendering model and aligned with it
-// instead: colorBackgroundActive[]/colorFocused[] are opaque, intentional, and deliberately
-// different colors matching what hover/selected should actually look like, so the native
-// replace-on-hover/replace-on-focus behavior now paints the *correct* color rather than a stale or
-// blank one. colorFocused (selected) is deliberately darker than colorBackgroundActive (hover) per
-// explicit user request, so the two states stay visually distinct even while overlapping (hovering
-// the already-selected button).
+// (4) made colorBackgroundActive[]/colorFocused[] opaque, intentional, and deliberately different
+// colors instead (hover vs. selected) - fixed the transparency symptoms above, but a clicked button
+// keeps native engine focus indefinitely, and a focused-and-still-hovered button (the normal case
+// right after clicking it) apparently can't stably render two different opaque "active" colors at
+// once either - real, confirmed symptom: the selected button kept flashing/pulsing instead of
+// staying solid. (5, current) stopped relying on colorFocused at all: the click handler
+// (fnc_injuryAuthor_onNavClick.sqf) now drops focus immediately after handling the click
+// (ctrlSetFocus controlNull), so colorFocused's condition is essentially never true and its value
+// no longer matters in practice - back to transparent, purely as a safe default. The actual
+// "selected" look is carried entirely by the runtime ctrlSetBackgroundColor
+// fnc_injuryAuthor_refreshNavbar.sqf already sets (the same darker AFCM_SIM_COLOR_ACCENT_SELECTED,
+// per explicit user request that selected read as darker than hover), which is stable because it
+// isn't fighting any native focus/hover repaint once focus is out of the picture.
 class AFCM_SIM_RscButtonNav: AFCM_SIM_RscButton
 {
     colorBackgroundActive[] = AFCM_SIM_COLOR_ACCENT_HOVER;
-    colorFocused[] = AFCM_SIM_COLOR_ACCENT_SELECTED;
+    colorFocused[] = {0, 0, 0, 0};
 };
 
 #define IDD_AFCM_SIM_PRESETLIBRARY 25603
