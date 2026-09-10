@@ -1,7 +1,7 @@
 /*
  * Author: Tasman Dynamics
  * Resolves an AFCM_SIM_ModulePatientPlacement logic's attributes (Casualty Type/Session Name/
- * Training Preset/Injury Preset Import, addons/eden/config.cpp) into what
+ * Training Preset/Injury Preset Import/Patient Name, addons/eden/config.cpp) into what
  * afcm_sim_spawner_fnc_spawnPatient actually needs - factored out of fnc_module_patientPlacement.sqf
  * so both real spawn paths (immediate auto-spawn when nothing's synced to the module, and the
  * deferred on-demand spawn once something is - fnc_serverSpawnFromTerminal.sqf) share exactly one
@@ -19,7 +19,7 @@
  *
  * Return Value:
  * [Injuries <ARRAY of Injury HASHMAP>, Casualty Type <NUMBER>, Session Label <STRING>,
- *  katExtras <ARRAY>]
+ *  katExtras <ARRAY>, Patient Name <STRING>]
  *
  * Public: No
 */
@@ -28,6 +28,7 @@ params ["_logic"];
 
 private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
 private _sessionLabel = _logic getVariable ["AFCM_SIM_sessionName", ""];
+private _patientName = (_logic getVariable ["AFCM_SIM_patientName", ""]) call CBA_fnc_trim;
 
 private _injuries = [];
 private _katExtras = [];
@@ -65,4 +66,4 @@ if (_trainingPresetIdx > 0) then {
     };
 };
 
-[_injuries, _casualtyType, _sessionLabel, _katExtras]
+[_injuries, _casualtyType, _sessionLabel, _katExtras, _patientName]

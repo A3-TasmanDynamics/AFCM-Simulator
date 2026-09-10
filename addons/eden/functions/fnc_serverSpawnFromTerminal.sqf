@@ -37,5 +37,5 @@ if (_object getVariable ["AFCM_SIM_terminalSpawned", false]) exitWith {};
 _object setVariable ["AFCM_SIM_terminalSpawned", true, true];
 
 private _pos = getPosASL _object;
-(_logic call afcm_sim_eden_fnc_resolvePatientAttributes) params ["_injuries", "_casualtyType", "_sessionLabel", "_katExtras"];
-[_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras] call afcm_sim_spawner_fnc_spawnPatient;
+(_logic call afcm_sim_eden_fnc_resolvePatientAttributes) params ["_injuries", "_casualtyType", "_sessionLabel", "_katExtras", "_patientName"];
+[_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras, -1, _patientName] call afcm_sim_spawner_fnc_spawnPatient;
