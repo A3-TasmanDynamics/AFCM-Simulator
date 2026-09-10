@@ -192,11 +192,16 @@ class CfgVehicles
         //    array a live patient's "Export Patient State" action produces on its own
         //    (fnc_exportPatientState.sqf - just `injuries`, or `[injuries, katExtras]` when there's
         //    KAT extras/cardiac state to carry - no id/name/author/description/tags noise).
-        //  - AFCM_SIM_SpawnMarkerName: where the patient spawns when nothing's synced to this module
-        //    (auto-spawn mode). To use: place a "System: Marker" object, give IT a Variable Name in
-        //    its own attributes (not this module's), then type that exact name here. Leave blank to
-        //    spawn at this module's own placed position instead. Has no effect at all once an object
-        //    is synced (on-demand mode) - position there always comes from the synced object itself.
+        //  - AFCM_SIM_SpawnMarkerName: where patients spawn when nothing's synced to this module
+        //    (auto-spawn mode) - a PREFIX, not one exact marker name, so one module can seed a whole
+        //    batch: place a "System: Marker" object per patient, give each one a Variable Name
+        //    starting with the same prefix (e.g. afcmPatient_1, afcmPatient_2, ...) in ITS OWN
+        //    attributes (not this module's), then type just the shared prefix here - one patient
+        //    spawns per matching marker, sharing this module's same Casualty Type/Training Preset. A
+        //    single marker named EXACTLY the prefix still works as before (spawns just the one
+        //    patient). Leave blank to spawn one patient at this module's own placed position instead.
+        //    Has no effect at all once an object is synced (on-demand mode) - position there always
+        //    comes from the synced object itself.
         class Attributes: AFCM_SIM_CasualtyTypeAttributes
         {
             class AFCM_SIM_TrainingPreset
@@ -235,8 +240,8 @@ class CfgVehicles
             };
             class AFCM_SIM_SpawnMarkerName
             {
-                displayName = "Spawn Marker Name";
-                tooltip = "Only used when nothing is synced to this module. Place a System: Marker, give it a Variable Name in ITS OWN attributes, then type that exact name here to spawn at its position. Leave blank to spawn at this module's own placed position instead.";
+                displayName = "Spawn Marker Name (prefix)";
+                tooltip = "Only used when nothing is synced to this module. Every placed System: Marker whose own Variable Name starts with this gets its own patient - e.g. prefix 'afcmPatient' matches markers afcmPatient_1, afcmPatient_2, etc. A single marker named exactly this still works as before, spawning just the one patient. Leave blank to spawn at this module's own placed position instead.";
                 property = "AFCM_SIM_spawnMarkerName";
                 control = "Edit";
                 defaultValue = "";
