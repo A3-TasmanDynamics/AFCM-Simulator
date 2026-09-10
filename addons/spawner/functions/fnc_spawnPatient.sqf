@@ -90,20 +90,18 @@ _unit setUnitPos "DOWN";
 _unit setCaptive true;
 _unit setDir (random 360);
 
-// Random name, flavored to match the casualty type already picked - real, vanilla BIS_fnc_generateName
-// (\A3\functions_f\Names\fn_generateName.sqf), not a hand-rolled name pool. Deliberately NOT `side
-// _unit` - AFCM_SIM_patientGroup (above) is always a `civilian`-side group for every patient
-// regardless of _casualtyType (a deliberate non-combatant/prop choice, unrelated to the cosmetic
-// classname picked above), so `side _unit` would always report civilian here. This parallel array,
-// indexed the same way _casualtyClasses already is, is what actually drives name flavor instead. A
-// global-effect command (replicates automatically, like setCaptive/removeAllWeapons below) - no
-// remoteExec/JIP handling needed, unlike the addAction wiring further down this file.
-private _nameSides = [civilian, west, east, independent];
-private _nameSide = _nameSides param [_casualtyType, civilian];
-private _generatedName = [_nameSide] call BIS_fnc_generateName;
-if (_generatedName isEqualType "" && {_generatedName != ""}) then {
-    _unit setName _generatedName;
-};
+// Random name - a real, confirmed bug fixed here: this used to call `BIS_fnc_generateName`, which
+// turned out to NOT actually be defined at this point (real in-game RPT: "Undefined variable in
+// expression: bis_fnc_generatename") - the function this addon assumed was a always-available
+// vanilla name generator either doesn't exist under that name or isn't compiled yet when a patient
+// spawns this early. Rather than depend on an unverified engine function again, this is a plain
+// hardcoded first/last name pool (same "hardcoded array of real data" pattern
+// fnc_getBuiltinPresets.sqf already uses) - guaranteed to work with nothing but this addon itself,
+// no DLC/function-library timing assumptions. A global-effect command (replicates automatically,
+// like setCaptive/removeAllWeapons below) - no remoteExec/JIP handling needed.
+private _firstNames = ["James", "John", "Robert", "Michael", "David", "William", "Daniel", "Joseph", "Thomas", "Charles", "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Susan", "Sarah", "Karen", "Lisa", "Nancy"];
+private _lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Wilson", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee", "Thompson", "White"];
+_unit setName format ["%1 %2", selectRandom _firstNames, selectRandom _lastNames];
 
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
 
