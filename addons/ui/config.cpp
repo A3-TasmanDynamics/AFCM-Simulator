@@ -168,6 +168,16 @@ class CfgFunctions
             file = "\afcm_sim\addons\ui\functions";
             class addTerminalAction { file = "\afcm_sim\addons\ui\functions\fnc_addTerminalAction.sqf"; };
         };
+        // AFCM Patient module's on-demand mode (eden/config.cpp's AFCM_SIM_ModulePatientPlacement,
+        // once something is synced to it) - adds a "Spawn Patient" interaction (scroll wheel and/or
+        // ACE interaction menu, afcm_sim_terminalInteractionMethod CBA setting) to whatever object
+        // the module is synced/attached to, same idea as InteractiveTerminal above but for spawning
+        // this specific configured patient rather than opening a dialog.
+        class PatientTerminal
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class addSpawnPatientAction { file = "\afcm_sim\addons\ui\functions\fnc_addSpawnPatientAction.sqf"; };
+        };
         // Generic AFCM-branded toast (RscDisplayAFCM_SIM_Toast, cutRsc-based, below) - a passive
         // HUD overlay, not a dialog, so it never steals input focus from Zeus or whatever else is
         // open. afcm_sim_scenario_fnc_startMedicalTentMonitor's session-resolved check is its first

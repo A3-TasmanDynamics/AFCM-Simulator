@@ -89,6 +89,22 @@ _unit setPosATL _jitteredPos;
 _unit setUnitPos "DOWN";
 _unit setCaptive true;
 _unit setDir (random 360);
+
+// Random name, flavored to match the casualty type already picked - real, vanilla BIS_fnc_generateName
+// (\A3\functions_f\Names\fn_generateName.sqf), not a hand-rolled name pool. Deliberately NOT `side
+// _unit` - AFCM_SIM_patientGroup (above) is always a `civilian`-side group for every patient
+// regardless of _casualtyType (a deliberate non-combatant/prop choice, unrelated to the cosmetic
+// classname picked above), so `side _unit` would always report civilian here. This parallel array,
+// indexed the same way _casualtyClasses already is, is what actually drives name flavor instead. A
+// global-effect command (replicates automatically, like setCaptive/removeAllWeapons below) - no
+// remoteExec/JIP handling needed, unlike the addAction wiring further down this file.
+private _nameSides = [civilian, west, east, independent];
+private _nameSide = _nameSides param [_casualtyType, civilian];
+private _generatedName = [_nameSide] call BIS_fnc_generateName;
+if (_generatedName isEqualType "" && {_generatedName != ""}) then {
+    _unit setName _generatedName;
+};
+
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
 
 // Strip down to bare clothing - a patient is a casualty prop, not a combatant, and shouldn't spawn

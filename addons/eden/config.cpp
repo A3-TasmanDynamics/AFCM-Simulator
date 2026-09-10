@@ -39,6 +39,8 @@ class CfgFunctions
             // both the fnc_ filename AND the absolute-path form are required.
             class module_patientPlacement { file = "\afcm_sim\addons\eden\functions\fnc_module_patientPlacement.sqf"; };
             class module_interactiveTerminal { file = "\afcm_sim\addons\eden\functions\fnc_module_interactiveTerminal.sqf"; };
+            class resolvePatientAttributes { file = "\afcm_sim\addons\eden\functions\fnc_resolvePatientAttributes.sqf"; };
+            class serverSpawnFromTerminal { file = "\afcm_sim\addons\eden\functions\fnc_serverSpawnFromTerminal.sqf"; };
         };
     };
 };
@@ -125,6 +127,24 @@ class CfgVehicles
             defaultValue = "";
             typeName = "STRING";
         };
+        // Editor-only label - NOT the patient's in-game name (patients now always get a random one,
+        // afcm_sim_spawner_fnc_spawnPatient) and has no effect at all unless this module is synced to
+        // an object (fnc_module_patientPlacement.sqf): syncing switches the module from auto-spawn to
+        // an on-demand "Spawn Patient" interaction on that object, and THAT interaction's whole label
+        // becomes "AFCM: <Title>" when set (fnc_addSpawnPatientAction.sqf) - the one place multiple
+        // placed instances actually need to look distinct to a real player, not just to whoever's
+        // editing the mission. On AFCM_SIM_CasualtyTypeAttributes (not just PatientPlacement) for the
+        // same reason AFCM_SIM_SessionName already is - a generic, low-coupling label attribute, even
+        // though only PatientPlacement's own sync flow reads it.
+        class AFCM_SIM_Title
+        {
+            displayName = "Title (editor-only)";
+            tooltip = "A label to tell multiple placed AFCM Patient modules apart - in Eden, AND on the 'Spawn Patient' interaction if this module is synced to an object. Never applied to the patient itself as a name.";
+            property = "AFCM_SIM_title";
+            control = "Edit";
+            defaultValue = "";
+            typeName = "STRING";
+        };
     };
 
     class AFCM_SIM_ModulePatientPlacement: Module_F
@@ -144,41 +164,70 @@ class CfgVehicles
         // No Injury Level attribute anymore - this module now spawns a clean, unconscious patient
         // by default and relies on the "Edit Injuries" scroll action (added to every spawned
         // patient, afcm_sim_spawner_fnc_spawnPatient) for real injury selection, same as Zeus's
-        // Spawn Patient module - UNLESS the Injury Preset Import attribute below is filled in, in
+        // Spawn Patient module - UNLESS Training Preset or Injury Preset Import (below) is set, in
         // which case the patient spawns pre-configured with those exact injuries instead.
         //
         // Casualty Type IS still an attribute here though - purely cosmetic (clothing/appearance),
         // not tied to the injury-randomization pipeline the old Injury Level attribute controlled,
         // so it makes sense on a manually-treated single patient too.
         //
-        // Two more attributes, both read back by fnc_module_patientPlacement.sqf:
+        // Real, confirmed behaviour change: syncing ANY object to this module (Eden: Ctrl+click drag
+        // a sync line to it) now means "spawn this patient on demand, via an interaction on that
+        // object" instead of "spawn immediately at mission start" - a laptop, a table, anything.
+        // fnc_module_patientPlacement.sqf resolves this at runtime (see its own comment); everything
+        // below is the same regardless of which mode a given placed instance ends up in.
+        //
+        // Attributes, all read back by fnc_module_patientPlacement.sqf/fnc_resolvePatientAttributes.sqf:
+        //  - AFCM_SIM_TrainingPreset: quick-pick a built-in training scenario (airway/fracture/
+        //    hemorrhage/GSW/blast/etc.) instead of hand-pasting an export string below. Wins over
+        //    Injury Preset Import when set to anything but "None" - see its own comment.
         //  - AFCM_SIM_InjuryPresetImport: paste an exported Injury Preset or Patient State string
-        //    here to spawn this patient pre-injured, e.g. one hand-authored casualty that's part
-        //    of a larger custom MCI built entirely out of these modules. Parsed by the shared
-        //    afcm_sim_scenario_fnc_parseExportedPreset (also used by the Preset Library's own
+        //    here to spawn this patient pre-injured with something not covered by Training Preset,
+        //    e.g. one hand-authored casualty that's part of a larger custom MCI built entirely out of
+        //    these modules. Only consulted when Training Preset is left on "None". Parsed by the
+        //    shared afcm_sim_scenario_fnc_parseExportedPreset (also used by the Preset Library's own
         //    Import), which accepts EITHER real export shape: the full Preset envelope the Preset
         //    Library's own Export button produces (fnc_exportPreset.sqf -
         //    `[id, name, author, description, injuries, tags, katExtras?]`), or the leaner bare
         //    array a live patient's "Export Patient State" action produces on its own
         //    (fnc_exportPatientState.sqf - just `injuries`, or `[injuries, katExtras]` when there's
-        //    KAT extras/cardiac state to carry - no id/name/author/description/tags noise). KAT
-        //    extras, from either shape, are applied via afcm_sim_scenario_fnc_serverApplyKatExtras
-        //    alongside the base injuries.
-        //  - AFCM_SIM_SpawnMarkerName: where the patient actually spawns. Left blank (the default),
-        //    behaviour is unchanged - the module's own placed position. Real, confirmed bug fixed
-        //    here: an earlier pass also required a "Spawn at Synced Object" checkbox to be ticked
-        //    before a synced object's position would be used at all, so simply syncing an object
-        //    with the checkbox left at its default silently fell through to the module's own
-        //    position - that checkbox is gone now. Any object synced to the module (Eden:
-        //    Ctrl+click drag a sync line to it) now always wins; a non-blank marker name here is
-        //    the fallback when nothing's synced (fnc_module_patientPlacement.sqf has the full
-        //    precedence).
+        //    KAT extras/cardiac state to carry - no id/name/author/description/tags noise).
+        //  - AFCM_SIM_SpawnMarkerName: where the patient spawns when nothing's synced to this module
+        //    (auto-spawn mode). To use: place a "System: Marker" object, give IT a Variable Name in
+        //    its own attributes (not this module's), then type that exact name here. Leave blank to
+        //    spawn at this module's own placed position instead. Has no effect at all once an object
+        //    is synced (on-demand mode) - position there always comes from the synced object itself.
         class Attributes: AFCM_SIM_CasualtyTypeAttributes
         {
+            class AFCM_SIM_TrainingPreset
+            {
+                displayName = "Training Preset (quick pick)";
+                tooltip = "Quick-pick a built-in training scenario instead of hand-pasting an export string below. Wins over Injury Preset Import when set to anything but None.";
+                property = "AFCM_SIM_trainingPreset";
+                control = "combo";
+                defaultValue = "0";
+                // Values here are positional indices into afcm_sim_scenario_fnc_getBuiltinPresets.sqf's
+                // own array (value N -> that array's index N-1) - deliberately an index, not a
+                // duplicated id string, to avoid a second hardcoded list drifting out of sync. If that
+                // file's array ever changes order/count, this list MUST be updated to match - see its
+                // own comment, which points back here.
+                class Values
+                {
+                    class None { name = "None (use paste below)"; value = 0; default = 1; };
+                    class GswChest { name = "GSW - Chest"; value = 1; };
+                    class GswLimbTq { name = "GSW - Limb (Tourniquet Candidate)"; value = 2; };
+                    class BlastCasualty { name = "Blast Casualty"; value = 3; };
+                    class FragMultiple { name = "Frag Wounds (Multiple)"; value = 4; };
+                    class MinorLaceration { name = "Training - Minor Laceration"; value = 5; };
+                    class AirwayObstruction { name = "Airway - Obstruction"; value = 6; };
+                    class FractureMultiple { name = "Fractures - Multiple Limb"; value = 7; };
+                    class SevereHemorrhage { name = "Severe Hemorrhage (Multi-Site)"; value = 8; };
+                };
+            };
             class AFCM_SIM_InjuryPresetImport
             {
                 displayName = "Injury Preset (paste to import)";
-                tooltip = "Paste an exported Injury Preset or Patient State string here to spawn this patient pre-configured with those exact injuries (including any KAT fracture/pneumothorax/airway/cardiac state the export carries). Leave blank to spawn clean/unconscious (use the Edit Injuries action instead).";
+                tooltip = "Only used when Training Preset above is left on None. Paste an exported Injury Preset or Patient State string here to spawn this patient pre-configured with those exact injuries (including any KAT fracture/pneumothorax/airway/cardiac state the export carries). Leave blank to spawn clean/unconscious (use the Edit Injuries action instead).";
                 property = "AFCM_SIM_injuryPresetImport";
                 control = "Edit";
                 defaultValue = "";
@@ -187,7 +236,7 @@ class CfgVehicles
             class AFCM_SIM_SpawnMarkerName
             {
                 displayName = "Spawn Marker Name";
-                tooltip = "Name of a placed marker to spawn the patient at. Ignored if an object is synced to this module (that always wins). Leave blank to spawn at the module's own placed position.";
+                tooltip = "Only used when nothing is synced to this module. Place a System: Marker, give it a Variable Name in ITS OWN attributes, then type that exact name here to spawn at its position. Leave blank to spawn at this module's own placed position instead.";
                 property = "AFCM_SIM_spawnMarkerName";
                 control = "Edit";
                 defaultValue = "";
