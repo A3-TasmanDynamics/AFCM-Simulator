@@ -38,8 +38,6 @@
  *    mode) learns which real unit its own Apply & Spawn Patient click actually produced. Called by
  *    name, no requiredAddons dependency on afcm_sim_ui - same reasoning already documented below for
  *    the addInjuryEditorAction/addTreatedAction/addExportStateAction calls.
- * 7: Explicit Name <STRING> (default "" - random) - overrides the random first/last name pool below
- *    with a specific name instead, e.g. the Eden AFCM Patient module's own Patient Name attribute.
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -50,7 +48,7 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1], ["_explicitName", ""]];
+params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1]];
 
 // Purely cosmetic - all four are real, base-game (no DLC/faction mod) Arma 3 classnames, so this
 // works with nothing but vanilla + CBA installed. Whatever's picked, gear is stripped down to bare
@@ -92,25 +90,18 @@ _unit setUnitPos "DOWN";
 _unit setCaptive true;
 _unit setDir (random 360);
 
-// Name - explicit (_explicitName) if the caller gave one, else random. A real, confirmed bug fixed
-// here for the random path: this used to call `BIS_fnc_generateName`, which turned out to NOT
-// actually be defined at this point (real in-game RPT: "Undefined variable in expression:
-// bis_fnc_generatename") - the function this addon assumed was an always-available vanilla name
-// generator either doesn't exist under that name or isn't compiled yet when a patient spawns this
-// early. Rather than depend on an unverified engine function again, this is a plain hardcoded
-// first/last name pool (same "hardcoded array of real data" pattern fnc_getBuiltinPresets.sqf
-// already uses) - guaranteed to work with nothing but this addon itself, no DLC/function-library
-// timing assumptions. `setName` is a global-effect command (replicates automatically, like
-// setCaptive/removeAllWeapons below) - no remoteExec/JIP handling needed either way.
-// _explicitName (e.g. the Eden AFCM Patient module's own Patient Name attribute) wins when given -
-// the random pool is only the fallback for callers that didn't ask for one specific name.
-if (_explicitName != "") then {
-    _unit setName _explicitName;
-} else {
-    private _firstNames = ["James", "John", "Robert", "Michael", "David", "William", "Daniel", "Joseph", "Thomas", "Charles", "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Susan", "Sarah", "Karen", "Lisa", "Nancy"];
-    private _lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Wilson", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee", "Thompson", "White"];
-    _unit setName format ["%1 %2", selectRandom _firstNames, selectRandom _lastNames];
-};
+// Random name, every patient, always - a real, confirmed bug fixed here: this used to call
+// `BIS_fnc_generateName`, which turned out to NOT actually be defined at this point (real in-game
+// RPT: "Undefined variable in expression: bis_fnc_generatename") - the function this addon assumed
+// was an always-available vanilla name generator either doesn't exist under that name or isn't
+// compiled yet when a patient spawns this early. Rather than depend on an unverified engine function
+// again, this is a plain hardcoded first/last name pool (same "hardcoded array of real data" pattern
+// fnc_getBuiltinPresets.sqf already uses) - guaranteed to work with nothing but this addon itself, no
+// DLC/function-library timing assumptions. `setName` is a global-effect command (replicates
+// automatically, like setCaptive/removeAllWeapons below) - no remoteExec/JIP handling needed.
+private _firstNames = ["James", "John", "Robert", "Michael", "David", "William", "Daniel", "Joseph", "Thomas", "Charles", "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Susan", "Sarah", "Karen", "Lisa", "Nancy"];
+private _lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Wilson", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee", "Thompson", "White"];
+_unit setName format ["%1 %2", selectRandom _firstNames, selectRandom _lastNames];
 
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
 

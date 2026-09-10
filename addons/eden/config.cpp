@@ -131,7 +131,7 @@ class CfgVehicles
         // afcm_sim_spawner_fnc_spawnPatient) and has no effect at all unless this module is synced to
         // an object (fnc_module_patientPlacement.sqf): syncing switches the module from auto-spawn to
         // an on-demand "Spawn Patient" interaction on that object, and THAT interaction's whole label
-        // becomes "AFCM: <Title>" when set (fnc_addSpawnPatientAction.sqf) - the one place multiple
+        // becomes "AFCM: Spawn <Title>" when set (fnc_addSpawnPatientAction.sqf) - the one place multiple
         // placed instances actually need to look distinct to a real player, not just to whoever's
         // editing the mission. On AFCM_SIM_CasualtyTypeAttributes (not just PatientPlacement) for the
         // same reason AFCM_SIM_SessionName already is - a generic, low-coupling label attribute, even
@@ -139,7 +139,7 @@ class CfgVehicles
         class AFCM_SIM_Title
         {
             displayName = "Title (editor-only)";
-            tooltip = "A label to tell multiple placed AFCM Patient modules apart - in Eden, AND on the 'Spawn Patient' interaction if this module is synced to an object. Never applied to the patient itself as a name.";
+            tooltip = "A label to tell multiple placed AFCM Patient modules apart - in Eden, AND on the interaction if this module is synced to an object (reads 'AFCM: Spawn <Title>' instead of the generic 'AFCM: Spawn Patient'). Never applied to the patient itself as a name - patients always get a random name.";
             property = "AFCM_SIM_title";
             control = "Edit";
             defaultValue = "";
@@ -202,23 +202,8 @@ class CfgVehicles
         //    patient). Leave blank to spawn one patient at this module's own placed position instead.
         //    Has no effect at all once an object is synced (on-demand mode) - position there always
         //    comes from the synced object itself.
-        //  - AFCM_SIM_PatientName: an explicit in-game name for this patient, overriding the random
-        //    one every spawned patient otherwise gets (afcm_sim_spawner_fnc_spawnPatient). Only
-        //    applies to a SINGLE-patient spawn (module's own position, one synced object, or a Spawn
-        //    Marker Name prefix that matches exactly one marker) - ignored (falls back to random, per
-        //    patient) for a multi-marker batch, since every patient in a batch would otherwise share
-        //    this same literal name.
         class Attributes: AFCM_SIM_CasualtyTypeAttributes
         {
-            class AFCM_SIM_PatientName
-            {
-                displayName = "Patient Name (optional)";
-                tooltip = "Explicit in-game name for this patient, instead of a random one. Ignored for a multi-marker batch spawn (Spawn Marker Name prefix matching more than one marker) - those still get random names, one per patient.";
-                property = "AFCM_SIM_patientName";
-                control = "Edit";
-                defaultValue = "";
-                typeName = "STRING";
-            };
             class AFCM_SIM_TrainingPreset
             {
                 displayName = "Training Preset (quick pick)";

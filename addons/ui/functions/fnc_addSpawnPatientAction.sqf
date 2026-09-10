@@ -26,9 +26,11 @@
  * what's tagged on the object itself" pattern already used for the Injury Author navbar's own
  * MouseEnter/MouseExit handlers (addons/ui/functions/fnc_injuryAuthor_init.sqf).
  *
- * Label is "AFCM: <Title>" when the module's Title attribute is set, else plain "AFCM: Spawn
+ * Label is "AFCM: Spawn <Title>" when the module's Title attribute is set, else plain "AFCM: Spawn
  * Patient" - the one place multiple placed AFCM Patient modules need to look distinct to a real
- * player, not just to whoever's editing the mission (Title's own comment, eden/config.cpp).
+ * player, not just to whoever's editing the mission (Title's own comment, eden/config.cpp). This is
+ * still just a label - patients themselves always get a random name regardless of Title (real,
+ * confirmed decision: an explicit per-patient name override was tried and deliberately reverted).
  *
  * Both interaction paths share one guard: the target object's own AFCM_SIM_terminalSpawned variable
  * (init'd false by fnc_module_patientPlacement.sqf, set true by fnc_serverSpawnFromTerminal.sqf once
@@ -52,7 +54,7 @@ params ["_object", "_logic"];
 if (isNull _object || {isNull _logic}) exitWith {};
 
 private _title = _logic getVariable ["AFCM_SIM_title", ""];
-private _label = if (_title != "") then { format ["AFCM: %1", _title] } else { "AFCM: Spawn Patient" };
+private _label = if (_title != "") then { format ["AFCM: Spawn %1", _title] } else { "AFCM: Spawn Patient" };
 
 // Local only (no `true`) - read back on the exact same client that's about to set it, inside the
 // same interaction click, never over the network.

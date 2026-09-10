@@ -70,7 +70,7 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
             allMapMarkers select { (_x find _markerPrefix) == 0 }
         };
 
-        (_logic call afcm_sim_eden_fnc_resolvePatientAttributes) params ["_injuries", "_casualtyType", "_sessionLabel", "_katExtras", "_patientName"];
+        (_logic call afcm_sim_eden_fnc_resolvePatientAttributes) params ["_injuries", "_casualtyType", "_sessionLabel", "_katExtras"];
 
         if (_matchingMarkers isEqualTo [] || {count _matchingMarkers == 1}) then {
             if (_markerPrefix != "" && {_matchingMarkers isEqualTo []}) then {
@@ -81,7 +81,7 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
                 private _markerPos = getMarkerPos (_matchingMarkers select 0);
                 _pos = [_markerPos select 0, _markerPos select 1, 0];
             };
-            [_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras, -1, _patientName] call afcm_sim_spawner_fnc_spawnPatient;
+            [_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras] call afcm_sim_spawner_fnc_spawnPatient;
         } else {
             // One shared session for the whole batch (same "generate one id up front, pass it to
             // every patient" pattern the MCI Spawner modules/MCI Creator already use) - so the whole
@@ -90,13 +90,6 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
             // fnc_spawnPatient.sqf's own generic "Spawn Patient" fallback, which only applies when NO
             // session id is passed at all - a real, pre-generated id here would otherwise reach the
             // Session Manager with a blank label.
-            //
-            // Patient Name is deliberately NOT threaded through here (config.cpp's own comment on
-            // AFCM_SIM_PatientName) - every patient in a real multi-marker batch would otherwise share
-            // this exact literal name, which is worse than the random pool it's meant to override.
-            if (_patientName != "") then {
-                diag_log text format ["[AFCM-Simulator] AFCM Patient module - Patient Name '%1' ignored: %2 markers matched, and a batch can't share one explicit name.", _patientName, count _matchingMarkers];
-            };
             private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
             if (_sessionLabel == "") then { _sessionLabel = "AFCM Patient (Marker Batch)"; };
             diag_log text format ["[AFCM-Simulator] AFCM Patient module - Spawn Marker Name '%1' matched %2 marker(s), spawning one patient at each.", _markerPrefix, count _matchingMarkers];
