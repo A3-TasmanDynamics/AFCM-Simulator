@@ -14,6 +14,18 @@
  * real vanilla addAction submenu mechanism exists (confirmed, same reasoning fnc_addTerminalAction.sqf
  * documents) - the scroll action is deliberately flat, "AFCM:"-prefixed.
  *
+ * Real, confirmed bug fixed here: the shared statement/condition code used to destructure `_this` as
+ * `[_target, _caller, _actionId, _arguments]` - vanilla addAction's own shape - and pull `_logic` out
+ * of `_arguments`. ACE's interaction menu calls its statement/condition with a DIFFERENT `_this` shape
+ * entirely (confirmed via a real in-game RPT error: "Undefined variable in expression: _logic" inside
+ * fnc_serverSpawnFromTerminal.sqf, because the value that reached it wasn't a real object at all).
+ * Fixed by not depending on either API's exact `_this` shape past its first element (`_target`, the
+ * one thing both addAction and ACE's interaction menu are confirmed to agree on) - `_logic` is tagged
+ * directly on the target object via setVariable instead and read back the same way regardless of
+ * which interaction fired, same "don't trust a stored-and-later-fired callback to see anything but
+ * what's tagged on the object itself" pattern already used for the Injury Author navbar's own
+ * MouseEnter/MouseExit handlers (addons/ui/functions/fnc_injuryAuthor_init.sqf).
+ *
  * Label is "AFCM: <Title>" when the module's Title attribute is set, else plain "AFCM: Spawn
  * Patient" - the one place multiple placed AFCM Patient modules need to look distinct to a real
  * player, not just to whoever's editing the mission (Title's own comment, eden/config.cpp).
@@ -42,10 +54,14 @@ if (isNull _object || {isNull _logic}) exitWith {};
 private _title = _logic getVariable ["AFCM_SIM_title", ""];
 private _label = if (_title != "") then { format ["AFCM: %1", _title] } else { "AFCM: Spawn Patient" };
 
+// Local only (no `true`) - read back on the exact same client that's about to set it, inside the
+// same interaction click, never over the network.
+_object setVariable ["AFCM_SIM_terminalLogic", _logic];
+
 private _fnc_statement = {
-    params ["_target", "_caller", "_actionId", "_arguments"];
-    _arguments params ["_logic"];
-    [_logic, _target] remoteExec ["afcm_sim_eden_fnc_serverSpawnFromTerminal", 2];
+    params ["_target"];
+    private _targetLogic = _target getVariable ["AFCM_SIM_terminalLogic", objNull];
+    [_targetLogic, _target] remoteExec ["afcm_sim_eden_fnc_serverSpawnFromTerminal", 2];
 };
 private _fnc_condition = {
     params ["_target"];
@@ -60,13 +76,12 @@ private _useAce = (_method in [1, 2]) && _aceAvailable;
 private _useScroll = (_method in [0, 2]) || !_aceAvailable;
 
 if (_useScroll) then {
-    // addAction's own statement code already receives _this = [_target, _caller, _actionId,
-    // _arguments] - the exact same shape _fnc_statement's own params expect, so it's reused directly
-    // rather than wrapped.
+    // addAction's own statement code receives _this = [_target, _caller, _actionId, _arguments] -
+    // _fnc_statement only reads the first element, so it's reused directly under either API.
     _object addAction [
         "<t color='#c1272d'>" + _label + "</t>",
         _fnc_statement,
-        [_logic],
+        [],
         1.5,
         true,
         true,
