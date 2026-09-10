@@ -200,6 +200,11 @@ class CfgFunctions
 #define AFCM_SIM_COLOR_ACCENT         {0.757, 0.153, 0.176, 1}
 #define AFCM_SIM_COLOR_ACCENT_DIM     {0.757, 0.153, 0.176, 0.28}
 #define AFCM_SIM_COLOR_ACCENT_HOVER   {0.757, 0.153, 0.176, 0.85}
+// Deliberately darker/less saturated than AFCM_SIM_COLOR_ACCENT_HOVER above - the Injury Author
+// navbar's own "selected" (active limb) color, distinct on purpose from its "hovering another
+// limb" color (which reuses ACCENT_HOVER) so the two read as clearly different states rather than
+// the same red at a glance - real user feedback, see AFCM_SIM_RscTextNavBg's own comment.
+#define AFCM_SIM_COLOR_ACCENT_SELECTED {0.42, 0.08, 0.09, 0.95}
 #define AFCM_SIM_COLOR_TEXT           {0.949, 0.937, 0.902, 1}
 #define AFCM_SIM_COLOR_TEXT_DIM       {0.75, 0.72, 0.68, 1}
 #define AFCM_SIM_COLOR_BTN_BG         {0.12, 0.12, 0.135, 0.92}
@@ -284,22 +289,58 @@ class AFCM_SIM_RscButtonDanger: AFCM_SIM_RscButton
     colorBackground[] = AFCM_SIM_COLOR_DANGER_BG;
     colorBackgroundActive[] = AFCM_SIM_COLOR_DANGER_HOVER;
 };
-// Data-driven selection button (the 6 InjuryAuthor navbar entries) - unlike every other button
-// here, its background isn't a fixed "rest vs. hover" pair, it's one of 3 runtime states
-// (empty/has-staged-injury/active) written by fnc_injuryAuthor_refreshNavbar.sqf via
-// ctrlSetBackgroundColor. Real, confirmed bug: with AFCM_SIM_RscButton's own
-// colorBackgroundActive[]/colorFocused[] (both opaque ACCENT_HOVER), the engine paints THAT color
-// over whatever ctrlSetBackgroundColor set the instant the control is merely moused-over or holds
-// input focus - regardless of which of the 3 real states that particular button is actually in.
-// That's what read as "still flickering" / "highlighted when not selected or hovered over": an
-// empty or dim staged-only button lights up fully bright on a passing mouse-over (looking exactly
-// like the true active limb), and reverts the moment the mouse leaves. Fully transparent
-// colorBackgroundActive[]/colorFocused[] means hover/focus paint nothing on top, so the
-// script-driven color underneath is the only thing ever shown - deterministic, no flicker.
-class AFCM_SIM_RscButtonNav: AFCM_SIM_RscButton
+// Data-driven navbar visual (the 6 InjuryAuthor limb entries) - a plain RscText (CT_STATIC), not a
+// button. This is a deliberate two-layer split: this class carries ONLY color/text, no
+// interactivity, recolored 3 ways (empty/has-staged-injury/active) by
+// fnc_injuryAuthor_refreshNavbar.sqf via ctrlSetBackgroundColor - and nothing else. A separate,
+// fully transparent AFCM_SIM_RscButtonNavHit control (own comment below) sits on top of each one of
+// these and handles the actual clicking/hovering, so this class never receives focus or registers
+// as hovered at all - a CT_STATIC has no colorBackgroundActive[]/colorFocused[] concept in the
+// first place, so there is nothing left that can ever repaint over what's set here.
+//
+// Real history, 6 attempts before this split, all on a single real RscButton carrying both the
+// click handling AND its own background: (1) opaque colorBackgroundActive[]/colorFocused[] both
+// bright/identical - painted over the runtime state on hover/focus regardless of true state
+// ("highlighted when not selected"). (2) made them transparent - dark flash on select, hover
+// "removing the box", old button flashing red on deselect (native active/focus color replaces the
+// runtime value instead of blending with it, so transparency meant "reveal whatever's behind" while
+// hovered/focused, not "stay out of the way"). (3) rebuilt the WHOLE control as a plain RscText -
+// broke the navbar completely, since RscText doesn't reliably receive
+// MouseButtonClick/MouseEnter/MouseExit at all; reverted to a real RscButton. (4) opaque,
+// deliberately different hover/selected colors - fixed the transparency symptoms, but a
+// clicked-and-still-hovered button apparently can't stably render two different opaque "active"
+// colors on itself at once - the selected button kept flashing. (5)/(6) tried dropping native focus
+// after the click (same-frame, then deferred a frame) - neither stopped the flashing, and the
+// deferred version additionally left the first nav button permanently looking selected regardless
+// of the real active limb (ctrlSetFocus controlNull did not behave like "no control has focus" in
+// practice). Every one of these fought the same real, structural problem: a single control can't
+// have both "click/hover/focus works reliably" (needs a real RscButton) and "background only ever
+// shows exactly what script sets, with nothing native able to override it" (needs NOT a RscButton).
+// Splitting the two jobs across two stacked controls sidesteps the contradiction instead of trying
+// to win it.
+class AFCM_SIM_RscTextNavBg: RscText
 {
+    colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
+    colorText[] = AFCM_SIM_COLOR_TEXT;
+    sizeEx = "0.022 * safeZoneH";
+    shadow = 1;
+};
+// The click/hover half of the navbar split (see AFCM_SIM_RscTextNavBg's own comment for why this
+// exists) - a real RscButton, positioned and sized identically to, and declared immediately after
+// (config control declaration order = z-order and mouse-input priority in this UI system), its
+// matching AFCM_SIM_RscTextNavBg sibling. Fully transparent and textless in every native color
+// state (idle/hover/focus/disabled) - nobody ever looks at this control's own background, so it
+// doesn't matter that it's a real interactive RscButton with all the usual native color machinery;
+// that machinery just never has anything visible to show.
+class AFCM_SIM_RscButtonNavHit: AFCM_SIM_RscButton
+{
+    colorBackground[] = {0, 0, 0, 0};
     colorBackgroundActive[] = {0, 0, 0, 0};
+    colorBackgroundDisabled[] = {0, 0, 0, 0};
     colorFocused[] = {0, 0, 0, 0};
+    colorText[] = {0, 0, 0, 0};
+    colorDisabled[] = {0, 0, 0, 0};
+    text = "";
 };
 
 #define IDD_AFCM_SIM_PRESETLIBRARY 25603
@@ -1286,6 +1327,14 @@ class RscDisplayAFCM_SIM_ConfirmDialog
 #define IDC_AFCM_SIM_IA_NAV_ARM_R       13
 #define IDC_AFCM_SIM_IA_NAV_LEG_L       14
 #define IDC_AFCM_SIM_IA_NAV_LEG_R       15
+// Click/hover hit-region idc's - one per Nav control above, see AFCM_SIM_RscButtonNavHit's own
+// comment (addons/ui/config.cpp) for why these are separate controls from idc's 10 to 15 above.
+#define IDC_AFCM_SIM_IA_NAV_HEAD_HIT    60
+#define IDC_AFCM_SIM_IA_NAV_CHEST_HIT   61
+#define IDC_AFCM_SIM_IA_NAV_ARM_L_HIT   62
+#define IDC_AFCM_SIM_IA_NAV_ARM_R_HIT   63
+#define IDC_AFCM_SIM_IA_NAV_LEG_L_HIT   64
+#define IDC_AFCM_SIM_IA_NAV_LEG_R_HIT   65
 #define IDC_AFCM_SIM_IA_LIMBLABEL       16
 #define IDC_AFCM_SIM_IA_WOUNDTYPE       20
 #define IDC_AFCM_SIM_IA_SEVERITY        21
@@ -1408,11 +1457,11 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // Left-side navbar - a plain vertical list (Head/Chest/L Arm/R Arm/L Leg/R Leg), not the
         // old dialog's 2D "rough body" button grid, since that layout doesn't fit a narrow single
         // column - and a straight top-to-bottom list is literally "go down the body limb list",
-        // the exact request this replaces the old back-and-forth flow with. Recolored 3 ways
-        // (unselected/has-staged-injury/active) by fnc_injuryAuthor_refreshNavbar.sqf via
-        // ctrlSetBackgroundColor - AFCM_SIM_RscButtonNav (not the plain AFCM_SIM_RscButton every
-        // other button here uses) keeps native hover/focus from painting over that.
-        class NavHead: AFCM_SIM_RscButtonNav
+        // the exact request this replaces the old back-and-forth flow with. Each entry is TWO
+        // stacked controls, a Nav* (AFCM_SIM_RscTextNavBg, color/text) and a matching Nav*Hit
+        // (AFCM_SIM_RscButtonNavHit, click/hover) at the same position - see those two classes' own
+        // comments (just above) for why.
+        class NavHead: AFCM_SIM_RscTextNavBg
         {
             idc = IDC_AFCM_SIM_IA_NAV_HEAD;
             text = "Head";
@@ -1420,9 +1469,17 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.170 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+        };
+        class NavHeadHit: AFCM_SIM_RscButtonNavHit
+        {
+            idc = IDC_AFCM_SIM_IA_NAV_HEAD_HIT;
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.170 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.045 * safeZoneH";
             action = "[""head""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavChest: AFCM_SIM_RscButtonNav
+        class NavChest: AFCM_SIM_RscTextNavBg
         {
             idc = IDC_AFCM_SIM_IA_NAV_CHEST;
             text = "Chest";
@@ -1430,9 +1487,17 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.221 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+        };
+        class NavChestHit: AFCM_SIM_RscButtonNavHit
+        {
+            idc = IDC_AFCM_SIM_IA_NAV_CHEST_HIT;
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.221 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.045 * safeZoneH";
             action = "[""chest""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavArmLeft: AFCM_SIM_RscButtonNav
+        class NavArmLeft: AFCM_SIM_RscTextNavBg
         {
             idc = IDC_AFCM_SIM_IA_NAV_ARM_L;
             text = "Left Arm";
@@ -1440,9 +1505,17 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.272 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+        };
+        class NavArmLeftHit: AFCM_SIM_RscButtonNavHit
+        {
+            idc = IDC_AFCM_SIM_IA_NAV_ARM_L_HIT;
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.272 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.045 * safeZoneH";
             action = "[""leftArm""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavArmRight: AFCM_SIM_RscButtonNav
+        class NavArmRight: AFCM_SIM_RscTextNavBg
         {
             idc = IDC_AFCM_SIM_IA_NAV_ARM_R;
             text = "Right Arm";
@@ -1450,9 +1523,17 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.323 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+        };
+        class NavArmRightHit: AFCM_SIM_RscButtonNavHit
+        {
+            idc = IDC_AFCM_SIM_IA_NAV_ARM_R_HIT;
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.323 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.045 * safeZoneH";
             action = "[""rightArm""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavLegLeft: AFCM_SIM_RscButtonNav
+        class NavLegLeft: AFCM_SIM_RscTextNavBg
         {
             idc = IDC_AFCM_SIM_IA_NAV_LEG_L;
             text = "Left Leg";
@@ -1460,12 +1541,28 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.374 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
             h = "0.045 * safeZoneH";
+        };
+        class NavLegLeftHit: AFCM_SIM_RscButtonNavHit
+        {
+            idc = IDC_AFCM_SIM_IA_NAV_LEG_L_HIT;
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.374 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.045 * safeZoneH";
             action = "[""leftLeg""] call afcm_sim_ui_fnc_injuryAuthor_onNavClick;";
         };
-        class NavLegRight: AFCM_SIM_RscButtonNav
+        class NavLegRight: AFCM_SIM_RscTextNavBg
         {
             idc = IDC_AFCM_SIM_IA_NAV_LEG_R;
             text = "Right Leg";
+            x = "0.22 * safeZoneW + safeZoneX";
+            y = "0.425 * safeZoneH + safeZoneY";
+            w = "0.16 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        class NavLegRightHit: AFCM_SIM_RscButtonNavHit
+        {
+            idc = IDC_AFCM_SIM_IA_NAV_LEG_R_HIT;
             x = "0.22 * safeZoneW + safeZoneX";
             y = "0.425 * safeZoneH + safeZoneY";
             w = "0.16 * safeZoneW";
@@ -1501,10 +1598,16 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             w = "0.22 * safeZoneW";
             h = "0.036 * safeZoneH";
         };
+        // Real, confirmed naming fix here: this label used to just say "Severity" - the bare,
+        // ambiguous name afcm_sim_scenario_fnc_buildInjury's own param was deliberately renamed
+        // away from (this addon has several other unrelated "severity"-shaped concepts - KAT
+        // fracture type, Random Damage's Easy/Medium/Hard/Insane level), but the label here never
+        // got the same treatment. "Wound Severity" now matches woundSeverity everywhere else
+        // (buildInjury.sqf, ACE_COMPAT.md §4.3) - same field, same name, everywhere.
         class SeverityLabel: AFCM_SIM_RscLabel
         {
             idc = -1;
-            text = "Severity";
+            text = "Wound Severity";
             x = "0.40 * safeZoneW + safeZoneX";
             y = "0.248 * safeZoneH + safeZoneY";
             w = "0.15 * safeZoneW";
@@ -1518,9 +1621,10 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             w = "0.22 * safeZoneW";
             h = "0.036 * safeZoneH";
         };
-        // Was a plain Bleeding checkbox - now a 5-option severity combo (None/Light/Medium/Heavy/
-        // Severe) so the controller picks a real bleedRate instead of a hidden random roll -
-        // fnc_injuryAuthor_init.sqf populates the exact values.
+        // Was a plain Bleeding checkbox - now a 4-option combo (None/Small/Medium/Large, matching
+        // ACE3's own real addWound size enum directly, ACE_COMPAT.md §4.4) so the controller picks
+        // a real bleedRate instead of a hidden random roll - fnc_injuryAuthor_init.sqf populates
+        // the exact values.
         class BleedingLabel: AFCM_SIM_RscLabel
         {
             idc = -1;
