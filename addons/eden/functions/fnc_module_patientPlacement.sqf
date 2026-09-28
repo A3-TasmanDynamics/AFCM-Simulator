@@ -102,12 +102,15 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
     } else {
         // On-demand - don't spawn now. Position is resolved fresh at click time
         // (fnc_serverSpawnFromTerminal.sqf), not here, so a moved object still spawns correctly.
-        // Diagnostic: logs the raw Title value read straight off _logic, server-side, at the exact
-        // point it's about to be handed off to every client via remoteExec - lets a real RPT check
-        // tell apart "Eden never actually set this attribute on the module" (blank here too) from
-        // "it's set here but lost somewhere after the remoteExec" (real here, blank in
-        // fnc_addSpawnPatientAction.sqf's own diag_log).
-        diag_log text format ["[AFCM-Simulator] AFCM Patient module - on-demand mode, object=%1, title='%2'.", _object, _logic getVariable ["AFCM_SIM_title", "<NOT SET>"]];
+        // Diagnostic: logs every attribute raw off _logic, server-side, at the exact point it's about
+        // to be handed off to every client via remoteExec - Title alone showed '<NOT SET>' on a real
+        // test despite being visibly filled in in Eden's own Attributes dialog; logging the other two
+        // attributes that moved out of the old shared base class alongside it (Casualty Type/Session
+        // Name) tells us whether this is isolated to Title specifically or affects that whole group -
+        // which would point at a stale/cached attribute set on this particular already-placed
+        // instance (edited under the OLD config, before the shared base class was flattened away)
+        // rather than a fresh bug in the new attribute declarations themselves.
+        diag_log text format ["[AFCM-Simulator] AFCM Patient module - on-demand mode, object=%1, casualtyType=%2, sessionName='%3', title='%4'.", _object, _logic getVariable ["AFCM_SIM_casualtyType", "<NOT SET>"], _logic getVariable ["AFCM_SIM_sessionName", "<NOT SET>"], _logic getVariable ["AFCM_SIM_title", "<NOT SET>"]];
         _object setVariable ["AFCM_SIM_terminalSpawned", false, true];
         [_object, _logic] remoteExec ["afcm_sim_ui_fnc_addSpawnPatientAction", 0, true];
     };
