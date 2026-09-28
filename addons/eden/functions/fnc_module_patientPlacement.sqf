@@ -7,8 +7,8 @@
  * Two real modes, decided by whether an object resolves (real, confirmed behaviour change - syncing
  * used to only affect spawn POSITION, keeping auto-spawn-at-mission-start either way):
  *  - Nothing synced/attached (today's original default): auto-spawns immediately at mission start -
- *    one patient per marker matching AFCM_SIM_SpawnMarkerName as a PREFIX (eden/config.cpp), or one
- *    patient at this module's own placed position if that's blank/matches nothing.
+ *    one patient per marker named in AFCM_SIM_SpawnMarkerName's comma-separated list (eden/
+ *    config.cpp), or one patient at this module's own placed position if that's blank/none resolve.
  *  - An object synced (Eden: Ctrl+click drag a sync line to it) or attached (Zeus drag-onto-object,
  *    same dual-resolution `_units` then `attachedTo _logic` pattern
  *    fnc_module_interactiveTerminal.sqf already uses - `attachedTo` is realistically unreachable here
@@ -54,27 +54,34 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
     if (isNull _object) then { _object = attachedTo _logic; };
 
     if (isNull _object) then {
-        // Auto-spawn. Spawn Marker Name is a PREFIX, not one exact marker name (real, confirmed
-        // request - a mission builder wants one module to seed a whole batch of casualties across a
-        // training area, not place a separate module per patient) - every placed marker whose own
-        // name starts with it (`find == 0`, `CBA_fnc_trim`'d first - Eden's text attribute can carry
-        // stray leading/trailing whitespace from a paste) gets its own patient, all sharing this
-        // module's same Casualty Type/Training Preset/Session Name. A single marker named EXACTLY the
-        // prefix (no suffix) still matches on its own - `find` on an exact match is still 0 - so this
-        // is backward compatible with the original "one marker, one patient" behaviour, just no
-        // longer limited to it. Falls back to a single patient at the module's own placed position
-        // when the prefix is blank or matches nothing (same as before this multi-marker support was
-        // added).
-        private _markerPrefix = (_logic getVariable ["AFCM_SIM_spawnMarkerName", ""]) call CBA_fnc_trim;
-        private _matchingMarkers = if (_markerPrefix == "") then { [] } else {
-            allMapMarkers select { (_x find _markerPrefix) == 0 }
+        // Auto-spawn. Spawn Marker Name is a comma-separated LIST of exact marker names (real,
+        // confirmed fix: this used to be treated as a single PREFIX the whole field had to match the
+        // start of - a mission builder who typed "Patient_1, Patient_2, Patient_3, Patient_4",
+        // expecting each one to be used literally, got zero matches instead, since no marker's own
+        // name starts with that entire comma-joined string). Each listed name is `CBA_fnc_trim`'d
+        // (Eden's text attribute can carry stray whitespace, and a comma-separated list needs each
+        // piece trimmed individually too - "Patient_1, Patient_2" splits into "Patient_1" and
+        // " Patient_2" otherwise) and checked against `markerType` for a real placed marker; any name
+        // that doesn't resolve is skipped with a diag_log, not silently dropped along with everything
+        // else. A single name (no comma) still works exactly as before - one patient at that one
+        // marker. Falls back to a single patient at the module's own placed position when the field
+        // is blank or nothing in it resolves.
+        private _markerNamesRaw = (_logic getVariable ["AFCM_SIM_spawnMarkerName", ""]) call CBA_fnc_trim;
+        private _requestedNames = if (_markerNamesRaw == "") then { [] } else {
+            (_markerNamesRaw splitString ",") apply { _x call CBA_fnc_trim } select { _x != "" }
         };
+        private _matchingMarkers = _requestedNames select { markerType _x != "" };
+        {
+            if !(_x in _matchingMarkers) then {
+                diag_log text format ["[AFCM-Simulator] AFCM Patient module - Spawn Marker Name '%1' doesn't match any placed marker, skipping it.", _x];
+            };
+        } forEach _requestedNames;
 
         (_logic call afcm_sim_eden_fnc_resolvePatientAttributes) params ["_injuries", "_casualtyType", "_sessionLabel", "_katExtras"];
 
         if (_matchingMarkers isEqualTo [] || {count _matchingMarkers == 1}) then {
-            if (_markerPrefix != "" && {_matchingMarkers isEqualTo []}) then {
-                diag_log text format ["[AFCM-Simulator] AFCM Patient module - Spawn Marker Name '%1' doesn't match any placed marker, falling back to the module's own position.", _markerPrefix];
+            if (_requestedNames isNotEqualTo [] && {_matchingMarkers isEqualTo []}) then {
+                diag_log text format ["[AFCM-Simulator] AFCM Patient module - none of Spawn Marker Name's %1 name(s) matched a placed marker, falling back to the module's own position.", count _requestedNames];
             };
             // Exact Position (fnc_spawnPatient.sqf's own 8th arg) is true only when this landed on a
             // real marker - a marker is a deliberately-placed exact spot, unlike the module's own
@@ -98,7 +105,7 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
             // placed marker, the whole point of this batch mode is precise per-marker placement.
             private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
             if (_sessionLabel == "") then { _sessionLabel = "AFCM Patient (Marker Batch)"; };
-            diag_log text format ["[AFCM-Simulator] AFCM Patient module - Spawn Marker Name '%1' matched %2 marker(s), spawning one patient at each.", _markerPrefix, count _matchingMarkers];
+            diag_log text format ["[AFCM-Simulator] AFCM Patient module - %1 of Spawn Marker Name's %2 name(s) matched a placed marker, spawning one patient at each.", count _matchingMarkers, count _requestedNames];
             {
                 private _markerPos = getMarkerPos _x;
                 private _pos = [_markerPos select 0, _markerPos select 1, 0];
