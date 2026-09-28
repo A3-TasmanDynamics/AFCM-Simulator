@@ -74,79 +74,6 @@ class CfgVehicles
 {
     class Module_F;
 
-    // Shared "Casualty Type" attribute (clothing/appearance only, DESIGN.md §5) — a plain nested
-    // class, not a Module_F itself, purely so both modules below can inherit the same four options
-    // via `class Attributes: AFCM_SIM_CasualtyTypeAttributes { ... }` instead of repeating them.
-    // Values must line up with the classname array in afcm_sim_spawner_fnc_spawnPatient
-    // (C_man_1/B_Soldier_F/O_Soldier_F/I_Soldier_F, all real, base-game classnames) and with
-    // afcm_sim_defaultCasualtyType's CBA setting (main/functions/fnc_settings_preInit.sqf) — keep
-    // all three in sync if this list ever changes.
-    // Shared attributes common to every AFCM spawn module (not just Casualty Type anymore, despite
-    // the name kept for continuity - renaming would only churn the config, since no placed mission
-    // actually references this intermediate class name, only the final resolved attribute list).
-    class AFCM_SIM_CasualtyTypeAttributes: Module_F
-    {
-        // Real, confirmed bug fixed here: this had NO base class at all (a bare CfgVehicles
-        // member) - every other real module class in this file inherits `: Module_F` (see
-        // AFCM_SIM_ModulePatientPlacement/ModuleInteractiveTerminal below), which is what actually
-        // supplies a real `model` entry from the engine's own base config chain. Without any
-        // inheritance, this class had no `model` anywhere in its lineage, which surfaced as a real,
-        // visible "No entry 'bin\config.bin/CfgVehicles/AFCM_SIM_CasualtyTypeAttributes.model'"
-        // error dialog on the main menu (confirmed from a client screenshot) - `scope=0` only hides
-        // a class from the Zeus/Eden object browser, it does NOT exempt a class from the engine's
-        // own property validation, contrary to what this comment used to claim. `: Module_F` fixes
-        // that at the source; `scope = 0` is kept for its real, original purpose - this is still
-        // never meant to be a placeable object in its own right, purely a template the two real
-        // modules below inherit their shared Attributes from.
-        scope = 0;
-        class AFCM_SIM_CasualtyType
-        {
-            displayName = "Casualty Type";
-            property = "AFCM_SIM_casualtyType";
-            control = "combo";
-            defaultValue = "0";
-            class Values
-            {
-                class Civilian { name = "Civilian"; value = 0; default = 1; };
-                class MilitaryBlufor { name = "Military (BLUFOR)"; value = 1; };
-                class MilitaryOpfor { name = "Military (OPFOR)"; value = 2; };
-                class MilitaryIndependent { name = "Military (Independent)"; value = 3; };
-            };
-        };
-        // Free-text Spawn Session name (DESIGN.md § Spawn Sessions), optional - blank means the
-        // module function auto-generates a label as before. Real, confirmed control type/shape
-        // from the official BI wiki (Eden Editor: Configuring Attributes[/: Controls]): `control =
-        // "Edit"` is a single-line text input saving a String; `typeName = "STRING"` is required
-        // for Edit controls specifically (defaults to something else otherwise) - this codebase's
-        // existing combo attributes never needed it since NUMBER is the assumed default there.
-        class AFCM_SIM_SessionName
-        {
-            displayName = "Session Name (optional)";
-            property = "AFCM_SIM_sessionName";
-            control = "Edit";
-            defaultValue = "";
-            typeName = "STRING";
-        };
-        // Editor-only label - NOT the patient's in-game name (patients now always get a random one,
-        // afcm_sim_spawner_fnc_spawnPatient) and has no effect at all unless this module is synced to
-        // an object (fnc_module_patientPlacement.sqf): syncing switches the module from auto-spawn to
-        // an on-demand "Spawn Patient" interaction on that object, and THAT interaction's whole label
-        // becomes "AFCM: Spawn <Title>" when set (fnc_addSpawnPatientAction.sqf) - the one place multiple
-        // placed instances actually need to look distinct to a real player, not just to whoever's
-        // editing the mission. On AFCM_SIM_CasualtyTypeAttributes (not just PatientPlacement) for the
-        // same reason AFCM_SIM_SessionName already is - a generic, low-coupling label attribute, even
-        // though only PatientPlacement's own sync flow reads it.
-        class AFCM_SIM_Title
-        {
-            displayName = "Title (editor-only)";
-            tooltip = "A label to tell multiple placed AFCM Patient modules apart - in Eden, AND on the interaction if this module is synced to an object (reads 'AFCM: Spawn <Title>' instead of the generic 'AFCM: Spawn Patient'). Never applied to the patient itself as a name - patients always get a random name.";
-            property = "AFCM_SIM_title";
-            control = "Edit";
-            defaultValue = "";
-            typeName = "STRING";
-        };
-    };
-
     class AFCM_SIM_ModulePatientPlacement: Module_F
     {
         scope = 2;
@@ -178,6 +105,21 @@ class CfgVehicles
         // below is the same regardless of which mode a given placed instance ends up in.
         //
         // Attributes, all read back by fnc_module_patientPlacement.sqf/fnc_resolvePatientAttributes.sqf:
+        //  - AFCM_SIM_CasualtyType: clothing/appearance only (DESIGN.md §5), not tied to the
+        //    injury-randomization pipeline the old Injury Level attribute controlled - purely
+        //    cosmetic, so it makes sense on a manually-treated single patient too. Values must line up
+        //    with the classname array in afcm_sim_spawner_fnc_spawnPatient
+        //    (C_man_1/B_Soldier_F/O_Soldier_F/I_Soldier_F, all real, base-game classnames) and with
+        //    afcm_sim_defaultCasualtyType's CBA setting (main/functions/fnc_settings_preInit.sqf) -
+        //    keep all three in sync if this list ever changes.
+        //  - AFCM_SIM_SessionName: optional free-text Spawn Session name (DESIGN.md § Spawn
+        //    Sessions) - blank means the module function auto-generates one as before.
+        //  - AFCM_SIM_Title: editor-only label, NOT the patient's in-game name (patients always get a
+        //    random one, afcm_sim_spawner_fnc_spawnPatient) - has no effect at all unless this module
+        //    is synced to an object (below), in which case that interaction's whole label becomes
+        //    "AFCM: Spawn <Title>" (fnc_addSpawnPatientAction.sqf) instead of the generic "AFCM: Spawn
+        //    Patient" - the one place multiple placed instances need to look distinct to a real
+        //    player picking one off a synced laptop, not just to whoever's editing the mission.
         //  - AFCM_SIM_TrainingPreset: quick-pick a built-in training scenario (airway/fracture/
         //    hemorrhage/GSW/blast/etc.) instead of hand-pasting an export string below. Wins over
         //    Injury Preset Import when set to anything but "None" - see its own comment.
@@ -202,8 +144,53 @@ class CfgVehicles
         //    patient). Leave blank to spawn one patient at this module's own placed position instead.
         //    Has no effect at all once an object is synced (on-demand mode) - position there always
         //    comes from the synced object itself.
-        class Attributes: AFCM_SIM_CasualtyTypeAttributes
+        //
+        // Real, confirmed Eden bug fixed here: CasualtyType/SessionName/Title used to live on a
+        // separate shared `AFCM_SIM_CasualtyTypeAttributes: Module_F` base class that this Attributes
+        // class inherited from (`class Attributes: AFCM_SIM_CasualtyTypeAttributes`) purely to avoid
+        // repeating them - the config itself resolved that inheritance correctly (confirmed by
+        // derapifying the actual built config.bin), but Eden's own "System Specific" attribute panel
+        // does NOT walk a class's inheritance chain when deciding what to display - it only shows
+        // attributes declared DIRECTLY in this class's own body. Every attribute inherited from that
+        // base class was invisible in Eden even though it was genuinely present in the compiled
+        // config - confirmed from a real screenshot showing only the 3 attributes already declared
+        // directly here (Training Preset/Injury Preset/Spawn Marker Name). Fixed by moving
+        // CasualtyType/SessionName/Title directly into this class's own body instead of inheriting
+        // them - the shared base class is gone now (nothing else in this file used it;
+        // addons/zeus/config.cpp has always kept its own fully independent copy, unaffected by this).
+        class Attributes
         {
+            class AFCM_SIM_CasualtyType
+            {
+                displayName = "Casualty Type";
+                property = "AFCM_SIM_casualtyType";
+                control = "combo";
+                defaultValue = "0";
+                class Values
+                {
+                    class Civilian { name = "Civilian"; value = 0; default = 1; };
+                    class MilitaryBlufor { name = "Military (BLUFOR)"; value = 1; };
+                    class MilitaryOpfor { name = "Military (OPFOR)"; value = 2; };
+                    class MilitaryIndependent { name = "Military (Independent)"; value = 3; };
+                };
+            };
+            class AFCM_SIM_SessionName
+            {
+                displayName = "Session Name (optional)";
+                property = "AFCM_SIM_sessionName";
+                control = "Edit";
+                defaultValue = "";
+                typeName = "STRING";
+            };
+            class AFCM_SIM_Title
+            {
+                displayName = "Title (editor-only)";
+                tooltip = "A label to tell multiple placed AFCM Patient modules apart - in Eden, AND on the interaction if this module is synced to an object (reads 'AFCM: Spawn <Title>' instead of the generic 'AFCM: Spawn Patient'). Never applied to the patient itself as a name - patients always get a random name.";
+                property = "AFCM_SIM_title";
+                control = "Edit";
+                defaultValue = "";
+                typeName = "STRING";
+            };
             class AFCM_SIM_TrainingPreset
             {
                 displayName = "Training Preset (quick pick)";
