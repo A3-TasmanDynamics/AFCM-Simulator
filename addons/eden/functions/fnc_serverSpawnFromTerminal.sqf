@@ -19,12 +19,16 @@
  * the debounce is active, but that's a UX nicety, not what actually prevents a double-spawn - this
  * check is.
  *
- * Position is resolved fresh here (`getPosASL _object`), not pre-computed when the interaction was
- * added, so a synced object that moves between mission start and someone actually using it still
- * spawns the patient at its current position. Jitter is kept (Exact Position left at its default
- * false, unlike the Eden module's own marker-based auto-spawn - fnc_module_patientPlacement.sqf) -
- * deliberately, since repeat spawns from this same interaction would otherwise stack directly on top
- * of each other and any prior patients still standing there.
+ * Real, confirmed fix: this used to always spawn exactly one patient at the object's own position,
+ * completely ignoring Spawn Marker Name even when the module had markers configured - a mission
+ * builder who set up a multi-marker training area AND synced the module to a laptop for on-demand
+ * triggering got one patient at the laptop instead of the whole scenario. Position/marker resolution
+ * is shared with the auto-spawn path now (fnc_serverSpawnForLogic.sqf, its own comment has the full
+ * reasoning) - the object's own position (resolved fresh here via `getPosASL _object`, not
+ * pre-computed when the interaction was added, so a synced object that moves between mission start
+ * and someone actually using it still spawns correctly) is passed through as the FALLBACK, only used
+ * when Spawn Marker Name is blank or nothing in it resolves - otherwise every configured marker gets
+ * its own patient, exactly like the auto-spawn path already did.
  *
  * Arguments:
  * 0: Logic <OBJECT> - the placed AFCM_SIM_ModulePatientPlacement module
@@ -48,6 +52,4 @@ _object setVariable ["AFCM_SIM_terminalSpawned", true, true];
     _object setVariable ["AFCM_SIM_terminalSpawned", false, true];
 }, [_object], 2] call CBA_fnc_waitAndExecute;
 
-private _pos = getPosASL _object;
-(_logic call afcm_sim_eden_fnc_resolvePatientAttributes) params ["_injuries", "_casualtyType", "_sessionLabel", "_katExtras"];
-[_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras] call afcm_sim_spawner_fnc_spawnPatient;
+[_logic, getPosASL _object] call afcm_sim_eden_fnc_serverSpawnForLogic;

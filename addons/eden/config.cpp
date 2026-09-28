@@ -40,6 +40,7 @@ class CfgFunctions
             class module_patientPlacement { file = "\afcm_sim\addons\eden\functions\fnc_module_patientPlacement.sqf"; };
             class module_interactiveTerminal { file = "\afcm_sim\addons\eden\functions\fnc_module_interactiveTerminal.sqf"; };
             class resolvePatientAttributes { file = "\afcm_sim\addons\eden\functions\fnc_resolvePatientAttributes.sqf"; };
+            class serverSpawnForLogic { file = "\afcm_sim\addons\eden\functions\fnc_serverSpawnForLogic.sqf"; };
             class serverSpawnFromTerminal { file = "\afcm_sim\addons\eden\functions\fnc_serverSpawnFromTerminal.sqf"; };
         };
     };
@@ -134,18 +135,24 @@ class CfgVehicles
         //    array a live patient's "Export Patient State" action produces on its own
         //    (fnc_exportPatientState.sqf - just `injuries`, or `[injuries, katExtras]` when there's
         //    KAT extras/cardiac state to carry - no id/name/author/description/tags noise).
-        //  - AFCM_SIM_SpawnMarkerName: where patients spawn when nothing's synced to this module
-        //    (auto-spawn mode) - a comma-separated LIST of exact marker names, not a prefix (real,
-        //    confirmed fix: this used to be prefix-matched, so typing the markers' own full names
-        //    comma-separated - the natural way to type it - matched nothing at all), so one module can
-        //    seed a whole batch: place a "System: Marker" object per patient, give each one whatever
-        //    Variable Name you like in ITS OWN attributes (not this module's), then list those exact
-        //    names here separated by commas (e.g. "Patient_1, Patient_2, Patient_3") - one patient
-        //    spawns per listed name that actually resolves to a placed marker, sharing this module's
-        //    same Casualty Type/Training Preset. A single name (no comma) still works exactly as
-        //    before - just the one patient at that one marker. Leave blank to spawn one patient at
-        //    this module's own placed position instead. Has no effect at all once an object is synced
-        //    (on-demand mode) - position there always comes from the synced object itself.
+        //  - AFCM_SIM_SpawnMarkerName: where patients spawn, in BOTH modes (real, confirmed fix - this
+        //    used to only apply in auto-spawn mode, completely ignored once an object was synced, so a
+        //    module set up to seed a training area AND synced to a laptop for on-demand triggering
+        //    silently spawned one patient at the laptop instead of the whole configured scenario). A
+        //    comma-separated LIST of exact marker names, not a prefix (own real, confirmed fix: this
+        //    used to be prefix-matched, so typing the markers' own full names comma-separated - the
+        //    natural way to type it - matched nothing at all), so one module can seed a whole batch:
+        //    place a "System: Marker" object per patient, give each one whatever Variable Name you
+        //    like in ITS OWN attributes (not this module's), then list those exact names here
+        //    separated by commas (e.g. "Patient_1, Patient_2, Patient_3") - one patient spawns per
+        //    listed name that actually resolves to a placed marker, sharing this module's same
+        //    Casualty Type/Training Preset, whether that's at mission start (auto-spawn) or every time
+        //    the synced object's interaction is used (on-demand - repeatable, so the whole marker
+        //    scenario can be re-spawned as many times as needed). A single name (no comma) still works
+        //    exactly as before - just the one patient at that one marker/object. Leave blank to spawn
+        //    at this module's own placed position (auto-spawn) or the synced object's position
+        //    (on-demand) instead - the ONLY thing sync still changes is which of those two fallback
+        //    positions is used when this is blank/nothing resolves.
         //
         // Real, confirmed Eden bug fixed here: CasualtyType/SessionName/Title used to live on a
         // separate shared `AFCM_SIM_CasualtyTypeAttributes: Module_F` base class that this Attributes
@@ -255,7 +262,7 @@ class CfgVehicles
             class AFCM_SIM_SpawnMarkerName
             {
                 displayName = "Spawn Marker Name(s)";
-                tooltip = "Only used when nothing is synced to this module. Comma-separated list of exact placed marker names - one patient spawns at each one that resolves (e.g. 'Patient_1, Patient_2, Patient_3'). A single name with no comma still works as before, spawning just the one patient. Leave blank to spawn at this module's own placed position instead.";
+                tooltip = "Comma-separated list of exact placed marker names - one patient spawns at each one that resolves (e.g. 'Patient_1, Patient_2, Patient_3'), whether at mission start or every time a synced object's Spawn Patient interaction is used. A single name with no comma still works as before, spawning just the one patient. Leave blank to spawn at this module's own placed position (or the synced object's position, if one's synced) instead.";
                 property = "AFCM_SIM_spawnMarkerName";
                 control = "Edit";
                 defaultValue = "";

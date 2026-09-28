@@ -4,8 +4,11 @@
  * resolution lives in afcm_sim_eden_fnc_resolvePatientAttributes.sqf now (Training Preset combo vs.
  * Injury Preset Import paste, see its own comment) - this file is just target/mode resolution.
  *
- * Two real modes, decided by whether an object resolves (real, confirmed behaviour change - syncing
- * used to only affect spawn POSITION, keeping auto-spawn-at-mission-start either way):
+ * Two real modes, decided by whether an object resolves. Both spawn according to the SAME marker
+ * precedence (fnc_serverSpawnForLogic.sqf, shared by both) - real, confirmed fix: syncing an object
+ * used to mean "spawn at that object's position, Spawn Marker Name ignored entirely" even if markers
+ * were configured, so a module set up to seed a training area AND synced to a laptop for on-demand
+ * triggering silently spawned one patient at the laptop instead of the whole configured scenario:
  *  - Nothing synced/attached (today's original default): auto-spawns immediately at mission start -
  *    one patient per marker named in AFCM_SIM_SpawnMarkerName's comma-separated list (eden/
  *    config.cpp), or one patient at this module's own placed position if that's blank/none resolve.
@@ -14,8 +17,9 @@
  *    fnc_module_interactiveTerminal.sqf already uses - `attachedTo` is realistically unreachable here
  *    since this module is hidden from the Zeus curator browser, curatorCanAttach=0, included purely
  *    for defensive symmetry with that module's own pattern): does NOT auto-spawn. Instead adds a
- *    "Spawn Patient" interaction to that object (afcm_sim_ui_fnc_addSpawnPatientAction) which spawns
- *    this exact configured patient, at that object's own position, whenever a player uses it -
+ *    "Spawn Patient" interaction to that object (afcm_sim_ui_fnc_addSpawnPatientAction), repeatable
+ *    for as long as the scenario needs - each use spawns one patient per configured marker (or one at
+ *    the object's own position, only when Spawn Marker Name is blank/nothing resolves) -
  *    afcm_sim_eden_fnc_serverSpawnFromTerminal does the actual spawn once that fires.
  *
  * Same 1s-deferred resolution fnc_module_interactiveTerminal.sqf uses and documents - a real,
@@ -54,64 +58,9 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
     if (isNull _object) then { _object = attachedTo _logic; };
 
     if (isNull _object) then {
-        // Auto-spawn. Spawn Marker Name is a comma-separated LIST of exact marker names (real,
-        // confirmed fix: this used to be treated as a single PREFIX the whole field had to match the
-        // start of - a mission builder who typed "Patient_1, Patient_2, Patient_3, Patient_4",
-        // expecting each one to be used literally, got zero matches instead, since no marker's own
-        // name starts with that entire comma-joined string). Each listed name is `CBA_fnc_trim`'d
-        // (Eden's text attribute can carry stray whitespace, and a comma-separated list needs each
-        // piece trimmed individually too - "Patient_1, Patient_2" splits into "Patient_1" and
-        // " Patient_2" otherwise) and checked against `markerType` for a real placed marker; any name
-        // that doesn't resolve is skipped with a diag_log, not silently dropped along with everything
-        // else. A single name (no comma) still works exactly as before - one patient at that one
-        // marker. Falls back to a single patient at the module's own placed position when the field
-        // is blank or nothing in it resolves.
-        private _markerNamesRaw = (_logic getVariable ["AFCM_SIM_spawnMarkerName", ""]) call CBA_fnc_trim;
-        private _requestedNames = if (_markerNamesRaw == "") then { [] } else {
-            (_markerNamesRaw splitString ",") apply { _x call CBA_fnc_trim } select { _x != "" }
-        };
-        private _matchingMarkers = _requestedNames select { markerType _x != "" };
-        {
-            if !(_x in _matchingMarkers) then {
-                diag_log text format ["[AFCM-Simulator] AFCM Patient module - Spawn Marker Name '%1' doesn't match any placed marker, skipping it.", _x];
-            };
-        } forEach _requestedNames;
-
-        (_logic call afcm_sim_eden_fnc_resolvePatientAttributes) params ["_injuries", "_casualtyType", "_sessionLabel", "_katExtras"];
-
-        if (_matchingMarkers isEqualTo [] || {count _matchingMarkers == 1}) then {
-            if (_requestedNames isNotEqualTo [] && {_matchingMarkers isEqualTo []}) then {
-                diag_log text format ["[AFCM-Simulator] AFCM Patient module - none of Spawn Marker Name's %1 name(s) matched a placed marker, falling back to the module's own position.", count _requestedNames];
-            };
-            // Exact Position (fnc_spawnPatient.sqf's own 8th arg) is true only when this landed on a
-            // real marker - a marker is a deliberately-placed exact spot, unlike the module's own
-            // placed position fallback below, which keeps the small random jitter it always had.
-            private _pos = getPosASL _logic;
-            private _exact = false;
-            if (count _matchingMarkers == 1) then {
-                private _markerPos = getMarkerPos (_matchingMarkers select 0);
-                _pos = [_markerPos select 0, _markerPos select 1, 0];
-                _exact = true;
-            };
-            [_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras, -1, _exact] call afcm_sim_spawner_fnc_spawnPatient;
-        } else {
-            // One shared session for the whole batch (same "generate one id up front, pass it to
-            // every patient" pattern the MCI Spawner modules/MCI Creator already use) - so the whole
-            // marker batch can be managed/deleted together in the Session Manager, not one session
-            // per marker. A blank Session Name gets a batch-specific default instead of
-            // fnc_spawnPatient.sqf's own generic "Spawn Patient" fallback, which only applies when NO
-            // session id is passed at all - a real, pre-generated id here would otherwise reach the
-            // Session Manager with a blank label. Exact Position (true) - every entry here is a real
-            // placed marker, the whole point of this batch mode is precise per-marker placement.
-            private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
-            if (_sessionLabel == "") then { _sessionLabel = "AFCM Patient (Marker Batch)"; };
-            diag_log text format ["[AFCM-Simulator] AFCM Patient module - %1 of Spawn Marker Name's %2 name(s) matched a placed marker, spawning one patient at each.", count _matchingMarkers, count _requestedNames];
-            {
-                private _markerPos = getMarkerPos _x;
-                private _pos = [_markerPos select 0, _markerPos select 1, 0];
-                [_pos, _injuries, _casualtyType, _sessionId, _sessionLabel, _katExtras, -1, true] call afcm_sim_spawner_fnc_spawnPatient;
-            } forEach _matchingMarkers;
-        };
+        // Auto-spawn - real spawn/marker-resolution logic now shared with the on-demand path
+        // (fnc_serverSpawnForLogic.sqf's own comment has the full "why a shared function" reasoning).
+        [_logic, getPosASL _logic] call afcm_sim_eden_fnc_serverSpawnForLogic;
     } else {
         // On-demand - don't spawn now. Position is resolved fresh at click time
         // (fnc_serverSpawnFromTerminal.sqf), not here, so a moved object still spawns correctly.
