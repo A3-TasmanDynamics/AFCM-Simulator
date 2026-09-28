@@ -88,12 +88,23 @@ class CfgVehicles
         // be a placeable object in its own right, purely a template the real modules below inherit
         // their shared Attributes from.
         scope = 0;
+        // Real, confirmed root-cause bug fixed here (both attributes in this class, and
+        // AFCM_SIM_PatientCount below): a custom Eden/Zeus attribute is NOT automatically written
+        // onto the placed object via setVariable just from having a `property=` - that only names
+        // the variable to use IF something calls setVariable. The actual write only happens through
+        // an explicit `expression=`, run by the engine whenever the attribute's value changes and
+        // again at scenario start (confirmed against Bohemia's own wiki - Eden Editor: Configuring
+        // Attributes - and against a real RPT test on the Eden side of this same bug, addons/eden/
+        // config.cpp, where every attribute without an expression read back unset regardless of what
+        // was visibly set in the dialog). None of these had one. `_this` is the placed object,
+        // `_value` is the attribute's current value.
         class AFCM_SIM_CasualtyType
         {
             displayName = "Casualty Type";
             property = "AFCM_SIM_casualtyType";
             control = "combo";
             defaultValue = "0";
+            expression = "_this setVariable ['AFCM_SIM_casualtyType', _value];";
             class Values
             {
                 class Civilian { name = "Civilian"; value = 0; default = 1; };
@@ -115,6 +126,7 @@ class CfgVehicles
             control = "Edit";
             defaultValue = "";
             typeName = "STRING";
+            expression = "_this setVariable ['AFCM_SIM_sessionName', _value];";
         };
     };
 
@@ -169,6 +181,7 @@ class CfgVehicles
                 property = "AFCM_SIM_patientCount";
                 control = "combo";
                 defaultValue = "4";
+                expression = "_this setVariable ['AFCM_SIM_patientCount', _value];";
                 class Values
                 {
                     class Two { name = "2"; value = 2; };

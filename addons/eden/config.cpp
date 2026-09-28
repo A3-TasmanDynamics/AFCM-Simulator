@@ -166,6 +166,18 @@ class CfgVehicles
                 property = "AFCM_SIM_casualtyType";
                 control = "combo";
                 defaultValue = "0";
+                // Real, confirmed root-cause bug fixed here (this class and every other one in this
+                // Attributes block): a custom Eden attribute is NOT automatically written onto the
+                // placed object via setVariable just from having a `property=` - that's purely the
+                // variable NAME to use if/when something actually calls setVariable. The actual write
+                // only happens through an explicit `expression=`, run by Eden itself whenever the
+                // attribute's value changes AND again at scenario start (confirmed against Bohemia's
+                // own wiki - Eden Editor: Configuring Attributes). Every attribute below had a
+                // `property=` but no `expression=` at all, so NONE of them were ever actually being
+                // set on the object - confirmed via a real RPT test where all 6 attributes read back
+                // as unset despite several being visibly non-default in Eden's own dialog. `_this` is
+                // the placed object, `_value` is the attribute's current value.
+                expression = "_this setVariable ['AFCM_SIM_casualtyType', _value];";
                 class Values
                 {
                     class Civilian { name = "Civilian"; value = 0; default = 1; };
@@ -181,6 +193,7 @@ class CfgVehicles
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
+                expression = "_this setVariable ['AFCM_SIM_sessionName', _value];";
             };
             class AFCM_SIM_Title
             {
@@ -190,6 +203,7 @@ class CfgVehicles
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
+                expression = "_this setVariable ['AFCM_SIM_title', _value];";
             };
             class AFCM_SIM_TrainingPreset
             {
@@ -198,6 +212,7 @@ class CfgVehicles
                 property = "AFCM_SIM_trainingPreset";
                 control = "combo";
                 defaultValue = "0";
+                expression = "_this setVariable ['AFCM_SIM_trainingPreset', _value];";
                 // Values here are positional indices into afcm_sim_scenario_fnc_getBuiltinPresets.sqf's
                 // own array (value N -> that array's index N-1) - deliberately an index, not a
                 // duplicated id string, to avoid a second hardcoded list drifting out of sync. If that
@@ -224,6 +239,7 @@ class CfgVehicles
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
+                expression = "_this setVariable ['AFCM_SIM_injuryPresetImport', _value];";
             };
             class AFCM_SIM_SpawnMarkerName
             {
@@ -233,6 +249,7 @@ class CfgVehicles
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
+                expression = "_this setVariable ['AFCM_SIM_spawnMarkerName', _value];";
             };
         };
     };
