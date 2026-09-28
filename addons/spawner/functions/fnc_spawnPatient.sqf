@@ -18,7 +18,8 @@
  * the MCI Creator) generate one id up front and pass the same one to every patient in the batch.
  *
  * Arguments:
- * 0: Position <ARRAY> - ASL/ATL position to spawn at (jittered slightly)
+ * 0: Position <ARRAY> - ASL/ATL position to spawn at (jittered up to 2m in X/Y unless Exact
+ *    Position below is true)
  * 1: Injuries <ARRAY> - array of Injury <HASHMAP>, see DESIGN.md §4.2 (default [])
  * 2: Casualty Type <NUMBER> - 0=Civilian, 1=Military (BLUFOR), 2=Military (OPFOR),
  *    3=Military (Independent) - purely a clothing/appearance pick (DESIGN.md §5), see
@@ -38,6 +39,12 @@
  *    mode) learns which real unit its own Apply & Spawn Patient click actually produced. Called by
  *    name, no requiredAddons dependency on afcm_sim_ui - same reasoning already documented below for
  *    the addInjuryEditorAction/addTreatedAction/addExportStateAction calls.
+ * 7: Exact Position <BOOL> (default false - jitter as before) - when true, skips the up-to-2m random
+ *    jitter and spawns precisely at Position. Real, confirmed request: a marker-based spawn (the
+ *    Eden AFCM Patient module's own Spawn Marker Name prefix, fnc_module_patientPlacement.sqf) is a
+ *    mission builder's deliberately-placed exact position, not a shared spot several random patients
+ *    need to be nudged apart from - jitter there just moved patients off the mark they were placed
+ *    at.
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -48,7 +55,7 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1]];
+params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1], ["_exactPos", false]];
 
 // Purely cosmetic - all four are real, base-game (no DLC/faction mod) Arma 3 classnames, so this
 // works with nothing but vanilla + CBA installed. Whatever's picked, gear is stripped down to bare
@@ -69,10 +76,10 @@ if (isNil "AFCM_SIM_spawnedPatients") then {
 // Z is always forced to 0 here, regardless of what the caller's _pos carries (module logics report
 // getPosASL, which has real sea-level altitude in its Z - reusing that Z as an ATL height was
 // spawning patients floating above the terrain rather than on it). setPosATL with Z=0 snaps to
-// ground level at that x/y.
+// ground level at that x/y. Jitter (up to 2m in X/Y) is skipped entirely when _exactPos is true.
 private _jitteredPos = [
-    (_pos select 0) + (random 4 - 2),
-    (_pos select 1) + (random 4 - 2),
+    (_pos select 0) + (if (_exactPos) then { 0 } else { random 4 - 2 }),
+    (_pos select 1) + (if (_exactPos) then { 0 } else { random 4 - 2 }),
     0
 ];
 
@@ -90,20 +97,18 @@ _unit setUnitPos "DOWN";
 _unit setCaptive true;
 _unit setDir (random 360);
 
-// Random name, flavored to match the casualty type already picked - real, vanilla BIS_fnc_generateName
-// (\A3\functions_f\Names\fn_generateName.sqf), not a hand-rolled name pool. Deliberately NOT `side
-// _unit` - AFCM_SIM_patientGroup (above) is always a `civilian`-side group for every patient
-// regardless of _casualtyType (a deliberate non-combatant/prop choice, unrelated to the cosmetic
-// classname picked above), so `side _unit` would always report civilian here. This parallel array,
-// indexed the same way _casualtyClasses already is, is what actually drives name flavor instead. A
-// global-effect command (replicates automatically, like setCaptive/removeAllWeapons below) - no
-// remoteExec/JIP handling needed, unlike the addAction wiring further down this file.
-private _nameSides = [civilian, west, east, independent];
-private _nameSide = _nameSides param [_casualtyType, civilian];
-private _generatedName = [_nameSide] call BIS_fnc_generateName;
-if (_generatedName isEqualType "" && {_generatedName != ""}) then {
-    _unit setName _generatedName;
-};
+// Random name, every patient, always - a real, confirmed bug fixed here: this used to call
+// `BIS_fnc_generateName`, which turned out to NOT actually be defined at this point (real in-game
+// RPT: "Undefined variable in expression: bis_fnc_generatename") - the function this addon assumed
+// was an always-available vanilla name generator either doesn't exist under that name or isn't
+// compiled yet when a patient spawns this early. Rather than depend on an unverified engine function
+// again, this is a plain hardcoded first/last name pool (same "hardcoded array of real data" pattern
+// fnc_getBuiltinPresets.sqf already uses) - guaranteed to work with nothing but this addon itself, no
+// DLC/function-library timing assumptions. `setName` is a global-effect command (replicates
+// automatically, like setCaptive/removeAllWeapons below) - no remoteExec/JIP handling needed.
+private _firstNames = ["James", "John", "Robert", "Michael", "David", "William", "Daniel", "Joseph", "Thomas", "Charles", "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Susan", "Sarah", "Karen", "Lisa", "Nancy"];
+private _lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Wilson", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee", "Thompson", "White"];
+_unit setName format ["%1 %2", selectRandom _firstNames, selectRandom _lastNames];
 
 _unit setVariable ["AFCM_SIM_isPatient", true, true];
 

@@ -4,18 +4,22 @@
  * resolution lives in afcm_sim_eden_fnc_resolvePatientAttributes.sqf now (Training Preset combo vs.
  * Injury Preset Import paste, see its own comment) - this file is just target/mode resolution.
  *
- * Two real modes, decided by whether an object resolves (real, confirmed behaviour change - syncing
- * used to only affect spawn POSITION, keeping auto-spawn-at-mission-start either way):
- *  - Nothing synced/attached (today's original default, unchanged): auto-spawns immediately at
- *    mission start, at the resolved marker-or-module position (AFCM_SIM_SpawnMarkerName,
- *    eden/config.cpp - unchanged logic, just moved inline below).
+ * Two real modes, decided by whether an object resolves. Both spawn according to the SAME marker
+ * precedence (fnc_serverSpawnForLogic.sqf, shared by both) - real, confirmed fix: syncing an object
+ * used to mean "spawn at that object's position, Spawn Marker Name ignored entirely" even if markers
+ * were configured, so a module set up to seed a training area AND synced to a laptop for on-demand
+ * triggering silently spawned one patient at the laptop instead of the whole configured scenario:
+ *  - Nothing synced/attached (today's original default): auto-spawns immediately at mission start -
+ *    one patient per marker named in AFCM_SIM_SpawnMarkerName's comma-separated list (eden/
+ *    config.cpp), or one patient at this module's own placed position if that's blank/none resolve.
  *  - An object synced (Eden: Ctrl+click drag a sync line to it) or attached (Zeus drag-onto-object,
  *    same dual-resolution `_units` then `attachedTo _logic` pattern
  *    fnc_module_interactiveTerminal.sqf already uses - `attachedTo` is realistically unreachable here
  *    since this module is hidden from the Zeus curator browser, curatorCanAttach=0, included purely
  *    for defensive symmetry with that module's own pattern): does NOT auto-spawn. Instead adds a
- *    "Spawn Patient" interaction to that object (afcm_sim_ui_fnc_addSpawnPatientAction) which spawns
- *    this exact configured patient, at that object's own position, whenever a player uses it -
+ *    "Spawn Patient" interaction to that object (afcm_sim_ui_fnc_addSpawnPatientAction), repeatable
+ *    for as long as the scenario needs - each use spawns one patient per configured marker (or one at
+ *    the object's own position, only when Spawn Marker Name is blank/nothing resolves) -
  *    afcm_sim_eden_fnc_serverSpawnFromTerminal does the actual spawn once that fires.
  *
  * Same 1s-deferred resolution fnc_module_interactiveTerminal.sqf uses and documents - a real,
@@ -54,24 +58,9 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
     if (isNull _object) then { _object = attachedTo _logic; };
 
     if (isNull _object) then {
-        // Auto-spawn, unchanged from before this module supported on-demand mode. Precedence: a
-        // non-blank Spawn Marker Name that resolves to a real placed marker (`CBA_fnc_trim`'d first -
-        // Eden's text attribute can carry stray leading/trailing whitespace from a paste, which would
-        // otherwise silently fail the `markerType` lookup) -> that marker's position. Otherwise -> the
-        // module's own placed position.
-        private _markerName = (_logic getVariable ["AFCM_SIM_spawnMarkerName", ""]) call CBA_fnc_trim;
-        private _pos = getPosASL _logic;
-        if (_markerName != "") then {
-            if (markerType _markerName != "") then {
-                private _markerPos = getMarkerPos _markerName;
-                _pos = [_markerPos select 0, _markerPos select 1, 0];
-            } else {
-                diag_log text format ["[AFCM-Simulator] AFCM Patient module - Spawn Marker Name '%1' doesn't match a placed marker, falling back to the module's own position.", _markerName];
-            };
-        };
-
-        (_logic call afcm_sim_eden_fnc_resolvePatientAttributes) params ["_injuries", "_casualtyType", "_sessionLabel", "_katExtras"];
-        [_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras] call afcm_sim_spawner_fnc_spawnPatient;
+        // Auto-spawn - real spawn/marker-resolution logic now shared with the on-demand path
+        // (fnc_serverSpawnForLogic.sqf's own comment has the full "why a shared function" reasoning).
+        [_logic, getPosASL _logic] call afcm_sim_eden_fnc_serverSpawnForLogic;
     } else {
         // On-demand - don't spawn now. Position is resolved fresh at click time
         // (fnc_serverSpawnFromTerminal.sqf), not here, so a moved object still spawns correctly.
