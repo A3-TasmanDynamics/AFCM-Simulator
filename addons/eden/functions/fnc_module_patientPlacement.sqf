@@ -41,6 +41,24 @@
 
 params ["_logic", "_units", "_activated"];
 
+// Diagnostic: unconditional, every real invocation (Module_F's function typically fires more than
+// once per placed module, e.g. once with _activated=false before mission start proper) - logs ALL
+// SIX Eden attributes raw off _logic right away, before any of this function's own exitWith guards
+// could skip it. A real test showed Casualty Type/Session Name/Title all '<NOT SET>' despite being
+// visibly filled in in Eden's own Attributes dialog - this checks whether that's isolated to those
+// three (which moved out of a shared base class in a recent config change) or hits Training
+// Preset/Injury Preset/Spawn Marker Name too, which were never touched and were assumed working
+// without ever actually being logged like this.
+diag_log text format ["[AFCM-Simulator] AFCM Patient module - fired, activated=%1, isServer=%2, casualtyType=%3, sessionName='%4', title='%5', trainingPreset=%6, injuryPresetImport='%7', spawnMarkerName='%8'.",
+    _activated, isServer,
+    _logic getVariable ["AFCM_SIM_casualtyType", "<NOT SET>"],
+    _logic getVariable ["AFCM_SIM_sessionName", "<NOT SET>"],
+    _logic getVariable ["AFCM_SIM_title", "<NOT SET>"],
+    _logic getVariable ["AFCM_SIM_trainingPreset", "<NOT SET>"],
+    _logic getVariable ["AFCM_SIM_injuryPresetImport", "<NOT SET>"],
+    _logic getVariable ["AFCM_SIM_spawnMarkerName", "<NOT SET>"]
+];
+
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
 if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
@@ -102,15 +120,8 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
     } else {
         // On-demand - don't spawn now. Position is resolved fresh at click time
         // (fnc_serverSpawnFromTerminal.sqf), not here, so a moved object still spawns correctly.
-        // Diagnostic: logs every attribute raw off _logic, server-side, at the exact point it's about
-        // to be handed off to every client via remoteExec - Title alone showed '<NOT SET>' on a real
-        // test despite being visibly filled in in Eden's own Attributes dialog; logging the other two
-        // attributes that moved out of the old shared base class alongside it (Casualty Type/Session
-        // Name) tells us whether this is isolated to Title specifically or affects that whole group -
-        // which would point at a stale/cached attribute set on this particular already-placed
-        // instance (edited under the OLD config, before the shared base class was flattened away)
-        // rather than a fresh bug in the new attribute declarations themselves.
-        diag_log text format ["[AFCM-Simulator] AFCM Patient module - on-demand mode, object=%1, casualtyType=%2, sessionName='%3', title='%4'.", _object, _logic getVariable ["AFCM_SIM_casualtyType", "<NOT SET>"], _logic getVariable ["AFCM_SIM_sessionName", "<NOT SET>"], _logic getVariable ["AFCM_SIM_title", "<NOT SET>"]];
+        // Full attribute state at this point is already covered by the unconditional diag_log at the
+        // top of this function.
         _object setVariable ["AFCM_SIM_terminalSpawned", false, true];
         [_object, _logic] remoteExec ["afcm_sim_ui_fnc_addSpawnPatientAction", 0, true];
     };
