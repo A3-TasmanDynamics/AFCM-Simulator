@@ -104,7 +104,12 @@ class CfgVehicles
             property = "AFCM_SIM_casualtyType";
             control = "combo";
             defaultValue = "0";
-            expression = "_this setVariable ['AFCM_SIM_casualtyType', _value];";
+            // parseNumber - real, confirmed bug (found on Eden's own copy of this same attribute,
+            // addons/eden/config.cpp): a combo's _value arrives at this expression as a STRING
+            // (matching `defaultValue`'s own string-typed "0" here), not the numeric `value=` from
+            // Values below. Edit/STRING-typed attributes (AFCM_SIM_SessionName below) don't need
+            // this - their downstream code already expects a string.
+            expression = "_this setVariable ['AFCM_SIM_casualtyType', parseNumber _value];";
             class Values
             {
                 class Civilian { name = "Civilian"; value = 0; default = 1; };
@@ -181,7 +186,9 @@ class CfgVehicles
                 property = "AFCM_SIM_patientCount";
                 control = "combo";
                 defaultValue = "4";
-                expression = "_this setVariable ['AFCM_SIM_patientCount', _value];";
+                // parseNumber - same combo-value-arrives-as-a-string issue as AFCM_SIM_CasualtyType
+                // above.
+                expression = "_this setVariable ['AFCM_SIM_patientCount', parseNumber _value];";
                 class Values
                 {
                     class Two { name = "2"; value = 2; };

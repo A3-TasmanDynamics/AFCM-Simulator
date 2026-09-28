@@ -104,4 +104,4 @@ if (_useAce) then {
     [_object, 0, ["ACE_MainActions"], _action] call ace_interact_menu_fnc_addActionToObject;
 };
 
-diag_log text format ["[AFCM-Simulator][UI] Spawn Patient interaction added to %1 (scroll=%2, ace=%3, logic=%4, title='%5', label='%6').", _object, _useScroll, _useAce, _logic, _title, _label];
+diag_log text format ["[AFCM-Simulator][UI] Spawn Patient interaction added to %1 (scroll=%2, ace=%3, label='%4').", _object, _useScroll, _useAce, _label];
