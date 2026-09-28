@@ -18,7 +18,8 @@
  * the MCI Creator) generate one id up front and pass the same one to every patient in the batch.
  *
  * Arguments:
- * 0: Position <ARRAY> - ASL/ATL position to spawn at (jittered slightly)
+ * 0: Position <ARRAY> - ASL/ATL position to spawn at (jittered up to 2m in X/Y unless Exact
+ *    Position below is true)
  * 1: Injuries <ARRAY> - array of Injury <HASHMAP>, see DESIGN.md §4.2 (default [])
  * 2: Casualty Type <NUMBER> - 0=Civilian, 1=Military (BLUFOR), 2=Military (OPFOR),
  *    3=Military (Independent) - purely a clothing/appearance pick (DESIGN.md §5), see
@@ -38,6 +39,12 @@
  *    mode) learns which real unit its own Apply & Spawn Patient click actually produced. Called by
  *    name, no requiredAddons dependency on afcm_sim_ui - same reasoning already documented below for
  *    the addInjuryEditorAction/addTreatedAction/addExportStateAction calls.
+ * 7: Exact Position <BOOL> (default false - jitter as before) - when true, skips the up-to-2m random
+ *    jitter and spawns precisely at Position. Real, confirmed request: a marker-based spawn (the
+ *    Eden AFCM Patient module's own Spawn Marker Name prefix, fnc_module_patientPlacement.sqf) is a
+ *    mission builder's deliberately-placed exact position, not a shared spot several random patients
+ *    need to be nudged apart from - jitter there just moved patients off the mark they were placed
+ *    at.
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -48,7 +55,7 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1]];
+params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1], ["_exactPos", false]];
 
 // Purely cosmetic - all four are real, base-game (no DLC/faction mod) Arma 3 classnames, so this
 // works with nothing but vanilla + CBA installed. Whatever's picked, gear is stripped down to bare
@@ -69,10 +76,10 @@ if (isNil "AFCM_SIM_spawnedPatients") then {
 // Z is always forced to 0 here, regardless of what the caller's _pos carries (module logics report
 // getPosASL, which has real sea-level altitude in its Z - reusing that Z as an ATL height was
 // spawning patients floating above the terrain rather than on it). setPosATL with Z=0 snaps to
-// ground level at that x/y.
+// ground level at that x/y. Jitter (up to 2m in X/Y) is skipped entirely when _exactPos is true.
 private _jitteredPos = [
-    (_pos select 0) + (random 4 - 2),
-    (_pos select 1) + (random 4 - 2),
+    (_pos select 0) + (if (_exactPos) then { 0 } else { random 4 - 2 }),
+    (_pos select 1) + (if (_exactPos) then { 0 } else { random 4 - 2 }),
     0
 ];
 

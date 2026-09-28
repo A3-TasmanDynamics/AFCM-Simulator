@@ -76,12 +76,17 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
             if (_markerPrefix != "" && {_matchingMarkers isEqualTo []}) then {
                 diag_log text format ["[AFCM-Simulator] AFCM Patient module - Spawn Marker Name '%1' doesn't match any placed marker, falling back to the module's own position.", _markerPrefix];
             };
+            // Exact Position (fnc_spawnPatient.sqf's own 8th arg) is true only when this landed on a
+            // real marker - a marker is a deliberately-placed exact spot, unlike the module's own
+            // placed position fallback below, which keeps the small random jitter it always had.
             private _pos = getPosASL _logic;
+            private _exact = false;
             if (count _matchingMarkers == 1) then {
                 private _markerPos = getMarkerPos (_matchingMarkers select 0);
                 _pos = [_markerPos select 0, _markerPos select 1, 0];
+                _exact = true;
             };
-            [_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras] call afcm_sim_spawner_fnc_spawnPatient;
+            [_pos, _injuries, _casualtyType, "", _sessionLabel, _katExtras, -1, _exact] call afcm_sim_spawner_fnc_spawnPatient;
         } else {
             // One shared session for the whole batch (same "generate one id up front, pass it to
             // every patient" pattern the MCI Spawner modules/MCI Creator already use) - so the whole
@@ -89,14 +94,15 @@ if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
             // per marker. A blank Session Name gets a batch-specific default instead of
             // fnc_spawnPatient.sqf's own generic "Spawn Patient" fallback, which only applies when NO
             // session id is passed at all - a real, pre-generated id here would otherwise reach the
-            // Session Manager with a blank label.
+            // Session Manager with a blank label. Exact Position (true) - every entry here is a real
+            // placed marker, the whole point of this batch mode is precise per-marker placement.
             private _sessionId = call afcm_sim_spawner_fnc_newSessionId;
             if (_sessionLabel == "") then { _sessionLabel = "AFCM Patient (Marker Batch)"; };
             diag_log text format ["[AFCM-Simulator] AFCM Patient module - Spawn Marker Name '%1' matched %2 marker(s), spawning one patient at each.", _markerPrefix, count _matchingMarkers];
             {
                 private _markerPos = getMarkerPos _x;
                 private _pos = [_markerPos select 0, _markerPos select 1, 0];
-                [_pos, _injuries, _casualtyType, _sessionId, _sessionLabel, _katExtras] call afcm_sim_spawner_fnc_spawnPatient;
+                [_pos, _injuries, _casualtyType, _sessionId, _sessionLabel, _katExtras, -1, true] call afcm_sim_spawner_fnc_spawnPatient;
             } forEach _matchingMarkers;
         };
     } else {

@@ -32,12 +32,15 @@
  * still just a label - patients themselves always get a random name regardless of Title (real,
  * confirmed decision: an explicit per-patient name override was tried and deliberately reverted).
  *
- * Both interaction paths share one guard: the target object's own AFCM_SIM_terminalSpawned variable
- * (init'd false by fnc_module_patientPlacement.sqf, set true by fnc_serverSpawnFromTerminal.sqf once
- * a patient's actually spawned) - re-evaluated by the scroll menu/ACE menu on their own each time
- * either is opened, so the interaction disappears from both once used with no manual removal needed.
- * That guard is a UX nicety only - fnc_serverSpawnFromTerminal.sqf's own atomic check-and-set is what
- * actually prevents a double-spawn under concurrent clicks.
+ * Repeatable, by design (real, confirmed request) - this interaction is meant to keep spawning fresh
+ * patients from the same synced object for as long as the scenario needs, not just once. Both
+ * interaction paths share one guard: the target object's own AFCM_SIM_terminalSpawned variable
+ * (init'd false by fnc_module_patientPlacement.sqf, briefly true right after a spawn, then cleared
+ * again 2 seconds later by fnc_serverSpawnFromTerminal.sqf itself) - re-evaluated by the scroll
+ * menu/ACE menu on their own each time either is opened, so the interaction only ever disappears for
+ * that short debounce window, not permanently. That guard is a UX nicety only -
+ * fnc_serverSpawnFromTerminal.sqf's own atomic check-and-set is what actually prevents a genuine
+ * double-spawn from one single click.
  *
  * Arguments:
  * 0: Object <OBJECT> - whatever the AFCM Patient module was synced/attached to
