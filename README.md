@@ -73,7 +73,7 @@ for how the detection actually works.
 
 | Doc | What's in it |
 |---|---|
-| [FIELD_MANUAL.md](docs/FIELD_MANUAL.md) | Step-by-step usage guide — placing patients, the Injury Author, MCI Creator, keybinds |
+| [FIELD_MANUAL.md](docs/FIELD_MANUAL.md) ([illustrated version](https://claude.ai/artifact/CXKo5fhfGCsHtowfe8dmSt)) | Step-by-step usage guide — placing patients, the Injury Author, MCI Creator, keybinds |
 | [DESIGN.md](docs/DESIGN.md) | UI architecture decision, data model, MP authority, repo layout, phased roadmap |
 | [REFERENCES.md](docs/REFERENCES.md) | ACE3 medical framework/function sources grounding `afcm_sim_ace_compat`'s implementation |
 | [docs/addons/](docs/addons/README.md) | Per-addon index — one deep-dive doc per PBO: [ACE_COMPAT.md](docs/addons/ACE_COMPAT.md) for `afcm_sim_ace_compat`, [KAT_COMPAT.md](docs/addons/KAT_COMPAT.md) for `afcm_sim_kat_compat` |
