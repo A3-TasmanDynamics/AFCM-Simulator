@@ -67,7 +67,13 @@ params ["_display"];
         _ctrl lbSetCurSel _curSel;
     };
 
-    [_display displayCtrl 20, ["None", "Gunshot", "Shrapnel", "Blast"], 0] call _fnc_populate;
+    // Expanded on request to cover ACE3's full real wound-class taxonomy (docs/INJURY_CODES.md §2.3,
+    // ACE_Medical_Injuries.hpp) - Gunshot/Shrapnel/Blast kept at their original indices for backward
+    // compatibility (saved/exported presets store the woundType STRING, not this index, so the new
+    // additions appended after them don't actually need this, but keeping the original 3 in place
+    // avoids unnecessary churn). fnc_injuryAuthor_commitActiveLimbForm.sqf's _woundTypes array is the
+    // parallel index-to-string mapping - keep both in sync if this list ever changes.
+    [_display displayCtrl 20, ["None", "Gunshot", "Shrapnel", "Blast", "Abrasion", "Avulsion", "Contusion", "Crush", "Cut", "Laceration", "Thermal Burn"], 0] call _fnc_populate;
     [_display displayCtrl 21, ["None", "Light", "Moderate", "Severe", "Critical"], 0] call _fnc_populate;
     [_display displayCtrl 22, ["None", "Small", "Medium", "Large"], 0] call _fnc_populate;
     // Fracture options are backend-dependent, same pattern as CardiacState below: ACE3 has its own

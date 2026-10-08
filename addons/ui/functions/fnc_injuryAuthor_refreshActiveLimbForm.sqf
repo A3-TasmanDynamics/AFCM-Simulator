@@ -61,7 +61,10 @@ private _limbNames = createHashMapFromArray [
 
 private _injuries = missionNamespace getVariable ["AFCM_SIM_UI_stagedInjuries", []];
 private _staged = _injuries select { (_x select 0) == _limb };
-private _woundTypes = ["", "gunshot", "shrapnel", "blast"];
+// Parallel to fnc_injuryAuthor_init.sqf's WoundType combo population (idc 20) and
+// fnc_injuryAuthor_commitActiveLimbForm.sqf's own copy - keep all three in sync if this list ever
+// changes.
+private _woundTypes = ["", "gunshot", "shrapnel", "blast", "abrasion", "avulsion", "contusion", "crush", "cut", "laceration", "thermalburn"];
 private _severities = [-1, 0.25, 0.5, 0.75, 1.0];
 private _bleedingLevels = [[false, 0], [true, 0.1], [true, 0.2], [true, 0.4]];
 
