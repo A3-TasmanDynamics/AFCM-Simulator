@@ -27,6 +27,7 @@ class CfgFunctions
             class randomizeInjuries { file = "\afcm_sim\addons\scenario\functions\fnc_randomizeInjuries.sqf"; };
             class serverApplyInjury { file = "\afcm_sim\addons\scenario\functions\fnc_serverApplyInjury.sqf"; };
             class serverReset { file = "\afcm_sim\addons\scenario\functions\fnc_serverReset.sqf"; };
+            class serverSetVitals { file = "\afcm_sim\addons\scenario\functions\fnc_serverSetVitals.sqf"; };
             class buildInjury { file = "\afcm_sim\addons\scenario\functions\fnc_buildInjury.sqf"; };
             // Unlike Pneumothorax/Airway below, fracture (like cardiac state) is NOT KAT-only -
             // ACE3 has its own real, native fracture mechanic (REFERENCES.md), so this dispatches

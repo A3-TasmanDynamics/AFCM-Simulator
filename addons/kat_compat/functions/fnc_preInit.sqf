@@ -29,6 +29,7 @@ _interface set ["removeInjury", afcm_sim_kat_fnc_removeInjury];
 _interface set ["getState", afcm_sim_kat_fnc_getState];
 _interface set ["reset", afcm_sim_kat_fnc_reset];
 _interface set ["setUnconscious", afcm_sim_kat_fnc_setUnconscious];
+_interface set ["setVitals", afcm_sim_kat_fnc_setVitals];
 
 ["kat", 15, _interface] call afcm_sim_fnc_backend_registerBackend;
 

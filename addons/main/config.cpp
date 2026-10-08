@@ -44,6 +44,7 @@ class CfgFunctions
             class backend_getState { file = "\afcm_sim\addons\main\functions\fnc_backend_getState.sqf"; };
             class backend_reset { file = "\afcm_sim\addons\main\functions\fnc_backend_reset.sqf"; };
             class backend_setUnconscious { file = "\afcm_sim\addons\main\functions\fnc_backend_setUnconscious.sqf"; };
+            class backend_setVitals { file = "\afcm_sim\addons\main\functions\fnc_backend_setVitals.sqf"; };
             // postInit, not preInit: the engine guarantees every addon's preInit (where backend
             // registration happens, see fnc_backend_registerBackend.sqf) finishes before ANY
             // addon's postInit runs — a native two-phase guarantee that doesn't need CBA's event
@@ -61,6 +62,7 @@ class CfgFunctions
             // CBA_fnc_targetEvent rather than called directly, since ace_medical_fnc_addDamageToUnit
             // requires `local _unit` (REFERENCES.md).
             class medical_applyAceStyleInjuryLocal { file = "\afcm_sim\addons\main\functions\fnc_medical_applyAceStyleInjuryLocal.sqf"; };
+            class medical_setVitalsLocal { file = "\afcm_sim\addons\main\functions\fnc_medical_setVitalsLocal.sqf"; };
             class medical_registerEvents { file = "\afcm_sim\addons\main\functions\fnc_medical_registerEvents.sqf"; preInit = 1; };
         };
         class Settings
