@@ -724,7 +724,7 @@ class RscDisplayAFCM_SIM_MciCreator
         class PresetListLabel: AFCM_SIM_RscLabel
         {
             idc = -1;
-            text = "Available Presets";
+            text = "Injury Presets";
             x = "0.51 * safeZoneW + safeZoneX";
             y = "0.3175 * safeZoneH + safeZoneY";
             w = "0.27 * safeZoneW";
@@ -1757,13 +1757,20 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // Text/mode set dynamically - "Apply" (edit mode, commits to AFCM_SIM_UI_targetUnit) or
         // "Apply & Spawn Patient" (author-new-patient mode, disabled until ChooseLocation below is
         // used, same "disabled until location chosen" pattern as the MCI Creator's own Spawn).
+        //
+        // Position below is this control's EDIT-MODE default (swapped with ResetPatient's old slot,
+        // full-width, on request) - author-new-patient mode overrides it back to the old half-width
+        // slot at runtime (fnc_injuryAuthor_init.sqf, same mode branch that already toggles
+        // ResetPatient vs ChooseLocation), since Apply is one shared control used in both modes
+        // (unlike ResetPatient/ChooseLocation, which are two separate controls sharing one slot) and
+        // author-new-patient mode still needs this row free for ChooseLocation/LocationStatus.
         class Apply: AFCM_SIM_RscButtonPrimary
         {
             idc = IDC_AFCM_SIM_IA_APPLY;
             text = "Apply";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.585 * safeZoneH + safeZoneY";
-            w = "0.275 * safeZoneW";
+            y = "0.827 * safeZoneH + safeZoneY";
+            w = "0.40 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
         // Local-only - clears just the active limb's staged entry/form, never touches a live unit.
@@ -1865,13 +1872,16 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         };
         // Edit mode only - the real full-unit reset (fullHeal + re-lock unconscious), same danger
         // style the old LimbSelect's Reset Patient had. Hidden entirely in author-new-patient mode.
+        // Position swapped with Apply's old slot on request (half-width, paired with ResetLimb) -
+        // edit mode is the only mode this control ever shows in, so no runtime override is needed
+        // here the way Apply needs one above.
         class ResetPatient: AFCM_SIM_RscButtonDanger
         {
             idc = IDC_AFCM_SIM_IA_RESETPATIENT;
             text = "Reset Patient";
             x = "0.22 * safeZoneW + safeZoneX";
-            y = "0.827 * safeZoneH + safeZoneY";
-            w = "0.40 * safeZoneW";
+            y = "0.585 * safeZoneH + safeZoneY";
+            w = "0.275 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
         // Author-new-patient mode only - occupies the same row/space as ResetPatient above (only

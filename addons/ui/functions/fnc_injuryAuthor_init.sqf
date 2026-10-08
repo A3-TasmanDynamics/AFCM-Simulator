@@ -97,6 +97,19 @@ params ["_display"];
     if (_authorNewPatient) then {
         _ctrlApply ctrlSetText "Apply & Spawn Patient";
         _ctrlApply ctrlEnable ((missionNamespace getVariable ["AFCM_SIM_UI_authorSpawnPos", []]) isNotEqualTo []);
+        // Apply/ResetPatient positions were swapped on request (addons/ui/config.cpp) - Apply's
+        // config default is now its EDIT-mode slot (full-width, where ResetPatient used to sit).
+        // Unlike ResetPatient/ChooseLocation (two separate controls sharing one slot, toggled via
+        // ctrlShow), Apply is the same one control in both modes, so author-new-patient mode needs
+        // to move it back to its old half-width slot at runtime instead - that row is still needed
+        // for ChooseLocation/LocationStatus below in this mode.
+        _ctrlApply ctrlSetPosition [
+            0.22 * safeZoneW + safeZoneX,
+            0.585 * safeZoneH + safeZoneY,
+            0.275 * safeZoneW,
+            0.045 * safeZoneH
+        ];
+        _ctrlApply ctrlCommit 0;
         (_display displayCtrl 50) ctrlShow false;
         { (_display displayCtrl _x) ctrlShow true; } forEach [51, 52, 54];
         (_display displayCtrl 54) ctrlEnable !(isNull (missionNamespace getVariable ["AFCM_SIM_UI_lastSpawnedPatient", objNull]));
