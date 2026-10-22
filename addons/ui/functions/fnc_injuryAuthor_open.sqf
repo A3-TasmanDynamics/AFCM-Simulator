@@ -75,6 +75,22 @@ missionNamespace setVariable ["AFCM_SIM_UI_targetUnit", _targetUnit];
 missionNamespace setVariable ["AFCM_SIM_UI_targetUnits", []];
 missionNamespace setVariable ["AFCM_SIM_UI_authorNewPatient", isNull _targetUnit];
 
+// Real, confirmed bug fixed here: AFCM_SIM_UI_activeLimb is a plain missionNamespace var that
+// fnc_injuryAuthor_setActiveLimb.sqf never resets between separate dialog sessions - it's whatever
+// limb was active when the LAST session (on any unit) closed. fnc_injuryAuthor_init.sqf's own first
+// setActiveLimb call commits the on-screen form for whatever that stale limb is BEFORE the dialog's
+// controls have ever been populated with this session's real reloaded data (that only happens
+// inside setActiveLimb's own refreshActiveLimbForm call, right after). If the stale limb happens to
+// match the limb this session lands on (overwhelmingly likely exactly when there's real staged data
+// to land on, e.g. re-opening on a patient with an airway obstruction - fnc_injuryAuthor_init.sqf's
+// own _fnc_limbHasStaged picks that same limb again), the commit silently overwrites the
+// just-reloaded value with the controls' blank config defaults before it's ever shown - reported
+// directly: apply an injury, back out, go back in to add more, and it's gone. Resetting this to ""
+// here means fnc_injuryAuthor_commitActiveLimbForm.sqf's own early exit (`if (_limb == "") exitWith
+// {};`) correctly no-ops on every session's first setActiveLimb call, not just the mission's
+// very-first-ever one.
+missionNamespace setVariable ["AFCM_SIM_UI_activeLimb", ""];
+
 if !(_preserveStaged) then {
     if (isNull _targetUnit) then {
         if (missionNamespace getVariable ["AFCM_SIM_UI_draftNewPatientValid", false]) then {
