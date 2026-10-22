@@ -1,11 +1,18 @@
 /*
  * Author: Tasman Dynamics
  * Opens RscDisplayAFCM_SIM_InjuryAuthor. Two modes, told apart by whether a target unit is given:
- *  - Edit an already-spawned patient (_targetUnit real) - if fnc_injuryAuthor_cleanup.sqf left a
- *    same-session draft on this exact unit (AFCM_SIM_UI_hasDraft), restores that instead so
- *    backing out of the dialog and reopening on the same patient picks up right where you left
- *    off; otherwise pre-loads its current real injuries/KAT extras
- *    (fnc_injuryAuthor_loadFromUnit.sqf).
+ *  - Edit an already-spawned patient (_targetUnit real) - always pre-loads its current real
+ *    injuries/KAT extras fresh (fnc_injuryAuthor_loadFromUnit.sqf). Used to prefer a per-unit
+ *    "draft" fnc_injuryAuthor_cleanup.sqf left behind on close, so backing out and reopening on the
+ *    same patient picked up right where you left off - removed as a real, confirmed bug: cleanup.sqf
+ *    saved that draft unconditionally on every close (Apply or not), so it permanently shadowed live
+ *    reload from then on - reopening Edit Injuries on a patient who'd taken real damage since the
+ *    FIRST time you ever opened it on them (including combat damage from anything else in the
+ *    mission) kept showing that first visit's frozen snapshot instead of their actual current
+ *    injuries. Reported directly: "it shows the current injuries but when I get out of it and go
+ *    back in, it doesn't show the current injuries." Always reloading live trades away the "resume
+ *    an accidentally-closed, never-applied edit" convenience, but that convenience was
+ *    indistinguishable from this bug in practice.
  *  - Author a brand-new patient (_targetUnit objNull, the Ctrl+Shift+I keybind's own call) -
  *    restores fnc_injuryAuthor_cleanup.sqf's own AFCM_SIM_UI_draftNewPatientInjuries/KatExtras if
  *    one exists (same "pick up where you left off" reasoning, same-session); otherwise, if
@@ -86,12 +93,7 @@ if !(_preserveStaged) then {
             missionNamespace setVariable ["AFCM_SIM_UI_authorSpawnPos", []];
         };
     } else {
-        if (_targetUnit getVariable ["AFCM_SIM_UI_hasDraft", false]) then {
-            missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", _targetUnit getVariable ["AFCM_SIM_UI_draftInjuries", []]];
-            missionNamespace setVariable ["AFCM_SIM_UI_stagedKatExtras", _targetUnit getVariable ["AFCM_SIM_UI_draftKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]]];
-        } else {
-            [_targetUnit] call afcm_sim_ui_fnc_injuryAuthor_loadFromUnit;
-        };
+        [_targetUnit] call afcm_sim_ui_fnc_injuryAuthor_loadFromUnit;
     };
 };
 

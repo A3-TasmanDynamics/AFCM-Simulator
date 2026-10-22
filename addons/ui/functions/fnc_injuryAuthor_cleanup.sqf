@@ -13,13 +13,15 @@
  * uses), and commits the active limb's on-screen form first so an in-progress edit that was never
  * explicitly committed (e.g. Escape pressed mid-edit) is still captured.
  *
- * Author-new-patient mode has no live unit to hang the draft off, so it's a plain missionNamespace
- * var (AFCM_SIM_UI_draftNewPatientInjuries/KatExtras/Valid) - there's only ever one "new patient
- * being authored" context at a time. Edit mode hangs it directly off the target unit (a plain
- * 2-param setVariable - client-local, never networked, purely a UI convenience) so multiple units'
- * drafts never collide and it's naturally garbage-collected when the unit is deleted; this is
- * separate from AFCM_SIM_appliedInjuries (the real applied-state tracking
- * fnc_injuryAuthor_loadFromUnit.sqf falls back to when no draft exists yet for that unit).
+ * Author-new-patient mode only now - a plain missionNamespace var
+ * (AFCM_SIM_UI_draftNewPatientInjuries/KatExtras/Valid), since there's only ever one "new patient
+ * being authored" context at a time, and no live unit exists yet for this to go stale against. Edit
+ * mode USED TO hang an equivalent draft directly off the target unit - removed as a real, confirmed
+ * bug (fnc_injuryAuthor_open.sqf's own header has the full report/explanation): this ran
+ * unconditionally on every close regardless of whether Apply was ever used, so it permanently
+ * shadowed live reload on every later open, even after the patient took further real damage.
+ * Edit mode now always reloads fresh from the live unit instead
+ * (fnc_injuryAuthor_loadFromUnit.sqf) - there's nothing left for this function to snapshot there.
  *
  * Deliberately independent of the afcm_sim_rememberLastInjuries CBA setting - that setting is the
  * separate, profileNamespace-backed "remember across missions/restarts" convenience written only on
@@ -44,13 +46,6 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
     missionNamespace setVariable ["AFCM_SIM_UI_draftNewPatientInjuries", _injuries];
     missionNamespace setVariable ["AFCM_SIM_UI_draftNewPatientKatExtras", _katExtras];
     missionNamespace setVariable ["AFCM_SIM_UI_draftNewPatientValid", true];
-} else {
-    private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
-    if !(isNull _targetUnit) then {
-        _targetUnit setVariable ["AFCM_SIM_UI_draftInjuries", _injuries];
-        _targetUnit setVariable ["AFCM_SIM_UI_draftKatExtras", _katExtras];
-        _targetUnit setVariable ["AFCM_SIM_UI_hasDraft", true];
-    };
 };
 
 private _handle = missionNamespace getVariable ["AFCM_SIM_UI_statePFH", -1];
