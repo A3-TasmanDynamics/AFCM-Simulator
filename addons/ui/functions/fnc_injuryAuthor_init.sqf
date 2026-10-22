@@ -120,11 +120,25 @@ params ["_display"];
         { (_display displayCtrl _x) ctrlShow true; } forEach [51, 52, 54];
         (_display displayCtrl 54) ctrlEnable !(isNull (missionNamespace getVariable ["AFCM_SIM_UI_lastSpawnedPatient", objNull]));
         (_display displayCtrl 35) ctrlSetText "No live patient yet - spawn one, or click View Live State if you already have.";
+        // Settable Blood Volume/SpO2 - edit mode only (see their own config.cpp comment); no
+        // not-yet-spawned patient to set them on here.
+        { (_display displayCtrl _x) ctrlShow false; } forEach [55, 56, 57, 58];
     } else {
         _ctrlApply ctrlSetText "Apply";
         _ctrlApply ctrlEnable (_backend in ["ace", "kat"]);
         (_display displayCtrl 50) ctrlShow true;
         { (_display displayCtrl _x) ctrlShow false; } forEach [51, 52, 54];
+        { (_display displayCtrl _x) ctrlShow true; } forEach [55, 56, 57, 58];
+        // Pre-fill from the live unit's current values (afcm_sim_fnc_backend_getState) rather than
+        // always showing the field defaults, so Apply doesn't silently reset an untouched field back
+        // to 6.0L/97% - same "don't clobber what's already real" reasoning fnc_injuryAuthor_
+        // loadFromUnit.sqf applies to staged injuries.
+        private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
+        if !(isNull _targetUnit) then {
+            private _state = [_targetUnit] call afcm_sim_fnc_backend_getState;
+            (_display displayCtrl 56) ctrlSetText str (_state getOrDefault ["bloodVolume", 6.0]);
+            (_display displayCtrl 58) ctrlSetText str (_state getOrDefault ["spO2", 97]);
+        };
     };
 
     {

@@ -78,5 +78,12 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
         ["injury.applied", [_targetUnit, _limb, _woundType, _severity, _bleeding]] call afcm_sim_ui_fnc_publish;
     } forEach _injuries;
 
+    // Settable Blood Volume/SpO2 - edit mode only (config.cpp's own comment on these controls).
+    // Clamped to each real ACE3 variable's sane range rather than trusting raw typed input.
+    private _display = ctrlParent _ctrlApply;
+    private _bloodVolume = 0 max (parseNumber (ctrlText (_display displayCtrl 56))) min 6.5;
+    private _spo2 = 0 max (parseNumber (ctrlText (_display displayCtrl 58))) min 100;
+    [_targetUnit, _bloodVolume, _spo2] remoteExec ["afcm_sim_scenario_fnc_serverSetVitals", 2];
+
     ["Injury Author", "Injuries applied."] call afcm_sim_ui_fnc_showToast;
 };

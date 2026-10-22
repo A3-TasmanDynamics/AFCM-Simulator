@@ -1363,6 +1363,10 @@ class RscDisplayAFCM_SIM_ConfirmDialog
 #define IDC_AFCM_SIM_IA_LOCATIONSTATUS  52
 #define IDC_AFCM_SIM_IA_CLOSE           53
 #define IDC_AFCM_SIM_IA_VIEWLIVESTATE   54
+#define IDC_AFCM_SIM_IA_BLOODVOLUMELABEL 55
+#define IDC_AFCM_SIM_IA_BLOODVOLUME     56
+#define IDC_AFCM_SIM_IA_SPO2LABEL       57
+#define IDC_AFCM_SIM_IA_SPO2            58
 
 // Replaces RscDisplayAFCM_SIM_LimbSelect + RscDisplayAFCM_SIM_InjuryEditor (both retired, IDD
 // 25601/25602 not reused) with one dialog: a persistent left-side limb navbar next to a single
@@ -1753,6 +1757,48 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             w = "0.12 * safeZoneW";
             h = "0.04 * safeZoneH";
             sizeEx = "0.016 * safeZoneH";
+        };
+        // Settable Blood Volume/SpO2, edit mode only - occupies the same StatusBg-panel corner
+        // ViewLiveState uses in author-new-patient mode (idc 54, hidden here since there's no "spawn
+        // first" step in edit mode - fnc_injuryAuthor_init.sqf's existing mode branch toggles this
+        // the same way). Applied on Apply (afcm_sim_fnc_backend_setVitals) alongside the staged
+        // injuries - setting vitals on a not-yet-spawned patient doesn't make sense the way
+        // injuries-to-apply-at-spawn do, so author-new-patient mode never shows these.
+        class BloodVolumeLabel: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_IA_BLOODVOLUMELABEL;
+            text = "Blood (L)";
+            x = "0.665 * safeZoneW + safeZoneX";
+            y = "0.490 * safeZoneH + safeZoneY";
+            w = "0.065 * safeZoneW";
+            h = "0.032 * safeZoneH";
+        };
+        class BloodVolume: RscEdit
+        {
+            idc = IDC_AFCM_SIM_IA_BLOODVOLUME;
+            text = "6.0";
+            x = "0.735 * safeZoneW + safeZoneX";
+            y = "0.490 * safeZoneH + safeZoneY";
+            w = "0.05 * safeZoneW";
+            h = "0.032 * safeZoneH";
+        };
+        class SpO2Label: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_IA_SPO2LABEL;
+            text = "SpO2 (%)";
+            x = "0.665 * safeZoneW + safeZoneX";
+            y = "0.530 * safeZoneH + safeZoneY";
+            w = "0.065 * safeZoneW";
+            h = "0.032 * safeZoneH";
+        };
+        class SpO2: RscEdit
+        {
+            idc = IDC_AFCM_SIM_IA_SPO2;
+            text = "97";
+            x = "0.735 * safeZoneW + safeZoneX";
+            y = "0.530 * safeZoneH + safeZoneY";
+            w = "0.05 * safeZoneW";
+            h = "0.032 * safeZoneH";
         };
         // Text/mode set dynamically - "Apply" (edit mode, commits to AFCM_SIM_UI_targetUnit) or
         // "Apply & Spawn Patient" (author-new-patient mode, disabled until ChooseLocation below is

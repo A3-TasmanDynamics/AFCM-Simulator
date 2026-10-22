@@ -37,6 +37,7 @@ class CfgFunctions
             class getState { file = "\afcm_sim\addons\kat_compat\functions\fnc_getState.sqf"; };
             class reset { file = "\afcm_sim\addons\kat_compat\functions\fnc_reset.sqf"; };
             class setUnconscious { file = "\afcm_sim\addons\kat_compat\functions\fnc_setUnconscious.sqf"; };
+            class setVitals { file = "\afcm_sim\addons\kat_compat\functions\fnc_setVitals.sqf"; };
             // Not part of the backend interface hashmap below - called directly by
             // afcm_sim_scenario_fnc_serverApplyFracture/serverApplyKatPneumothorax, since
             // fracture/pneumothorax have no equivalent in the backend-agnostic Injury object

@@ -25,3 +25,4 @@
 */
 
 ["afcm_sim_applyAceStyleInjuryLocal", afcm_sim_fnc_medical_applyAceStyleInjuryLocal] call CBA_fnc_addEventHandler;
+["afcm_sim_setVitalsLocal", afcm_sim_fnc_medical_setVitalsLocal] call CBA_fnc_addEventHandler;
