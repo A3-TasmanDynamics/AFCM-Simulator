@@ -47,3 +47,14 @@
     "AFCM Medical Simulator",
     [[0, 1, 2], ["Scroll Wheel", "ACE Interaction Menu", "Both"], 0]
 ] call CBA_fnc_addSetting;
+
+// Opt-in, default off - every spawned patient's "Edit Injuries" action is unrestricted today
+// (fnc_addInjuryEditorAction.sqf's condition is a hardcoded "true"), and this setting leaves that
+// unchanged unless a mission maker deliberately turns it on. When on, a player must first use the
+// new "AFCM: Authorize Injury Editing" action on an Interactive Terminal's synced object
+// (fnc_addTerminalAction.sqf) before Edit Injuries appears for them on any patient.
+["afcm_sim_requireInjuryEditPermission", "CHECKBOX",
+    ["Require Injury Edit Permission", "If enabled, a player can't use a patient's ""Edit Injuries"" action until they've used ""AFCM: Authorize Injury Editing"" on an Interactive Terminal's synced object at least once this mission. Off by default - every patient's Edit Injuries stays unrestricted unless this is turned on."],
+    "AFCM Medical Simulator",
+    false
+] call CBA_fnc_addSetting;
