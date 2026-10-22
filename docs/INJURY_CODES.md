@@ -73,36 +73,56 @@ Defined in [DESIGN.md §4.2](DESIGN.md#42-injury-object).
 
 ### 2.1 Real values in use today
 
-`woundType` is an open vocabulary in principle, but only three values are actually produced or
-consumed anywhere in the codebase right now (`afcm_sim_scenario_fnc_randomizeInjuries` is the only
-producer; `afcm_sim_ace_fnc_applyInjury` is the only real consumer):
+`woundType` is an open vocabulary in principle. The original three go through ACE3's *probabilistic*
+`ace_medical_fnc_addDamageToUnit` (a `damageTypes` class biases ACE's own random wound selection);
+the Injury Author's wound-type taxonomy expansion added seven more that each map 1:1 to one exact
+real `CfgWounds` class (§2.3), so those go through the *deterministic* `ace_medical_fnc_addWound`
+directly instead — there's no real ACE `damageType` that reliably selects e.g. `Laceration` over
+every other class it also weights, so guessing one would be an unverified mapping this codebase's
+own convention avoids. All ten are wired on both `ace_compat` and `kat_compat` (KAT extends ACE's
+wound pipeline rather than replacing it).
 
-| `woundType` | Meaning | Real ACE3 `damageTypes` class it maps to |
-|---|---|---|
-| `gunshot` | Ballistic/bullet wound | `bullet` |
-| `shrapnel` | Fragmentation wound | `grenade` |
-| `blast` | Overpressure/explosive wound | `shell` |
+| `woundType` | Meaning | Real ACE3 class | Mechanism |
+|---|---|---|---|
+| `gunshot` | Ballistic/bullet wound | `bullet` (`damageTypes`) | `addDamageToUnit`, probabilistic |
+| `shrapnel` | Fragmentation wound | `grenade` (`damageTypes`) | `addDamageToUnit`, probabilistic |
+| `blast` | Overpressure/explosive wound | `shell` (`damageTypes`) | `addDamageToUnit`, probabilistic |
+| `abrasion` | Scrape/rope burn | `Abrasion` (`CfgWounds`) | `addWound`, deterministic — no bleed (§2.3) |
+| `avulsion` | Torn-away tissue | `Avulsion` (`CfgWounds`) | `addWound`, deterministic |
+| `contusion` | Bruise | `Contusion` (`CfgWounds`) | `addWound`, deterministic — no bleed (§2.3) |
+| `crush` | Crush injury | `Crush` (`CfgWounds`) | `addWound`, deterministic |
+| `cut` | Minimal slicing wound | `Cut` (`CfgWounds`) | `addWound`, deterministic |
+| `laceration` | Tearing wound | `Laceration` (`CfgWounds`) | `addWound`, deterministic |
+| `thermalburn` | Heat contact | `ThermalBurn` (`CfgWounds`) | `addWound`, deterministic |
 
-All three ACE3 classes are real, confirmed `ACE_Medical_Injuries.hpp` classes (not guessed) — see
+All classes above are real, confirmed `ACE_Medical_Injuries.hpp` classes (not guessed) — see
 [REFERENCES.md](REFERENCES.md#ace3-medical-source-confirmed-directly-from-acemodace3-not-the-wiki)
-for the full class list ACE3 actually supports beyond these three (`explosive`, `vehiclehit`,
-`vehiclecrash`, `collision`, `falling`, `backblast`, `stab`, `punch`, `ropeburn`, `drowning`,
-`fire`, `burn`, `unknown`) — none of those are wired up on the `afcm_sim_scenario` side yet, so
-they're not reachable through AFCM-Simulator today even though `ace_compat` could in principle
-support any of them.
+for the full real `damageTypes` list ACE3 supports beyond the three mapped here (`explosive`,
+`vehiclehit`, `vehiclecrash`, `collision`, `falling`, `backblast`, `stab`, `punch`, `ropeburn`,
+`drowning`, `fire`, `burn`, `unknown`) — none of those are wired up on the `afcm_sim_scenario` side
+yet, so they're not reachable through AFCM-Simulator today even though `ace_compat` could in
+principle support any of them.
 
 ### 2.2 Bleeding → real ACE3 wound class
 
-When `bleeding: true`, `ace_compat` forces a real, sized bleeding wound via
-`ace_medical_fnc_addWound` rather than leaving it to `addDamageToUnit`'s internal randomness (full
-rationale in [ACE_COMPAT.md §3](addons/ACE_COMPAT.md#3-why-two-ace-calls-not-one)). Which wound
-class it uses depends on `woundType`:
+Applies to the three probabilistic `woundType`s only (§2.1). When `bleeding: true`, `ace_compat`
+forces a real, sized bleeding wound via `ace_medical_fnc_addWound` rather than leaving it to
+`addDamageToUnit`'s internal randomness (full rationale in
+[ACE_COMPAT.md §3](addons/ACE_COMPAT.md#3-why-two-ace-calls-not-one)). Which wound class it uses
+depends on `woundType`:
 
 | `woundType` | ACE3 wound class used |
 |---|---|
 | `gunshot` | `VelocityWound` |
 | `shrapnel` | `PunctureWound` |
 | `blast` | `PunctureWound` |
+
+The seven deterministic `woundType`s (§2.1) don't need this two-step mechanism — each already
+`addWound`s its own exact class directly as the base injury, sized from whichever of
+severity/`bleedRate` actually applies, so there's no separate forced-bleed call. `contusion` and
+`abrasion` specifically never bleed regardless of a requested `bleeding: true` — real,
+`ACE_Medical_Injuries.hpp`-confirmed base bleeding of `0` for both (§2.3) — `ace_compat` forces this
+off rather than relying on callers to never ask.
 
 `bleedRate` (roughly `0.1`–`0.4` as produced by the randomizer, see §4 below) is bucketed into
 ACE3's `_size` enum, since that's the only lever `addWound` exposes over how much a specific wound
@@ -116,9 +136,11 @@ bleeds:
 
 ### 2.3 Real ACE3 wound classes (case-sensitive)
 
-The full set `addWound` accepts, confirmed from `ACE_Medical_Injuries.hpp` — only `VelocityWound`
-and `PunctureWound` are actually used by `ace_compat` today (§2.2), the rest are documented here as
-the real available vocabulary for future use:
+The full set `addWound` accepts, confirmed from `ACE_Medical_Injuries.hpp`. `VelocityWound` and
+`PunctureWound` are reached via the probabilistic forced-bleed path (§2.2); `Abrasion`, `Avulsion`,
+`Contusion`, `Crush`, `Cut`, `Laceration`, and `ThermalBurn` are each reached directly via their own
+deterministic `woundType` (§2.1) — every class below is real and wired today, none are
+future-use-only anymore:
 
 | Class | Base bleeding | Base pain | Notes |
 |---|---|---|---|

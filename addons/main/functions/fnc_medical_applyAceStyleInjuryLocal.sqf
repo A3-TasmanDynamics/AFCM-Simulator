@@ -86,31 +86,67 @@ private _bleedWoundTypeMap = createHashMapFromArray [
     ["shrapnel", "PunctureWound"],
     ["blast", "PunctureWound"]
 ];
+// Real ACE3 CfgWounds classes (ACE_Medical_Injuries.hpp, docs/INJURY_CODES.md §2.3 - confirmed, not
+// guessed) for the wound-type taxonomy expansion. Unlike gunshot/shrapnel/blast above, each of these
+// maps 1:1 to one exact real wound class, so they go through addWound directly (deterministic)
+// rather than addDamageToUnit's damageType-biased random selection - there's no real ACE damageType
+// that reliably picks e.g. "Laceration" over the other classes it also weights, and guessing one
+// would be exactly the kind of unverified mapping this codebase's own convention (REFERENCES.md)
+// avoids.
+private _directWoundClassMap = createHashMapFromArray [
+    ["abrasion", "Abrasion"],
+    ["avulsion", "Avulsion"],
+    ["contusion", "Contusion"],
+    ["crush", "Crush"],
+    ["cut", "Cut"],
+    ["laceration", "Laceration"],
+    ["thermalburn", "ThermalBurn"]
+];
+// Real, confirmed constraint (ACE_Medical_Injuries.hpp, matches the user-supplied ACE injury
+// reference sheet): Contusion and Abrasion carry no bleed rate. Forced off here regardless of what
+// the Injury Author's Bleeding control was set to, rather than relying on the UI to never ask.
+private _noBleedTypes = ["contusion", "abrasion"];
 
 private _limb = _injury getOrDefault ["limb", "chest"];
 private _woundType = _injury getOrDefault ["woundType", "gunshot"];
 private _severity = _injury getOrDefault ["severity", 0.5];
-private _bleeding = _injury getOrDefault ["bleeding", false];
+private _bleeding = (_injury getOrDefault ["bleeding", false]) && !(_woundType in _noBleedTypes);
 private _bleedRate = _injury getOrDefault ["bleedRate", 0];
 
 if !(_limb in _bodyPartMap) then {
     diag_log text format ["[AFCM-Simulator][%1 backend] applyInjury - unrecognized limb '%2', falling back to chest (caller bug - check the LimbId spelling/casing, INJURY_CODES.md §1).", _backendLabel, _limb];
 };
 private _bodyPart = _bodyPartMap getOrDefault [_limb, "body"];
-private _damageType = _damageTypeMap getOrDefault [_woundType, "bullet"];
 
-[_unit, _severity, _bodyPart, _damageType] call ace_medical_fnc_addDamageToUnit;
-
-if (_bleeding) then {
-    private _bleedWoundType = _bleedWoundTypeMap getOrDefault [_woundType, "PunctureWound"];
-    // Size 0/1/2 (small/medium/large) - the only lever ACE gives addWound over how much this
-    // specific wound bleeds/hurts (`bleeding`/`pain` in ACE_Medical_Injuries.hpp are multiplied by
-    // size). DESIGN.md §4.4's bleedRate values run roughly 0.1-0.4 in practice (afcm_sim_scenario's
-    // randomizer) - bucketed into size here rather than scaled 1:1, since size is an enum not a
-    // continuous value.
+if (_woundType in _directWoundClassMap) then {
+    // Deterministic path - one exact real CfgWounds class via addWound, sized from whichever of
+    // severity/bleedRate actually drives this wound (a bleeding wound uses the bleed-requested
+    // size; a non-bleeding one uses severity) - same 0.15/0.3 bucket thresholds the probabilistic
+    // path below already uses, reused here as a reasonable first approximation rather than a
+    // separately-tuned scale.
+    private _woundClass = _directWoundClassMap get _woundType;
+    private _magnitude = [_severity, _bleedRate] select _bleeding;
     private _size = 0;
-    if (_bleedRate >= 0.3) then { _size = 2; } else {
-        if (_bleedRate >= 0.15) then { _size = 1; };
+    if (_magnitude >= 0.3) then { _size = 2; } else {
+        if (_magnitude >= 0.15) then { _size = 1; };
     };
-    [_unit, _bodyPart, [_bleedWoundType, 1, _size, 0]] call ace_medical_fnc_addWound;
+    [_unit, _bodyPart, [_woundClass, 1, _size, 0]] call ace_medical_fnc_addWound;
+} else {
+    private _damageType = _damageTypeMap getOrDefault [_woundType, "bullet"];
+
+    [_unit, _severity, _bodyPart, _damageType] call ace_medical_fnc_addDamageToUnit;
+
+    if (_bleeding) then {
+        private _bleedWoundType = _bleedWoundTypeMap getOrDefault [_woundType, "PunctureWound"];
+        // Size 0/1/2 (small/medium/large) - the only lever ACE gives addWound over how much this
+        // specific wound bleeds/hurts (`bleeding`/`pain` in ACE_Medical_Injuries.hpp are multiplied
+        // by size). DESIGN.md §4.4's bleedRate values run roughly 0.1-0.4 in practice
+        // (afcm_sim_scenario's randomizer) - bucketed into size here rather than scaled 1:1, since
+        // size is an enum not a continuous value.
+        private _size = 0;
+        if (_bleedRate >= 0.3) then { _size = 2; } else {
+            if (_bleedRate >= 0.15) then { _size = 1; };
+        };
+        [_unit, _bodyPart, [_bleedWoundType, 1, _size, 0]] call ace_medical_fnc_addWound;
+    };
 };
