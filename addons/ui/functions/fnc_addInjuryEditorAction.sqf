@@ -10,9 +10,11 @@
  * Condition is opt-in gated behind afcm_sim_requireInjuryEditPermission (default false, unrestricted
  * - unchanged behaviour unless a mission maker turns it on). When on, a player needs
  * AFCM_SIM_canEditInjuries set on themselves first (fnc_addTerminalAction.sqf's "AFCM: Authorize
- * Injury Editing" action) - condition strings are re-evaluated live every time a player scrolls, so
- * permission granted after this action was already added still works correctly with no re-adding
- * needed.
+ * Injury Editing" action, revocable via its own "AFCM: Revoke Injury Editing"). The condition string
+ * itself reads afcm_sim_requireInjuryEditPermission live, not a value baked in once at add-time -
+ * condition strings are re-evaluated every time a player scrolls regardless, so this also means a
+ * mission maker toggling the CBA setting mid-mission takes effect immediately for every already-
+ * spawned patient, not just ones spawned after the toggle.
  *
  * Arguments:
  * 0: Patient unit <OBJECT>
@@ -27,7 +29,7 @@ params ["_unit"];
 
 if (isNull _unit) exitWith {};
 
-private _condition = ["true", "player getVariable ['AFCM_SIM_canEditInjuries', false]"] select afcm_sim_requireInjuryEditPermission;
+private _condition = "!afcm_sim_requireInjuryEditPermission || {player getVariable ['AFCM_SIM_canEditInjuries', false]}";
 
 _unit addAction [
     "<t color='#c1272d'>AFCM: Edit Injuries</t>",

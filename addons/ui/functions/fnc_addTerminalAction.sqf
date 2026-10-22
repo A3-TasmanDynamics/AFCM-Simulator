@@ -1,11 +1,11 @@
 /*
  * Author: Tasman Dynamics
- * Adds three vanilla addActions ("AFCM: Open MCI Creator" / "AFCM: Open Session Manager" / "AFCM:
- * Authorize Injury Editing") to a placed object - run via remoteExec (target 0 = everyone,
- * JIP-persisted) from afcm_sim_eden_fnc_module_interactiveTerminal, same reasoning as
- * fnc_addInjuryEditorAction.sqf: addAction is inherently local to whichever machine calls it, so
- * every client (present and JIP) needs to run this itself for the actions to actually show up for
- * them.
+ * Adds four vanilla addActions ("AFCM: Open MCI Creator" / "AFCM: Open Session Manager" / "AFCM:
+ * Authorize Injury Editing" / "AFCM: Revoke Injury Editing") to a placed object - run via
+ * remoteExec (target 0 = everyone, JIP-persisted) from afcm_sim_eden_fnc_module_interactiveTerminal,
+ * same reasoning as fnc_addInjuryEditorAction.sqf: addAction is inherently local to whichever
+ * machine calls it, so every client (present and JIP) needs to run this itself for the actions to
+ * actually show up for them.
  *
  * No real vanilla addAction submenu/parentId mechanism exists (confirmed - the BI wiki and
  * community discussion around addAction only document a flat action list, workarounds like
@@ -14,13 +14,15 @@
  * convention already used elsewhere in this addon ("AFCM: Edit Injuries", "AFCM: Assign MCI
  * Preset").
  *
- * "Authorize Injury Editing" is always added here (cheap, harmless when the gate it feeds is off),
- * always set AFCM_SIM_canEditInjuries true, regardless of whether
- * afcm_sim_requireInjuryEditPermission is actually on - that setting only controls whether
- * fnc_addInjuryEditorAction.sqf's own condition string checks the flag at all, so using this action
- * with the setting off is a harmless no-op, not a prerequisite that has to be toggled in lockstep.
- * A per-player permission (player setVariable, not per-unit) - once used, every patient's Edit
- * Injuries works for that player from then on, not just whichever unit they were standing near.
+ * Authorize/Revoke are both always added here (cheap, harmless when the gate they feed is off -
+ * afcm_sim_requireInjuryEditPermission only controls whether fnc_addInjuryEditorAction.sqf's own
+ * condition string checks the flag at all, so using either with the setting off is a harmless
+ * no-op), and are each other's mirror: Authorize's own condition only shows it while the player
+ * does NOT already have the flag, Revoke's only shows it while they DO - real, confirmed gap fixed
+ * here, there used to be no way to give the permission back up once granted. Both set a per-player
+ * flag (player setVariable, not per-unit) - once authorized, every patient's Edit Injuries works for
+ * that player from then on, not just whichever unit they were standing near; revoking removes it the
+ * same way.
  *
  * Arguments:
  * 0: Object <OBJECT> - whatever the Interactive Terminal module was attached to (a placed Laptop,
@@ -71,7 +73,22 @@ _object addAction [
     true,
     true,
     "",
-    "true",
+    "!(player getVariable ['AFCM_SIM_canEditInjuries', false])",
+    5
+];
+
+_object addAction [
+    "<t color='#c1272d'>AFCM: Revoke Injury Editing</t>",
+    {
+        player setVariable ["AFCM_SIM_canEditInjuries", false, true];
+        ["AFCM Terminal", "Injury-editing authorization revoked."] call afcm_sim_ui_fnc_showToast;
+    },
+    [],
+    1.2,
+    true,
+    true,
+    "",
+    "player getVariable ['AFCM_SIM_canEditInjuries', false]",
     5
 ];
 
