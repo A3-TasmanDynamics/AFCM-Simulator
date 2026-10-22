@@ -33,4 +33,14 @@ diag_log text format ["[AFCM-Simulator][UI] Spawning MCI - %1 patient(s) at %2 (
 
 [_pos, AFCM_SIM_UI_mciPatientSpecs, _casualtyType, _sessionLabel] remoteExec ["afcm_sim_scenario_fnc_serverSpawnMci", 2];
 
+// Real, confirmed bug fixed here: AFCM_SIM_UI_mciPatientSpecs (fnc_mciCreator_init.sqf) is only
+// ever seeded once per session (isNil guard) and nothing else resets it - so reopening MCI Creator
+// for a genuinely different incident silently reused whichever presets were last assigned, even
+// after the first incident's patients were cleared via the Session Manager (which only touches
+// spawned objects/sessions server-side, never this dialog's own working state). The remoteExec
+// above already serialized the real specs for THIS spawn, so resetting the var now only affects
+// future opens, not this call - preserves "reopen to tweak before spawning" within one incident
+// while guaranteeing a spawned incident's presets never leak into the next one.
+AFCM_SIM_UI_mciPatientSpecs = AFCM_SIM_UI_mciPatientSpecs apply { "random" };
+
 closeDialog 0;
