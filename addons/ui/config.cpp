@@ -65,11 +65,6 @@ class CfgFunctions
             class addTreatedAction { file = "\afcm_sim\addons\ui\functions\fnc_addTreatedAction.sqf"; };
             class addExportStateAction { file = "\afcm_sim\addons\ui\functions\fnc_addExportStateAction.sqf"; };
         };
-        class Mci
-        {
-            file = "\afcm_sim\addons\ui\functions";
-            class addMciPresetAction { file = "\afcm_sim\addons\ui\functions\fnc_addMciPresetAction.sqf"; };
-        };
         class PresetLibrary
         {
             file = "\afcm_sim\addons\ui\functions";
