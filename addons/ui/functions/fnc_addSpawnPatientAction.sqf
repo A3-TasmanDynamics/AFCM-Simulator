@@ -59,15 +59,27 @@ if (isNull _object || {isNull _logic}) exitWith {};
 private _title = _logic getVariable ["AFCM_SIM_title", ""];
 private _label = if (_title != "") then { format ["AFCM: Spawn %1", _title] } else { "AFCM: Spawn Patient" };
 
-// Local only (no `true`) - read back on the exact same client that's about to set it, inside the
-// same interaction click, never over the network.
-_object setVariable ["AFCM_SIM_terminalLogic", _logic];
+// Real, confirmed bug fixed here: this used to tag _logic under one SHARED key
+// ("AFCM_SIM_terminalLogic") on the object regardless of which module added the interaction - fine
+// for exactly one module synced to an object, but with two or more AFCM Patient modules synced to
+// the SAME object (a real, intended use case - multiple distinctly-Titled "Spawn <Title>"
+// interactions on one laptop), the second module's registration silently overwrote the first's, so
+// EVERY spawn interaction on that object - whichever label was actually clicked - resolved to
+// whichever module synced most recently (reported: two modules synced to one object, one "Airway
+// Management" and one "Limb Injuries", only ever spawned the Airway preset). Fixed by keying storage
+// per module (netId _logic is unique per placed module) and baking that unique key directly into
+// each module's own COMPILED statement code (compile format, not a captured/closed-over private -
+// SQF code blocks used as addAction/ACE statements don't reliably retain outer-scope state once
+// stored and fired later, same reasoning this file's own earlier `_logic`-tagging fix already
+// established) so each interaction correctly reads back only its own module's logic, no matter how
+// many others are synced to the same object.
+private _logicKey = format ["AFCM_SIM_terminalLogic_%1", netId _logic];
+_object setVariable [_logicKey, _logic];
 
-private _fnc_statement = {
-    params ["_target"];
-    private _targetLogic = _target getVariable ["AFCM_SIM_terminalLogic", objNull];
-    [_targetLogic, _target] remoteExec ["afcm_sim_eden_fnc_serverSpawnFromTerminal", 2];
-};
+private _fnc_statement = compile format [
+    "params ['_target']; private _targetLogic = _target getVariable ['%1', objNull]; [_targetLogic, _target] remoteExec ['afcm_sim_eden_fnc_serverSpawnFromTerminal', 2];",
+    _logicKey
+];
 private _fnc_condition = {
     params ["_target"];
     !(_target getVariable ["AFCM_SIM_terminalSpawned", false])
