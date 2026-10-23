@@ -28,6 +28,7 @@ class CfgFunctions
             class newSessionId { file = "\afcm_sim\addons\spawner\functions\fnc_newSessionId.sqf"; };
             class getSessions { file = "\afcm_sim\addons\spawner\functions\fnc_getSessions.sqf"; };
             class serverDeleteSession { file = "\afcm_sim\addons\spawner\functions\fnc_serverDeleteSession.sqf"; };
+            class serverPruneEmptySession { file = "\afcm_sim\addons\spawner\functions\fnc_serverPruneEmptySession.sqf"; };
         };
     };
 };
