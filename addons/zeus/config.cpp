@@ -155,14 +155,17 @@ class CfgVehicles
         class Attributes: AFCM_SIM_CasualtyTypeAttributes {};
     };
 
-    // "select a place on the map" is placing this module; "select a preset" happens right after,
-    // via the "Assign MCI Preset" scroll action added to the spawned batch
-    // (afcm_sim_ui_fnc_addMciPresetAction) rather than a static Attribute, since Zeus placement is a
-    // live, interactive moment that can reach the full real-time preset library (built-in + the
-    // placing operator's own saved presets). Used to have a design-time Eden counterpart
-    // (AFCM_SIM_ModuleMciSpawnerPlacement, limited to the 5 built-in presets only) - removed on
-    // request along with AFCM MASCAL Zone/Medical Tent, keeping only AFCM Patient + Interactive
-    // Terminal in eden/config.cpp; this Zeus module is unaffected.
+    // "select a place on the map" is placing this module - it opens the real MCI Creator
+    // (RscDisplayAFCM_SIM_MciCreator) right on the placing curator's own screen with this position
+    // already filled in (fnc_module_mciSpawner.sqf), skipping its own "Choose Location on Map" step
+    // entirely. Real, confirmed redesign: this used to spawn a blank batch immediately and offer only
+    // ONE shared single-injury preset for the whole group via a scroll action - replaced with the
+    // full MCI Creator so each patient can get its own distinct preset, including loading a real
+    // saved MCI Preset, not just a single shared wound. Patient Count/Casualty Type below still seed
+    // the Creator's own working state (fnc_module_mciSpawner.sqf's own comment has the exact rules).
+    // Used to have a design-time Eden counterpart (AFCM_SIM_ModuleMciSpawnerPlacement, limited to the
+    // 5 built-in presets only) - removed on request along with AFCM MASCAL Zone/Medical Tent, keeping
+    // only AFCM Patient + Interactive Terminal in eden/config.cpp; this Zeus module is unaffected.
     class AFCM_SIM_ModuleMciSpawner: Module_F
     {
         scope = 0;
