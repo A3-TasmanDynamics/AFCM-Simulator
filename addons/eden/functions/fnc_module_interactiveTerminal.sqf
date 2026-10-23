@@ -16,11 +16,16 @@
  * Real, confirmed gap fixed here: `attachedTo _logic` (the Zeus attach path specifically) isn't
  * guaranteed to have finished replicating to the server by the time this callback first runs on a
  * dedicated server - a curator dragging the module onto an object could see it silently never add
- * its actions. Deferred 1s before resolving the target, same reasoning as afcm_sim_spawner_fnc_
- * spawnPatient's own addAction registration (a freshly-attached/created object's state isn't
- * guaranteed to have replicated to every machine yet). AFCM_SIM_moduleFired is also only latched
- * AFTER a target actually resolves, not before - so a genuine, still-unresolved case doesn't
- * permanently block a later re-fire the way an earlier pass did.
+ * its actions. AFCM_SIM_moduleFired is also only latched AFTER a target actually resolves, not
+ * before - so a genuine, still-unresolved case doesn't permanently block a later re-fire the way an
+ * earlier pass did.
+ *
+ * Target resolution itself (with retry) is factored into fnc_resolveTerminalTarget.sqf, retrying
+ * every 1s for up to 5 attempts rather than checking exactly once - a single fixed 1s defer (this
+ * file's own earlier fix) still isn't a guaranteed-safe margin on every server (load, mission
+ * complexity, a slower dedicated server all push replication further out), and silently giving up
+ * after one attempt is exactly the "curator drags it on, nothing ever happens, no clue why" failure
+ * mode being fixed here.
  *
  * Unlike Edit Injuries, this module doesn't self-delete or open anything itself - it's a persistent
  * placed effect ("this object is now a terminal"), so it guards against re-adding the same actions
@@ -39,21 +44,10 @@
 
 params ["_logic", "_units", "_activated"];
 
+diag_log text format ["[AFCM-Simulator][Eden][diag] Interactive Terminal module fired - activated=%1, isServer=%2, units=%3.", _activated, isServer, _units];
+
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
 if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
 
-[{
-    params ["_logic", "_units"];
-    if (isNull _logic) exitWith {};
-
-    private _object = _units param [0, objNull];
-    if (isNull _object) then { _object = attachedTo _logic; };
-
-    if (isNull _object) exitWith {
-        diag_log text "[AFCM-Simulator][Eden] Interactive Terminal module fired with no synced/attached object - nothing to add actions to.";
-    };
-
-    _logic setVariable ["AFCM_SIM_moduleFired", true];
-    [_object] remoteExec ["afcm_sim_ui_fnc_addTerminalAction", 0, true];
-}, [_logic, _units], 1] call CBA_fnc_waitAndExecute;
+[_logic, _units, 1] call afcm_sim_eden_fnc_resolveTerminalTarget;
