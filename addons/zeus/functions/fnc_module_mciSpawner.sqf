@@ -35,6 +35,9 @@
 
 params ["_logic", "_units", "_activated"];
 
+// Diagnostic-only, temporary - see fnc_module_spawnRandomPatient.sqf's own comment for why.
+diag_log text format ["[AFCM-Simulator][Zeus][diag] MCI Spawner module fired - activated=%1, isServer=%2, moduleFired=%3.", _activated, isServer, _logic getVariable ["AFCM_SIM_moduleFired", false]];
+
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
 if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
