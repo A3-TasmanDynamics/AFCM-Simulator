@@ -198,6 +198,10 @@ _unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
 _unit addEventHandler ["Deleted", {
     params ["_entity"];
     private _sessionId = _entity getVariable ["AFCM_SIM_sessionId", ""];
+    // Diagnostic-only, temporary - the prior "Deleted" EH fix (PR #54) still isn't auto-clearing the
+    // session per a real retest. Unconditionally logged so a next retest shows whether this EH is
+    // even firing on a Zeus delete at all, and if so, what sessionId it read back.
+    diag_log text format ["[AFCM-Simulator][diag] Patient Deleted EH fired - entity=%1, isServer=%2, sessionId='%3'.", _entity, isServer, _sessionId];
     if (_sessionId != "") then {
         [_sessionId, _entity] call afcm_sim_spawner_fnc_serverPruneEmptySession;
     };
