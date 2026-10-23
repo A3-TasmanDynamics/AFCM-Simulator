@@ -32,6 +32,12 @@
 
 params ["_logic", "_units", "_activated"];
 
+// Diagnostic-only, temporary - added alongside fnc_main_postInit.sqf's own CfgPatches/CfgVehicles
+// check (PR #46) to chase down "Zeus modules don't work" reports. If this line never shows up in
+// the RPT at all when the module is placed, the module function itself isn't even being reached -
+// narrows the problem down to placement/Module_F activation rather than anything in this file.
+diag_log text format ["[AFCM-Simulator][Zeus][diag] Spawn Patient module fired - activated=%1, isServer=%2, moduleFired=%3.", _activated, isServer, _logic getVariable ["AFCM_SIM_moduleFired", false]];
+
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
 if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
