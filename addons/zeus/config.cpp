@@ -16,12 +16,22 @@ class CfgPatches
 // (DESIGN.md §5), now calling real afcm_sim_spawner logic. `scopeCurator = 2;` (below) is required
 // in addition to `scope`, confirmed via a real in-Zeus test that without it, the module compiles
 // and registers fine but simply never appears in the Zeus curator browser at all (plain `scope=2`
-// alone is not sufficient for Zeus specifically, unlike Eden). `scope` itself is now set to `0`,
-// not `2`, on every module below — deliberately keeping these OUT of the Eden 2D-editor module
-// list, since Eden already has its own design-time counterparts (addons/eden/config.cpp: AFCM
-// Patient, MCI Spawner) and showing both sets in Eden just duplicated/confused the module browser.
-// Confirmed this doesn't affect Zeus visibility at all, since `scopeCurator` is explicitly defined
-// here (see the BI wiki: scopeCurator only falls back to `scope` when left undefined).
+// alone is not sufficient for Zeus specifically, unlike Eden).
+//
+// Real, confirmed bug fixed here: `scope` used to be `0` ("private") on every module below, on the
+// theory that `scopeCurator` alone would still make them placeable in Zeus while keeping them out
+// of Eden's own 2D-editor module list (Eden already has its own design-time counterparts: AFCM
+// Patient, MCI Spawner, addons/eden/config.cpp). That theory was wrong in a way that only showed up
+// at actual placement time, not at browse time - `scope = 0` blocks real object INSTANTIATION at
+// the engine level, a separate, deeper gate than `scopeCurator`'s own browser-visibility check.
+// The modules still showed up and could be SELECTED in the Zeus browser (scopeCurator=2 covers
+// that), but every attempt to actually place one silently failed - confirmed directly from a real
+// RPT: "Cannot create entity with abstract type AFCM_SIM_ModuleMciSpawner (scope = private?)" /
+// "Cannot create non-ai vehicle 'AFCM_SIM_ModuleMciSpawner',''" - the module's own function was
+// never even reached, since the object backing it never existed to fire Module_F's Activated
+// callback on in the first place. `scope = 1` ("protected") is the correct value instead - still a
+// real, instantiable object (so Zeus can actually create and place it), just hidden from Eden's own
+// placement browser the same way `scope = 0` was, without blocking creation entirely.
 //
 // Second, bigger gotcha (found by diffing against KAT's real addons/zeus/config.cpp): Zeus does
 // NOT use CfgVehicleClasses for module categorization at all — that's an Eden (2D editor) only
@@ -137,7 +147,7 @@ class CfgVehicles
 
     class AFCM_SIM_ModuleSpawnRandomPatient: Module_F
     {
-        scope = 0;
+        scope = 1;
         scopeCurator = 2;
         side = 7;
         displayName = "Spawn Patient";
@@ -168,7 +178,7 @@ class CfgVehicles
     // only AFCM Patient + Interactive Terminal in eden/config.cpp; this Zeus module is unaffected.
     class AFCM_SIM_ModuleMciSpawner: Module_F
     {
-        scope = 0;
+        scope = 1;
         scopeCurator = 2;
         side = 7;
         displayName = "MCI Spawner";
@@ -217,7 +227,7 @@ class CfgVehicles
     // target back via `attachedTo _logic`, not the `_units` (synced units) param.
     class AFCM_SIM_ModuleEditInjuries: Module_F
     {
-        scope = 0;
+        scope = 1;
         scopeCurator = 2;
         side = 7;
         displayName = "Edit Injuries";
