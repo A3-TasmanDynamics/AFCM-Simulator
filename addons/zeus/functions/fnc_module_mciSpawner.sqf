@@ -51,7 +51,9 @@
 
 params ["_logic", "_units", "_activated"];
 
-// Diagnostic-only, temporary - see fnc_module_spawnRandomPatient.sqf's own comment for why.
+// Diagnostic-only, temporary - see fnc_module_spawnRandomPatient.sqf's own comment for why. Logs
+// `local _logic` (not isServer, which PR #56 originally logged here before this module's own
+// redesign changed its real guard to match Edit Injuries' local-client pattern).
 diag_log text format ["[AFCM-Simulator][Zeus][diag] MCI Spawner module fired - activated=%1, local=%2, moduleFired=%3.", _activated, local _logic, _logic getVariable ["AFCM_SIM_moduleFired", false]];
 
 if !(_activated) exitWith {};

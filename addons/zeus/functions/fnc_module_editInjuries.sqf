@@ -31,6 +31,13 @@
 
 params ["_logic", "_units", "_activated"];
 
+// Diagnostic-only, temporary - see fnc_module_spawnRandomPatient.sqf's own comment for why. Logs
+// `local _logic` specifically (not isServer, like every other module here) since that's the real
+// guard this one depends on - grounded in ACE3's own "Heal" Zeus module using the identical pattern
+// for the identical curatorCanAttach=1 case, but worth confirming directly against this mod's own
+// real RPT rather than only trusting that source was still accurate.
+diag_log text format ["[AFCM-Simulator][Zeus][diag] Edit Injuries module fired - activated=%1, local=%2, attachedTo=%3.", _activated, local _logic, attachedTo _logic];
+
 if !(_activated) exitWith {};
 if !(local _logic) exitWith {};
 

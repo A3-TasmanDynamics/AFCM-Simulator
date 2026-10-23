@@ -39,6 +39,7 @@ class CfgFunctions
             // both the fnc_ filename AND the absolute-path form are required.
             class module_patientPlacement { file = "\afcm_sim\addons\eden\functions\fnc_module_patientPlacement.sqf"; };
             class module_interactiveTerminal { file = "\afcm_sim\addons\eden\functions\fnc_module_interactiveTerminal.sqf"; };
+            class resolveTerminalTarget { file = "\afcm_sim\addons\eden\functions\fnc_resolveTerminalTarget.sqf"; };
             class resolvePatientAttributes { file = "\afcm_sim\addons\eden\functions\fnc_resolvePatientAttributes.sqf"; };
             class serverSpawnForLogic { file = "\afcm_sim\addons\eden\functions\fnc_serverSpawnForLogic.sqf"; };
             class serverSpawnFromTerminal { file = "\afcm_sim\addons\eden\functions\fnc_serverSpawnFromTerminal.sqf"; };

@@ -1,0 +1,44 @@
+/*
+ * Author: Tasman Dynamics
+ * Resolves AFCM_SIM_ModuleInteractiveTerminal's actual target object (synced unit, or Zeus
+ * attachedTo), retrying every 1s for up to 5 attempts before giving up - factored out of
+ * fnc_module_interactiveTerminal.sqf so it can call itself by name (CBA_fnc_waitAndExecute) rather
+ * than stash an ad-hoc self-referencing closure in missionNamespace.
+ *
+ * A single fixed-delay check isn't a guaranteed-safe margin on every server (load, mission
+ * complexity, a slower dedicated server all push replication further out) - a curator dragging the
+ * module onto an object in Zeus could see it silently never add its actions. Retrying gives
+ * replication real room to catch up instead of a one-shot gamble. Every attempt is unconditionally
+ * diag_log'd (not gated behind Debug Logging) - temporary, specifically so a retest pins down
+ * exactly which stage fails if this still isn't enough.
+ *
+ * Arguments:
+ * 0: Logic <OBJECT> - the placed/attached module
+ * 1: Units <ARRAY> - synced units; first entry (if any) is the target object
+ * 2: Attempt <NUMBER> - 1-indexed, gives up after attempt 5
+ *
+ * Return Value:
+ * None
+ *
+ * Public: Yes
+*/
+
+params ["_logic", "_units", "_attempt"];
+
+if (isNull _logic) exitWith {};
+
+private _object = _units param [0, objNull];
+if (isNull _object) then { _object = attachedTo _logic; };
+
+diag_log text format ["[AFCM-Simulator][Eden][diag] Interactive Terminal resolve attempt %1/5 - object=%2.", _attempt, _object];
+
+if !(isNull _object) exitWith {
+    _logic setVariable ["AFCM_SIM_moduleFired", true];
+    [_object] remoteExec ["afcm_sim_ui_fnc_addTerminalAction", 0, true];
+};
+
+if (_attempt < 5) then {
+    [afcm_sim_eden_fnc_resolveTerminalTarget, [_logic, _units, _attempt + 1], 1] call CBA_fnc_waitAndExecute;
+} else {
+    diag_log text "[AFCM-Simulator][Eden] Interactive Terminal module gave up after 5s - still no synced/attached object, nothing to add actions to.";
+};
