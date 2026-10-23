@@ -188,6 +188,21 @@ publicVariable "AFCM_SIM_spawnSessions";
 
 _unit setVariable ["AFCM_SIM_sessionId", _sessionId, true];
 
+// Real, confirmed gap fixed here: deleting this patient any way OTHER than the Session Manager's own
+// Delete Session/Clear All Sessions buttons (Zeus's own native delete/trash tool, a scripted
+// deleteVehicle, etc.) never told AFCM_SIM_spawnSessions this unit was gone - a session could sit at
+// 0 real patients forever. "Deleted" is a real vanilla entity event, not a kill - fires for a direct
+// Zeus delete too, unlike "Killed"/MPKilled which wouldn't. Added server-side only, matching this
+// whole function's own server-authoritative scope - patients are always server-local AI, never
+// player-controlled, so this doesn't need the MP broadcast addMPEventHandler form.
+_unit addEventHandler ["Deleted", {
+    params ["_entity"];
+    private _sessionId = _entity getVariable ["AFCM_SIM_sessionId", ""];
+    if (_sessionId != "") then {
+        [_sessionId, _entity] call afcm_sim_spawner_fnc_serverPruneEmptySession;
+    };
+}];
+
 [{
     params ["_unit", "_injuries", "_katExtras", "_callbackOwner"];
     if (isNull _unit) exitWith {};
