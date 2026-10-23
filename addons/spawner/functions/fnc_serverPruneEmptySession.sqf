@@ -34,10 +34,16 @@ if !(isServer) exitWith {};
 
 private _sessions = missionNamespace getVariable ["AFCM_SIM_spawnSessions", []];
 private _sessionIdx = _sessions findIf { (_x select 0) == _sessionId };
-if (_sessionIdx == -1) exitWith {};
+if (_sessionIdx == -1) exitWith {
+    diag_log text format ["[AFCM-Simulator][diag] serverPruneEmptySession - session '%1' not found in AFCM_SIM_spawnSessions, nothing to prune.", _sessionId];
+};
 
 private _units = (_sessions select _sessionIdx) select 3;
 private _stillAlive = _units select { !(isNull _x) && {_x != _justDeleted} };
+// Diagnostic-only, temporary - a prior retest still showed the session not auto-clearing at 0
+// patients despite this function's own logic looking correct; logged unconditionally so a next
+// retest shows exactly what this function saw (every tracked unit, and which ones it judged alive).
+diag_log text format ["[AFCM-Simulator][diag] serverPruneEmptySession - session '%1': %2 tracked unit(s), %3 still alive (excluding %4).", _sessionId, count _units, count _stillAlive, _justDeleted];
 if (_stillAlive isNotEqualTo []) exitWith {};
 
 _sessions deleteAt _sessionIdx;
