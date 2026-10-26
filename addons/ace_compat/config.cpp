@@ -39,6 +39,7 @@ class CfgFunctions
             class reset { file = "\afcm_sim\addons\ace_compat\functions\fnc_reset.sqf"; };
             class setUnconscious { file = "\afcm_sim\addons\ace_compat\functions\fnc_setUnconscious.sqf"; };
             class setVitals { file = "\afcm_sim\addons\ace_compat\functions\fnc_setVitals.sqf"; };
+            class getWoundTypes { file = "\afcm_sim\addons\ace_compat\functions\fnc_getWoundTypes.sqf"; };
             // Not part of the backend interface hashmap below - called directly by
             // afcm_sim_scenario_fnc_serverApplyCardiacState, same pattern as kat_compat's
             // applyFracture/applyPneumothorax/applyAirway - a whole-patient vitals state has no
