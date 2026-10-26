@@ -44,6 +44,7 @@ class CfgFunctions
             class backend_getState { file = "\afcm_sim\addons\main\functions\fnc_backend_getState.sqf"; };
             class backend_reset { file = "\afcm_sim\addons\main\functions\fnc_backend_reset.sqf"; };
             class backend_setUnconscious { file = "\afcm_sim\addons\main\functions\fnc_backend_setUnconscious.sqf"; };
+            class backend_getWoundTypes { file = "\afcm_sim\addons\main\functions\fnc_backend_getWoundTypes.sqf"; };
             class backend_setVitals { file = "\afcm_sim\addons\main\functions\fnc_backend_setVitals.sqf"; };
             // postInit, not preInit: the engine guarantees every addon's preInit (where backend
             // registration happens, see fnc_backend_registerBackend.sqf) finishes before ANY

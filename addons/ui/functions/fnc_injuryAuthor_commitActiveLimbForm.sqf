@@ -51,11 +51,11 @@ if (isNull _display) exitWith {};
 private _limb = missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", ""];
 if (_limb == "") exitWith {};
 
-// Parallel to fnc_injuryAuthor_init.sqf's WoundType combo population (idc 20) - keep both in sync
-// if this list ever changes. The new entries (index 4+) are ACE3's real wound-class taxonomy
-// (docs/INJURY_CODES.md §2.3), consumed via fnc_medical_applyAceStyleInjuryLocal.sqf's
-// deterministic addWound path rather than the probabilistic addDamageToUnit path the original 3 use.
-private _woundTypes = ["", "gunshot", "shrapnel", "blast", "abrasion", "avulsion", "contusion", "crush", "cut", "laceration", "thermalburn"];
+// Same afcm_sim_fnc_backend_getWoundTypes dispatcher fnc_injuryAuthor_init.sqf's combo population
+// (idc 20) calls, so this index-to-id array can never drift out of sync with what's actually on
+// screen - "" at index 0 is still the UI-only "None" sentinel (INJURY_CODES.md has no "none"
+// woundType), matching that combo's own "None" at index 0.
+private _woundTypes = [""] + ((call afcm_sim_fnc_backend_getWoundTypes) apply { _x select 0 });
 private _severities = [-1, 0.25, 0.5, 0.75, 1.0];
 private _bleedingLevels = [[false, 0], [true, 0.1], [true, 0.2], [true, 0.4]];
 

@@ -67,13 +67,14 @@ params ["_display"];
         _ctrl lbSetCurSel _curSel;
     };
 
-    // Expanded on request to cover ACE3's full real wound-class taxonomy (docs/INJURY_CODES.md §2.3,
-    // ACE_Medical_Injuries.hpp) - Gunshot/Shrapnel/Blast kept at their original indices for backward
-    // compatibility (saved/exported presets store the woundType STRING, not this index, so the new
-    // additions appended after them don't actually need this, but keeping the original 3 in place
-    // avoids unnecessary churn). fnc_injuryAuthor_commitActiveLimbForm.sqf's _woundTypes array is the
-    // parallel index-to-string mapping - keep both in sync if this list ever changes.
-    [_display displayCtrl 20, ["None", "Gunshot", "Shrapnel", "Blast", "Abrasion", "Avulsion", "Contusion", "Crush", "Cut", "Laceration", "Thermal Burn"], 0] call _fnc_populate;
+    // WoundType labels now come from afcm_sim_fnc_backend_getWoundTypes (on request) - the real,
+    // confirmed id/label list each backend's own compat addon owns (ace_compat/kat_compat's own
+    // fnc_getWoundTypes.sqf), rather than a copy hardcoded here that could drift out of sync with
+    // fnc_medical_applyAceStyleInjuryLocal.sqf's own mapping. "None" stays a UI-only sentinel at
+    // index 0 (INJURY_CODES.md has no "none" woundType) - fnc_injuryAuthor_commitActiveLimbForm.sqf
+    // calls the same dispatcher to keep its own index-to-id array in sync.
+    private _woundTypePairs = call afcm_sim_fnc_backend_getWoundTypes;
+    [_display displayCtrl 20, ["None"] + (_woundTypePairs apply { _x select 1 }), 0] call _fnc_populate;
     [_display displayCtrl 21, ["None", "Light", "Moderate", "Severe", "Critical"], 0] call _fnc_populate;
     [_display displayCtrl 22, ["None", "Small", "Medium", "Large"], 0] call _fnc_populate;
     // Fracture options are backend-dependent, same pattern as CardiacState below: ACE3 has its own
