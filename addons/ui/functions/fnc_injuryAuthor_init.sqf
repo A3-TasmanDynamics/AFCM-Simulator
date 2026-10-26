@@ -165,15 +165,24 @@ params ["_display"];
     // the engine's own UI event dispatch, not guaranteed to still see this loop's own private
     // variables by then - HEMTT's own linter caught this the first time this was tried as a direct
     // closure). MouseEnter only tints a limb that ISN'T currently active (so hovering the already-
-    // selected one is a no-op, no flicker); MouseExit just re-runs the real 3-state refresh to
-    // restore the correct color exactly, idempotent even right after a click already changed which
-    // limb is active. See AFCM_SIM_RscTextNavBg's own comment (config.cpp) for why the hover/select
-    // color is painted on a plain RscText via a separate hit-region button, rather than through any
-    // of the real RscButton's own native color states - 6 attempts at the latter (opaque, then
-    // transparent, then a plain RscText for everything, then opaque-but-different, then two attempts
-    // at dropping native focus) each fixed part of the problem while breaking something else; this
-    // split is what finally makes the color immune to native hover/focus rendering entirely, rather
-    // than trying to out-guess it.
+    // selected one is a no-op, no flicker); MouseExit re-runs the real 3-state refresh for JUST its
+    // own limb (fnc_injuryAuthor_refreshNavbarLimb.sqf), idempotent even right after a click already
+    // changed which limb is active. See AFCM_SIM_RscTextNavBg's own comment (config.cpp) for why the
+    // hover/select color is painted on a plain RscText via a separate hit-region button, rather than
+    // through any of the real RscButton's own native color states - 6 attempts at the latter (opaque,
+    // then transparent, then a plain RscText for everything, then opaque-but-different, then two
+    // attempts at dropping native focus) each fixed part of the problem while breaking something
+    // else; this split is what finally makes the color immune to native hover/focus rendering
+    // entirely, rather than trying to out-guess it.
+    //
+    // Real, confirmed bug fixed here: MouseExit used to call the FULL fnc_injuryAuthor_refreshNavbar
+    // (all 6 limbs), not just its own - harmless on its own, but the 6 hit-regions are stacked
+    // edge-to-edge, so swiping the mouse directly from one limb's row to an adjacent one fires the
+    // NEW limb's MouseEnter (tinting it) before the OLD limb's MouseExit fires. That MouseExit's
+    // full repaint then wiped the new limb's just-applied hover tint back to its real color a frame
+    // later - reported directly as nav buttons "highlighting when not actually [hovered]" and
+    // staged-looking colors on limbs that aren't actually staged. Scoping MouseExit to only repaint
+    // its own limb means it can never touch a different limb's own in-progress hover state.
     //
     // Click handling itself stays on the real `action=` on each Nav*Hit control in config.cpp
     // (native ButtonClick), unchanged from before.
@@ -191,7 +200,8 @@ params ["_display"];
             };
         }];
         _ctrlHit ctrlAddEventHandler ["MouseExit", {
-            call afcm_sim_ui_fnc_injuryAuthor_refreshNavbar;
+            params ["_ctrlHit"];
+            [_ctrlHit getVariable ["AFCM_SIM_navLimbId", ""]] call afcm_sim_ui_fnc_injuryAuthor_refreshNavbarLimb;
         }];
     } forEach [
         [60, 10, "head"], [61, 11, "chest"], [62, 12, "leftArm"],

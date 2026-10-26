@@ -45,6 +45,7 @@ class CfgFunctions
             class injuryAuthor_commitActiveLimbForm { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_commitActiveLimbForm.sqf"; };
             class injuryAuthor_refreshActiveLimbForm { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_refreshActiveLimbForm.sqf"; };
             class injuryAuthor_refreshNavbar { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_refreshNavbar.sqf"; };
+            class injuryAuthor_refreshNavbarLimb { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_refreshNavbarLimb.sqf"; };
             class injuryAuthor_onApply { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onApply.sqf"; };
             class injuryAuthor_onResetLimb { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onResetLimb.sqf"; };
             class injuryAuthor_onResetPatient { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onResetPatient.sqf"; };
