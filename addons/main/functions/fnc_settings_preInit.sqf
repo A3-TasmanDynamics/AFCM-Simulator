@@ -58,3 +58,22 @@
     "AFCM Medical Simulator",
     false
 ] call CBA_fnc_addSetting;
+
+// Real, confirmed CBA array-category form (the wiki's own code example is string-only, verified
+// instead directly against CBA_A3's own fnc_init.sqf: `_categoryArg params [["_category", "", [""]],
+// ["_subCategory", "", [""]]];` - index 0 is the top-level category, index 1 the sub-category,
+// grouping these two under the same "AFCM Medical Simulator" top-level category as every other
+// setting here while nesting them under their own headings. Both default true - these two scroll
+// actions were always-on with no way to disable before this, so defaulting to true preserves
+// existing behaviour for anyone who never touches the setting.
+["afcm_sim_enableMarkAsTreated", "CHECKBOX",
+    ["Enable ""Mark as Treated"" Action", "Adds the ""AFCM: Mark as Treated"" scroll-wheel action to every spawned patient - the manual half of Medical Tent's treated-detection (DESIGN.md § Medical Tent). Turn off to remove the action entirely."],
+    ["AFCM Medical Simulator", "Training"],
+    true
+] call CBA_fnc_addSetting;
+
+["afcm_sim_enableExportPatientState", "CHECKBOX",
+    ["Enable ""Export Patient State"" Action", "Adds the ""AFCM: Export Patient State"" scroll-wheel action to every spawned patient, letting a controller copy their current injuries out as a reusable preset string (fnc_exportPatientState.sqf). Turn off to remove the action entirely."],
+    ["AFCM Medical Simulator", "Scenario"],
+    true
+] call CBA_fnc_addSetting;
