@@ -120,24 +120,28 @@ params ["_display"];
         { (_display displayCtrl _x) ctrlShow true; } forEach [51, 52, 54];
         (_display displayCtrl 54) ctrlEnable !(isNull (missionNamespace getVariable ["AFCM_SIM_UI_lastSpawnedPatient", objNull]));
         (_display displayCtrl 35) ctrlSetText "No live patient yet - spawn one, or click View Live State if you already have.";
-        // Settable Blood Volume/SpO2 - edit mode only (see their own config.cpp comment); no
-        // not-yet-spawned patient to set them on here.
-        { (_display displayCtrl _x) ctrlShow false; } forEach [55, 56, 57, 58];
+        // Settable Blood Volume/SpO2 and the consciousness toggle - edit mode only (see their own
+        // config.cpp comments); no not-yet-spawned patient to set them on or wake/knock out here.
+        { (_display displayCtrl _x) ctrlShow false; } forEach [55, 56, 57, 58, 59];
     } else {
         _ctrlApply ctrlSetText "Apply";
         _ctrlApply ctrlEnable (_backend in ["ace", "kat"]);
         (_display displayCtrl 50) ctrlShow true;
         { (_display displayCtrl _x) ctrlShow false; } forEach [51, 52, 54];
-        { (_display displayCtrl _x) ctrlShow true; } forEach [55, 56, 57, 58];
+        { (_display displayCtrl _x) ctrlShow true; } forEach [55, 56, 57, 58, 59];
         // Pre-fill from the live unit's current values (afcm_sim_fnc_backend_getState) rather than
         // always showing the field defaults, so Apply doesn't silently reset an untouched field back
         // to 6.0L/97% - same "don't clobber what's already real" reasoning fnc_injuryAuthor_
-        // loadFromUnit.sqf applies to staged injuries.
+        // loadFromUnit.sqf applies to staged injuries. The toggle's own initial label is set here too
+        // - the live-status PFH (started further down for edit mode) keeps it correct every 0.5s
+        // after this, but the dialog shouldn't show a stale/default label for even one frame.
         private _targetUnit = missionNamespace getVariable ["AFCM_SIM_UI_targetUnit", objNull];
         if !(isNull _targetUnit) then {
             private _state = [_targetUnit] call afcm_sim_fnc_backend_getState;
             (_display displayCtrl 56) ctrlSetText str (_state getOrDefault ["bloodVolume", 6.0]);
             (_display displayCtrl 58) ctrlSetText str (_state getOrDefault ["spO2", 97]);
+            private _isUnconscious = (_state getOrDefault ["incapacitatedState", ""]) == "UNCONSCIOUS";
+            (_display displayCtrl 59) ctrlSetText (["Knock Out Patient", "Wake Patient"] select _isUnconscious);
         };
     };
 
@@ -155,7 +159,8 @@ params ["_display"];
         [48, afcm_sim_ui_fnc_injuryAuthor_onRandomDamage],
         [50, afcm_sim_ui_fnc_injuryAuthor_onResetPatient],
         [51, afcm_sim_ui_fnc_injuryAuthor_onChooseLocation],
-        [54, afcm_sim_ui_fnc_injuryAuthor_onViewLiveState]
+        [54, afcm_sim_ui_fnc_injuryAuthor_onViewLiveState],
+        [59, afcm_sim_ui_fnc_injuryAuthor_onToggleConsciousness]
     ];
 
     // Navbar hover tint, scripted against the click-only Nav*Hit controls (idc 60-65,

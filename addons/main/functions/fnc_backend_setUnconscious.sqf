@@ -10,6 +10,9 @@
  *
  * Arguments:
  * 0: Target unit <OBJECT>
+ * 1: Unconscious <BOOL> (default true) - threaded straight through to the backend's own
+ *    setUnconscious implementation, which now supports waking a unit back up too (false) for the
+ *    Injury Author's "Wake Up"/"Knock Out" toggle.
  *
  * Return Value:
  * Bool - true if the active backend handled it, false if no backend is active/registered here or
@@ -18,7 +21,7 @@
  * Public: No
 */
 
-params ["_unit"];
+params ["_unit", ["_unconscious", true]];
 
 private _backendId = missionNamespace getVariable ["AFCM_SIM_activeBackend", ""];
 
@@ -43,5 +46,5 @@ if (isNil "_fnc") exitWith {
     false
 };
 
-[_unit] call _fnc;
+[_unit, _unconscious] call _fnc;
 true

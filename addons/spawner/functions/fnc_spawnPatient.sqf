@@ -148,8 +148,14 @@ _unit disableAI "ALL";
 // as long as this specific unit exists, in case anything (spontaneous wake-up chance, KAT's own
 // vitals handling, a future backend) tries to wake it. A patient is meant to stay down until an
 // instructor resets it (afcm_sim_fnc_backend_reset) - "spontaneously wakes up on its own" is never
-// the intended behaviour for this mod. fnc_setUnconscious.sqf early-exits if already
-// ACE-unconscious, so this is a cheap no-op on every tick where nothing actually needs re-locking.
+// the intended behaviour for this mod. fnc_setUnconscious.sqf early-exits if already in the
+// requested state, so this is a cheap no-op on every tick where nothing actually needs re-locking.
+//
+// Respects AFCM_SIM_allowConscious (set by the Injury Author's own "Wake Up" toggle,
+// fnc_serverSetConsciousness.sqf) - real, confirmed gap this closes: without this check, this exact
+// safeguard would silently re-knock a deliberately-woken patient back out within 3 seconds, with no
+// indication anywhere of why. An instructor explicitly choosing to wake a patient up is not the
+// "spontaneous wake-up" this guard exists to prevent.
 [
     {
         params ["_args", "_handle"];
@@ -157,7 +163,9 @@ _unit disableAI "ALL";
         if (isNull _unit || {!alive _unit}) exitWith {
             [_handle] call CBA_fnc_removePerFrameHandler;
         };
-        [_unit] call afcm_sim_fnc_backend_setUnconscious;
+        if !(_unit getVariable ["AFCM_SIM_allowConscious", false]) then {
+            [_unit] call afcm_sim_fnc_backend_setUnconscious;
+        };
     },
     3,
     [_unit]

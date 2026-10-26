@@ -26,6 +26,10 @@ params ["_display"];
     [_display] call afcm_sim_ui_fnc_presetLibrary_populateList;
 
     (_display displayCtrl 10) ctrlAddEventHandler ["LBSelChanged", afcm_sim_ui_fnc_presetLibrary_onSelect];
+    // Double-click a preset row to apply it immediately - onApply itself re-reads lbCurSel on this
+    // same listbox rather than using whichever control it's passed, so reusing it here needs no
+    // changes to that function.
+    (_display displayCtrl 10) ctrlAddEventHandler ["LBDblClick", afcm_sim_ui_fnc_presetLibrary_onApply];
     (_display displayCtrl 11) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_presetLibrary_onApply];
     (_display displayCtrl 12) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_presetLibrary_onDelete];
     (_display displayCtrl 13) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_presetLibrary_onExport];
