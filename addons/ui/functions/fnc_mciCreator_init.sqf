@@ -64,6 +64,10 @@ if (isNil "AFCM_SIM_UI_mciPatientSpecs") then {
 
     _countLB ctrlAddEventHandler ["LBSelChanged", afcm_sim_ui_fnc_mciCreator_onPatientCountChanged];
     (_display displayCtrl 14) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_mciCreator_onAssign];
+    // Double-click a preset row to assign it to the currently-selected patient straight away,
+    // without needing the separate Assign button click - onAssign itself already exits early if no
+    // patient row (idc 12) is selected yet, so this is a strict shortcut, not a behavior change.
+    (_display displayCtrl 13) ctrlAddEventHandler ["LBDblClick", afcm_sim_ui_fnc_mciCreator_onAssign];
     (_display displayCtrl 15) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_mciCreator_onRandomizeAll];
     (_display displayCtrl 17) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_mciCreator_onChooseLocation];
     (_display displayCtrl 18) ctrlAddEventHandler ["ButtonClick", afcm_sim_ui_fnc_mciCreator_onSavePreset];

@@ -49,6 +49,7 @@ class CfgFunctions
             class injuryAuthor_onApply { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onApply.sqf"; };
             class injuryAuthor_onResetLimb { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onResetLimb.sqf"; };
             class injuryAuthor_onResetPatient { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onResetPatient.sqf"; };
+            class injuryAuthor_onToggleConsciousness { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onToggleConsciousness.sqf"; };
             class injuryAuthor_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onSavePreset.sqf"; };
             class injuryAuthor_onLoadPreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onLoadPreset.sqf"; };
             class injuryAuthor_loadPresetArrays { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_loadPresetArrays.sqf"; };
@@ -210,6 +211,7 @@ class CfgFunctions
 #define AFCM_SIM_COLOR_STATUS_BG      {0.02, 0.02, 0.025, 0.72}
 
 class RscText;
+class RscStructuredText;
 class RscButton;
 class RscCombo;
 class RscListBox;
@@ -1363,6 +1365,7 @@ class RscDisplayAFCM_SIM_ConfirmDialog
 #define IDC_AFCM_SIM_IA_BLOODVOLUME     56
 #define IDC_AFCM_SIM_IA_SPO2LABEL       57
 #define IDC_AFCM_SIM_IA_SPO2            58
+#define IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE 59
 
 // Replaces RscDisplayAFCM_SIM_LimbSelect + RscDisplayAFCM_SIM_InjuryEditor (both retired, IDD
 // 25601/25602 not reused) with one dialog: a persistent left-side limb navbar next to a single
@@ -1726,7 +1729,11 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // mode shows a static placeholder until ViewLiveState below is used
         // (fnc_injuryAuthor_init.sqf/fnc_injuryAuthor_onViewLiveState.sqf) - no live unit to query
         // until a patient has actually been spawned.
-        class StatusText: RscText
+        // RscStructuredText, not plain RscText - fnc_injuryAuthor_refreshState.sqf builds this via
+        // ctrlSetStructuredText/parseText now (bold accent-red section headers, color-coded
+        // critical fields) rather than ctrlSetText, specifically to fix the old wall-of-text
+        // readout regularly overflowing this box with no visual priority between fields.
+        class StatusText: RscStructuredText
         {
             idc = IDC_AFCM_SIM_IA_STATUS;
             text = "";
@@ -1734,7 +1741,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             y = "0.490 * safeZoneH + safeZoneY";
             w = "0.43 * safeZoneW";
             h = "0.08 * safeZoneH";
-            sizeEx = "0.019 * safeZoneH";
+            size = "0.017 * safeZoneH";
             colorText[] = AFCM_SIM_COLOR_TEXT_DIM;
         };
         // Author-new-patient mode only (hidden entirely in edit mode, which already auto-starts the
@@ -1759,42 +1766,62 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // first" step in edit mode - fnc_injuryAuthor_init.sqf's existing mode branch toggles this
         // the same way). Applied on Apply (afcm_sim_fnc_backend_setVitals) alongside the staged
         // injuries - setting vitals on a not-yet-spawned patient doesn't make sense the way
-        // injuries-to-apply-at-spawn do, so author-new-patient mode never shows these.
+        // injuries-to-apply-at-spawn do, so author-new-patient mode never shows these. Rows tightened
+        // from 0.032 to 0.027 tall (on request) to make room for ConsciousnessToggle below without
+        // growing past the panel's own bottom edge.
         class BloodVolumeLabel: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IA_BLOODVOLUMELABEL;
             text = "Blood (L)";
             x = "0.665 * safeZoneW + safeZoneX";
-            y = "0.490 * safeZoneH + safeZoneY";
+            y = "0.488 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
-            h = "0.032 * safeZoneH";
+            h = "0.027 * safeZoneH";
         };
         class BloodVolume: RscEdit
         {
             idc = IDC_AFCM_SIM_IA_BLOODVOLUME;
             text = "6.0";
             x = "0.735 * safeZoneW + safeZoneX";
-            y = "0.490 * safeZoneH + safeZoneY";
+            y = "0.488 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
-            h = "0.032 * safeZoneH";
+            h = "0.027 * safeZoneH";
         };
         class SpO2Label: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IA_SPO2LABEL;
             text = "SpO2 (%)";
             x = "0.665 * safeZoneW + safeZoneX";
-            y = "0.530 * safeZoneH + safeZoneY";
+            y = "0.518 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
-            h = "0.032 * safeZoneH";
+            h = "0.027 * safeZoneH";
         };
         class SpO2: RscEdit
         {
             idc = IDC_AFCM_SIM_IA_SPO2;
             text = "97";
             x = "0.735 * safeZoneW + safeZoneX";
-            y = "0.530 * safeZoneH + safeZoneY";
+            y = "0.518 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
-            h = "0.032 * safeZoneH";
+            h = "0.027 * safeZoneH";
+        };
+        // Toggle consciousness, edit mode only - same corner, below Blood Volume/SpO2. Label/action
+        // flip based on the live state (fnc_injuryAuthor_refreshState.sqf sets the text each 0.5s
+        // tick; fnc_injuryAuthor_onToggleConsciousness.sqf reads the CURRENT text to decide which way
+        // to toggle, rather than tracking a separate bool the live-state refresh could drift out of
+        // sync with). Real, confirmed design note: waking a patient needs more than just this button
+        // - fnc_spawnPatient.sqf's own recurring 3s unconscious safeguard would otherwise silently
+        // re-knock them out again within seconds (AFCM_SIM_allowConscious,
+        // fnc_serverSetConsciousness.sqf, is the actual fix for that).
+        class ConsciousnessToggle: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE;
+            text = "Wake Patient";
+            x = "0.665 * safeZoneW + safeZoneX";
+            y = "0.548 * safeZoneH + safeZoneY";
+            w = "0.12 * safeZoneW";
+            h = "0.025 * safeZoneH";
+            sizeEx = "0.015 * safeZoneH";
         };
         // Text/mode set dynamically - "Apply" (edit mode, commits to AFCM_SIM_UI_targetUnit) or
         // "Apply & Spawn Patient" (author-new-patient mode, disabled until ChooseLocation below is

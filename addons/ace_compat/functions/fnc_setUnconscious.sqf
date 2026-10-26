@@ -13,12 +13,21 @@
  * `disableAI`) still saw patients as fully conscious and immediately self-treated them, which is
  * the real root cause of patients "healing themselves" (REFERENCES.md).
  *
- * Early-exits if already ACE-unconscious so the recurring re-lock safeguard in
+ * Early-exits if already in the requested state so the recurring re-lock safeguard in
  * fnc_spawnPatient.sqf doesn't spam a WARNING every 3s (ace_medical_fnc_setUnconscious itself
  * warns and no-ops on a redundant call).
  *
+ * Real, confirmed extension: now takes an explicit target state instead of always forcing
+ * unconscious, so the same interface op covers the Injury Author's new "Wake Up"/"Knock Out"
+ * toggle (fnc_injuryAuthor_onToggleConsciousness.sqf) too - every existing caller
+ * (`[_unit] call afcm_sim_fnc_backend_setUnconscious;`, no 2nd arg) is unaffected, since the
+ * default is still `true`. The early-exit guard now compares against the REQUESTED state, not just
+ * "is unconscious" - the old unconditional check would have silently refused to ever wake a unit
+ * back up, since it's unconscious by definition at that point.
+ *
  * Arguments:
  * 0: Target unit <OBJECT>
+ * 1: Unconscious <BOOL> (default true)
  *
  * Return Value:
  * None
@@ -26,9 +35,9 @@
  * Public: No
 */
 
-params ["_unit"];
+params ["_unit", ["_unconscious", true]];
 
 if (isNull _unit || {!alive _unit}) exitWith {};
-if (_unit getVariable ["ACE_isUnconscious", false]) exitWith {};
+if ((_unit getVariable ["ACE_isUnconscious", false]) == _unconscious) exitWith {};
 
-[_unit, true] call ace_medical_fnc_setUnconscious;
+[_unit, _unconscious] call ace_medical_fnc_setUnconscious;

@@ -13,6 +13,21 @@
  * _handle]`) and directly (`call`, `_this` = []) - both handled by defaulting params rather than
  * requiring the PFH's two-argument shape.
  *
+ * Renders via ctrlSetStructuredText now (StatusText/idc 35 is RscStructuredText, config.cpp) rather
+ * than plain ctrlSetText - the old single-color wall of one-field-per-line text regularly overflowed
+ * the status box once more than a couple of optional fields (Fracture/SpO2/KAT extras) were present
+ * at once, with no visual priority between a "Cardiac Arrest: YES" and a routine Pain reading.
+ * Reorganized into three sections (Vitals / active limb / KAT advanced) with bold accent-red
+ * headers, related fields paired two-per-line to use the box's real width instead of just stacking
+ * vertically, and Cardiac Arrest pulled up to directly under Vitals (most life-critical, so it's
+ * never the line that gets clipped if a rare worst-case combination still overflows) while KAT's
+ * advanced extras stay last/smallest (least critical, lowest priority if space runs out).
+ *
+ * Also keeps the ConsciousnessToggle button (idc 59) label synced to the unit's REAL current
+ * incapacitatedState every tick, not just this function's own text - fixes the toggle drifting out
+ * of sync with reality if the patient wakes/passes out from something other than the button itself
+ * (e.g. ACE's own natural recovery, or another controller's action).
+ *
  * "Stable" is ACE3's own real ace_medical_fnc_isInStableCondition (both backends' own getState -
  * REFERENCES.md has the full traced call chain/thresholds) - alive, conscious, zero active wound
  * bleeding, and vitals (blood volume/pressure/heart rate/blood-loss rate) all within ACE's own real
@@ -67,29 +82,54 @@ private _limbNames = createHashMapFromArray [
 ];
 private _limbLine = _limbNames getOrDefault [_limb, _limb];
 
+#define AFCM_SIM_IA_HEX_ACCENT "#c1272d"
+#define AFCM_SIM_IA_HEX_GOOD "#8bc34a"
+
+private _header = {
+    format ["<t color='%1' bold='1'>%2</t><br/>", AFCM_SIM_IA_HEX_ACCENT, _this]
+};
+
 private _text = "No live status available (no medical backend active).";
 if (count _state > 0) then {
+    private _isUnconscious = (_state getOrDefault ["incapacitatedState", ""]) == "UNCONSCIOUS";
+    private _isStable = _state getOrDefault ["stable", false];
+    private _inCardiacArrest = _state getOrDefault ["inCardiacArrest", false];
+
     private _consciousness = _state getOrDefault ["lifeState", "?"];
     private _incap = _state getOrDefault ["incapacitatedState", ""];
     if (_incap != "") then { _consciousness = _consciousness + format [" (%1)", _incap]; };
 
-    _text = format [
-        "Consciousness: %1 | Stable: %2\nPain: %3 | Injured: %4\nBlood Volume: %5L\n%6 — open wounds: %7 | Bleeding: %8",
-        _consciousness,
-        ["NO", "YES"] select (_state getOrDefault ["stable", false]),
-        _state getOrDefault ["pain", 0],
-        _state getOrDefault ["injured", false],
-        _state getOrDefault ["bloodVolume", 6.0],
-        _limbLine,
-        _state getOrDefault ["limbWoundCount", 0],
-        _state getOrDefault ["limbBleeding", false]
+    // Keeps the toggle button (idc 59, edit mode only) honest against the unit's REAL current
+    // state every tick, not just whatever the button itself last set optimistically.
+    (_display displayCtrl 59) ctrlSetText (["Knock Out Patient", "Wake Patient"] select _isUnconscious);
+
+    _text = "VITALS" call _header;
+
+    _text = _text + format [
+        "Consciousness: <t color='%1'>%2</t>   Stable: <t color='%3'>%4</t><br/>",
+        [AFCM_SIM_IA_HEX_ACCENT, ""] select !_isUnconscious, _consciousness,
+        [AFCM_SIM_IA_HEX_ACCENT, AFCM_SIM_IA_HEX_GOOD] select _isStable, ["NO", "YES"] select _isStable
     ];
 
-    _text = _text + format ["\nBleeding Status: %1", _state getOrDefault ["bleedingStatus", "No Bleeding"]];
-
-    if (_state getOrDefault ["inCardiacArrest", false]) then {
-        _text = _text + "\nCardiac Arrest: YES";
+    if (_inCardiacArrest) then {
+        _text = _text + format ["<t color='%1' bold='1'>CARDIAC ARREST</t><br/>", AFCM_SIM_IA_HEX_ACCENT];
     };
+
+    _text = _text + format [
+        "Pain: %1   Blood Volume: %2L   SpO2: %3%%<br/>",
+        _state getOrDefault ["pain", 0],
+        _state getOrDefault ["bloodVolume", 6.0],
+        _state getOrDefault ["spO2", 97]
+    ];
+
+    _text = _text + (toUpper _limbLine) call _header;
+
+    _text = _text + format [
+        "Wounds: %1   Bleeding: <t color='%2'>%3</t><br/>",
+        _state getOrDefault ["limbWoundCount", 0],
+        [AFCM_SIM_IA_HEX_ACCENT, ""] select !(_state getOrDefault ["limbBleeding", false]),
+        _state getOrDefault ["bleedingStatus", "No Bleeding"]
+    ];
 
     // "pneumothoraxType" is only ever set by kat_compat's own getState (never ace_compat's) - a
     // reliable "is KAT actually active" signal, unlike "fracture" which both backends now report.
@@ -107,34 +147,37 @@ if (count _state > 0) then {
             (if (_isKat) then { ["None", "Simple", "Compound", "Comminuted"] } else { ["None", "Fractured"] })
                 param [floor _fractureVal, format ["%1", _fractureVal]]
         };
-        _text = _text + format ["\nFracture: %1", _fractureName];
+        _text = _text + format ["Fracture: %1<br/>", _fractureName];
     };
 
-    _text = _text + format ["\nSpO2: %1%%", _state getOrDefault ["spO2", 97]];
-
     if (_isKat) then {
+        _text = _text + format ["<t color='%1' bold='1' size='0.85'>ADVANCED (KAT)</t><br/>", AFCM_SIM_IA_HEX_ACCENT];
+
         private _pneumoNames = ["None", "Simple", "Hemopneumothorax", "Tension"];
         private _pneumoName = _pneumoNames param [_state getOrDefault ["pneumothoraxType", 0], "None"];
-        _text = _text + format ["\nPneumothorax (KAT): %1", _pneumoName];
 
+        private _airwayName = "Clear";
         if ("airwayStatus" in _state) then {
             private _airwayNames = ["Clear", "Obstruction", "Occlusion"];
-            private _airwayName = _airwayNames param [_state get "airwayStatus", "Clear"];
-            _text = _text + format ["\nAirway (KAT): %1", _airwayName];
+            _airwayName = _airwayNames param [_state get "airwayStatus", "Clear"];
         };
+
+        _text = _text + format [
+            "<t size='0.85'>Pneumothorax: %1   Airway: %2</t><br/>", _pneumoName, _airwayName
+        ];
 
         private _bleedRate = _state getOrDefault ["internalBleedingRate", 0];
         if (_bleedRate > 0) then {
-            _text = _text + format ["\nInternal Bleeding (Hemothorax, KAT): %1L/s", _bleedRate];
+            _text = _text + format ["<t size='0.85'>Internal Bleeding: %1L/s</t><br/>", _bleedRate];
         };
 
         private _rhythm = _state getOrDefault ["cardiacRhythm", 0];
         if (_rhythm > 0) then {
             private _rhythmNames = ["Normal", "Asystole", "PEA", "Ventricular Fibrillation", "Ventricular Tachycardia"];
             private _rhythmName = _rhythmNames param [_rhythm, "Normal"];
-            _text = _text + format ["\nCardiac Rhythm (KAT): %1", _rhythmName];
+            _text = _text + format ["<t size='0.85'>Cardiac Rhythm: %1</t><br/>", _rhythmName];
         };
     };
 };
 
-(_display displayCtrl 35) ctrlSetText _text;
+(_display displayCtrl 35) ctrlSetStructuredText (parseText _text);
