@@ -221,10 +221,18 @@ _unit addEventHandler ["Deleted", {
     [_unit] remoteExec ["afcm_sim_ui_fnc_addInjuryEditorAction", 0, true];
     // "Mark as Treated" - the manual half of the Medical Tent's "Both" treated-detection mode
     // (afcm_sim_scenario_fnc_isPatientTreated), same local-addAction reasoning as the line above.
-    [_unit] remoteExec ["afcm_sim_ui_fnc_addTreatedAction", 0, true];
+    // Gated behind afcm_sim_enableMarkAsTreated (default true - unchanged behaviour unless a mission
+    // maker turns it off) so a mission that doesn't want this action cluttering the scroll menu can
+    // remove it entirely rather than just ignore it.
+    if (afcm_sim_enableMarkAsTreated) then {
+        [_unit] remoteExec ["afcm_sim_ui_fnc_addTreatedAction", 0, true];
+    };
     // "Export Patient State" - lets a controller copy this patient's current AFCM-applied injuries
     // out as a reusable Preset string (fnc_exportPatientState.sqf), same local-addAction reasoning.
-    [_unit] remoteExec ["afcm_sim_ui_fnc_addExportStateAction", 0, true];
+    // Gated behind afcm_sim_enableExportPatientState, same "default true, opt-out" reasoning above.
+    if (afcm_sim_enableExportPatientState) then {
+        [_unit] remoteExec ["afcm_sim_ui_fnc_addExportStateAction", 0, true];
+    };
 
     { [_unit, _x] call afcm_sim_fnc_backend_applyInjury; } forEach _injuries;
     [_unit, _katExtras] call afcm_sim_scenario_fnc_serverApplyKatExtras;
