@@ -114,12 +114,15 @@ class CfgVehicles
             property = "AFCM_SIM_casualtyType";
             control = "combo";
             defaultValue = "0";
-            // parseNumber - real, confirmed bug (found on Eden's own copy of this same attribute,
-            // addons/eden/config.cpp): a combo's _value arrives at this expression as a STRING
-            // (matching `defaultValue`'s own string-typed "0" here), not the numeric `value=` from
-            // Values below. Edit/STRING-typed attributes (AFCM_SIM_SessionName below) don't need
-            // this - their downstream code already expects a string.
-            expression = "_this setVariable ['AFCM_SIM_casualtyType', parseNumber _value];";
+            // Real, confirmed bug (and its own follow-up bug, found on Eden's own copy of this same
+            // attribute, addons/eden/config.cpp): a combo's _value arrives at this expression as a
+            // STRING when the user changes it in the attribute dialog (matching `defaultValue`'s own
+            // string-typed "0" here), but Zeus re-runs this same expression with the real NUMERIC
+            // `value=` from Values below when it reapplies attributes at mission/session start -
+            // confirmed via a real RPT error ("parsenumber: Type Number, expected Bool,String",
+            // parseNumber itself rejecting an already-numeric _value). Guard both cases instead of
+            // assuming one fixed type.
+            expression = "_this setVariable ['AFCM_SIM_casualtyType', if (_value isEqualType '') then {parseNumber _value} else {_value}];";
             class Values
             {
                 class Civilian { name = "Civilian"; value = 0; default = 1; };
@@ -199,9 +202,9 @@ class CfgVehicles
                 property = "AFCM_SIM_patientCount";
                 control = "combo";
                 defaultValue = "4";
-                // parseNumber - same combo-value-arrives-as-a-string issue as AFCM_SIM_CasualtyType
-                // above.
-                expression = "_this setVariable ['AFCM_SIM_patientCount', parseNumber _value];";
+                // Same dual-type (string on edit, number on scenario-start reapply) issue as
+                // AFCM_SIM_CasualtyType above - same guard.
+                expression = "_this setVariable ['AFCM_SIM_patientCount', if (_value isEqualType '') then {parseNumber _value} else {_value}];";
                 class Values
                 {
                     class Two { name = "2"; value = 2; };

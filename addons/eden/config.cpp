@@ -187,13 +187,16 @@ class CfgVehicles
                 // set on the object - confirmed via a real RPT test where all 6 attributes read back
                 // as unset despite several being visibly non-default in Eden's own dialog. `_this` is
                 // the placed object, `_value` is the attribute's current value.
-                // parseNumber - real, confirmed bug: a combo's _value arrives at this expression as a
-                // STRING (matching `defaultValue`'s own string-typed "0" here), not the numeric
-                // `value=` from Values below - confirmed via a real RPT error downstream
-                // (fnc_resolvePatientAttributes.sqf: "Type String, expected Number" comparing a
-                // combo-sourced variable). Edit/STRING-typed attributes elsewhere in this file don't
-                // need this - their downstream code already expects a string.
-                expression = "_this setVariable ['AFCM_SIM_casualtyType', parseNumber _value];";
+                // Real, confirmed bug (and its own follow-up bug): a combo's _value arrives at this
+                // expression as a STRING when the user changes it in Eden's attribute dialog
+                // (matching `defaultValue`'s own string-typed "0" here), but Eden re-runs this same
+                // expression with the real NUMERIC `value=` from Values below when it reapplies
+                // attributes at mission/session start - confirmed via two separate real RPT errors,
+                // first "Type String, expected Number" downstream (fnc_resolvePatientAttributes.sqf)
+                // before parseNumber was added, then "parsenumber: Type Number, expected Bool,String"
+                // (parseNumber itself rejecting an already-numeric _value) after. Guard both cases
+                // instead of assuming one fixed type.
+                expression = "_this setVariable ['AFCM_SIM_casualtyType', if (_value isEqualType '') then {parseNumber _value} else {_value}];";
                 class Values
                 {
                     class Civilian { name = "Civilian"; value = 0; default = 1; };
@@ -228,10 +231,9 @@ class CfgVehicles
                 property = "AFCM_SIM_trainingPreset";
                 control = "combo";
                 defaultValue = "0";
-                // parseNumber - same combo-value-arrives-as-a-string issue as AFCM_SIM_CasualtyType
-                // above, confirmed via a real RPT error here specifically (this attribute's own
-                // index compared with `> 0` in fnc_resolvePatientAttributes.sqf).
-                expression = "_this setVariable ['AFCM_SIM_trainingPreset', parseNumber _value];";
+                // Same dual-type (string on edit, number on scenario-start reapply) issue as
+                // AFCM_SIM_CasualtyType above - same guard.
+                expression = "_this setVariable ['AFCM_SIM_trainingPreset', if (_value isEqualType '') then {parseNumber _value} else {_value}];";
                 // Values here are positional indices into afcm_sim_scenario_fnc_getBuiltinPresets.sqf's
                 // own array (value N -> that array's index N-1) - deliberately an index, not a
                 // duplicated id string, to avoid a second hardcoded list drifting out of sync. If that
