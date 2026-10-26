@@ -15,6 +15,13 @@
  * SQF) - same duplication fnc_limbSelect_refreshButtons.sqf already had. Keep in sync with
  * addons/ui/config.cpp if the brand palette ever changes.
  *
+ * Per-limb color logic itself now lives in fnc_injuryAuthor_refreshNavbarLimb.sqf, reused here in a
+ * loop over all 6 - factored out so the navbar's own MouseExit handler (fnc_injuryAuthor_init.sqf)
+ * can repaint just the ONE limb it's leaving instead of all 6, fixing a real, confirmed bug where
+ * repainting every limb on any single MouseExit could wipe out a DIFFERENT limb's just-applied hover
+ * tint (the 6 hit-regions are stacked edge-to-edge, so a quick swipe between adjacent limbs fires the
+ * new one's MouseEnter before the old one's MouseExit).
+ *
  * Arguments:
  * None
  *
@@ -24,46 +31,5 @@
  * Public: No
 */
 
-disableSerialization;
-
-// 25611 = IDD_AFCM_SIM_INJURYAUTHOR (addons/ui/config.cpp) - hardcoded since #defines aren't
-// available in SQF; keep in sync if that IDD ever changes.
-private _display = findDisplay 25611;
-if (isNull _display) exitWith {};
-
-private _limbIdcs = [
-    ["head", 10], ["chest", 11], ["leftArm", 12],
-    ["rightArm", 13], ["leftLeg", 14], ["rightLeg", 15]
-];
-
-private _colorEmpty = [0.12, 0.12, 0.135, 0.92];
-private _colorStaged = [0.757, 0.153, 0.176, 0.28];
-private _colorActive = [0.42, 0.08, 0.09, 0.95];
-
-private _activeLimb = missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", ""];
-private _injuries = missionNamespace getVariable ["AFCM_SIM_UI_stagedInjuries", []];
-private _katExtras = missionNamespace getVariable ["AFCM_SIM_UI_stagedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]];
-_katExtras params [["_fractures", [0, 0, 0, 0, 0, 0]], ["_pneumoType", 0], ["_airwayType", 0], ["_rhythm", 0]];
-
-private _fractureLimbs = ["leftArm", "rightArm", "leftLeg", "rightLeg"];
-
-{
-    _x params ["_limb", "_idc"];
-    private _ctrl = _display displayCtrl _idc;
-
-    private _hasStaged = (_injuries findIf { (_x select 0) == _limb }) != -1;
-    if !(_hasStaged) then {
-        if (_limb in _fractureLimbs) then {
-            private _limbIndex = ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"] find _limb;
-            _hasStaged = (_fractures param [_limbIndex, 0]) > 0;
-        };
-        if (_limb == "chest") then { _hasStaged = _hasStaged || {_pneumoType > 0} || {_rhythm > 0}; };
-        if (_limb == "head") then { _hasStaged = _hasStaged || {_airwayType > 0}; };
-    };
-
-    private _color = _colorEmpty;
-    if (_hasStaged) then { _color = _colorStaged; };
-    if (_limb == _activeLimb) then { _color = _colorActive; };
-
-    _ctrl ctrlSetBackgroundColor _color;
-} forEach _limbIdcs;
+{ [_x] call afcm_sim_ui_fnc_injuryAuthor_refreshNavbarLimb; } forEach
+    ["head", "chest", "leftArm", "rightArm", "leftLeg", "rightLeg"];
