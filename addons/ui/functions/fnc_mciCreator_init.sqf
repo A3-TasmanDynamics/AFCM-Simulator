@@ -58,6 +58,11 @@ if (isNil "AFCM_SIM_UI_mciPatientSpecs") then {
     } forEach [["Civilian", 0], ["Military (BLUFOR)", 1], ["Military (OPFOR)", 2], ["Military (Independent)", 3]];
     _ctLB lbSetCurSel (missionNamespace getVariable ["AFCM_SIM_UI_mciCasualtyType", 0]);
 
+    // Settable right here now, on request, not just inside the Map Picker's own Radius field -
+    // same AFCM_SIM_UI_mciRadius var either way (fnc_mciCreator_refreshLocationStatus.sqf re-syncs
+    // this field from it too, so editing it from the Map Picker reflects back here).
+    (_display displayCtrl 25) ctrlSetText str (missionNamespace getVariable ["AFCM_SIM_UI_mciRadius", 10]);
+
     [_display] call afcm_sim_ui_fnc_mciCreator_populatePatientList;
     [_display] call afcm_sim_ui_fnc_mciCreator_populatePresetList;
     [_display] call afcm_sim_ui_fnc_mciCreator_refreshLocationStatus;
