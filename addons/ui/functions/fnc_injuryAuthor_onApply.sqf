@@ -94,11 +94,11 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
     private _pain = 0 max (parseNumber (ctrlText (_display displayCtrl 67))) min 1;
     [_targetUnit, _bloodVolume, _spo2, _pain] remoteExec ["afcm_sim_scenario_fnc_serverSetVitals", 2];
 
-    // Consciousness checkbox (idc 59) - staged-until-Apply now, on request ("when apply is
-    // selected, it will force the patient awake or unconscious") - fnc_injuryAuthor_
-    // onToggleConsciousness.sqf itself no longer remoteExecs anything, this is the only place that
-    // actually forces the real state.
-    private _unconscious = (_display displayCtrl 59) getVariable ["AFCM_SIM_unconsciousChecked", false];
+    // Consciousness checkbox (idc 59, a real RscCheckBox - config.cpp) - staged-until-Apply, on
+    // request ("when apply is selected, it will force the patient awake or unconscious"). It
+    // toggles itself natively on click with no handler of its own, so this is the ONLY place that
+    // actually forces the real state - cbChecked reads whatever the player last left it ticked to.
+    private _unconscious = cbChecked (_display displayCtrl 59);
     [_targetUnit, _unconscious] remoteExec ["afcm_sim_scenario_fnc_serverSetConsciousness", 2];
 
     ["Injury Author", "Injuries applied."] call afcm_sim_ui_fnc_showToast;
