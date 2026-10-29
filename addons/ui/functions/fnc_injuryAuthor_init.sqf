@@ -118,18 +118,27 @@ params ["_display"];
         ];
         _ctrlApply ctrlCommit 0;
         (_display displayCtrl 50) ctrlShow false;
+        // Clear All (idc 47) stays visible here - see the edit-mode branch's own comment below for
+        // why it's hidden there instead.
+        (_display displayCtrl 47) ctrlShow true;
         { (_display displayCtrl _x) ctrlShow true; } forEach [51, 52, 54];
         (_display displayCtrl 54) ctrlEnable !(isNull (missionNamespace getVariable ["AFCM_SIM_UI_lastSpawnedPatient", objNull]));
         (_display displayCtrl 35) ctrlSetText "No live patient yet - spawn one, or click View Live State if you already have.";
-        // Settable Blood Volume/SpO2 and the consciousness toggle - edit mode only (see their own
-        // config.cpp comments); no not-yet-spawned patient to set them on or wake/knock out here.
-        { (_display displayCtrl _x) ctrlShow false; } forEach [55, 56, 57, 58, 59];
+        // Settable Blood Volume/SpO2/Pain and the consciousness toggle - edit mode only (see their
+        // own config.cpp comments); no not-yet-spawned patient to set them on or wake/knock out here.
+        { (_display displayCtrl _x) ctrlShow false; } forEach [55, 56, 57, 58, 59, 66, 67];
     } else {
         _ctrlApply ctrlSetText "Apply";
         _ctrlApply ctrlEnable (_backend in ["ace", "kat"]);
         (_display displayCtrl 50) ctrlShow true;
+        // Clear All (idc 47) removed from edit mode on request - its "wipe the staged form" behavior
+        // is now folded directly into Reset Patient (fnc_injuryAuthor_onResetPatient.sqf), so one
+        // button does both instead of two overlapping ones. Still shown in author-new-patient mode
+        // below - Reset Patient doesn't exist there (no live unit to reset yet), so Clear All is the
+        // only way to wipe a staged-but-not-yet-spawned form.
+        (_display displayCtrl 47) ctrlShow false;
         { (_display displayCtrl _x) ctrlShow false; } forEach [51, 52, 54];
-        { (_display displayCtrl _x) ctrlShow true; } forEach [55, 56, 57, 58, 59];
+        { (_display displayCtrl _x) ctrlShow true; } forEach [55, 56, 57, 58, 59, 66, 67];
         // Pre-fill from the live unit's current values (afcm_sim_fnc_backend_getState) rather than
         // always showing the field defaults, so Apply doesn't silently reset an untouched field back
         // to 6.0L/97% - same "don't clobber what's already real" reasoning fnc_injuryAuthor_
@@ -141,6 +150,7 @@ params ["_display"];
             private _state = [_targetUnit] call afcm_sim_fnc_backend_getState;
             (_display displayCtrl 56) ctrlSetText str (_state getOrDefault ["bloodVolume", 6.0]);
             (_display displayCtrl 58) ctrlSetText str (_state getOrDefault ["spO2", 97]);
+            (_display displayCtrl 67) ctrlSetText str (_state getOrDefault ["pain", 0]);
             private _isUnconscious = (_state getOrDefault ["incapacitatedState", ""]) == "UNCONSCIOUS";
             (_display displayCtrl 59) ctrlSetText (["Knock Out Patient", "Wake Patient"] select _isUnconscious);
         };
@@ -199,7 +209,7 @@ params ["_display"];
         _ctrlHit setVariable ["AFCM_SIM_navLimbId", _limbId];
         _ctrlHit setVariable ["AFCM_SIM_navBgCtrl", _ctrlBg];
         _ctrlHit ctrlAddEventHandler ["MouseEnter", {
-            params ["_ctrlHit"];
+0            params ["_ctrlHit"];
             private _limbId = _ctrlHit getVariable ["AFCM_SIM_navLimbId", ""];
             if (_limbId != (missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", ""])) then {
                 (_ctrlHit getVariable ["AFCM_SIM_navBgCtrl", controlNull]) ctrlSetBackgroundColor [0.757, 0.153, 0.176, 0.5];

@@ -12,6 +12,12 @@
  * Doesn't close the dialog afterward - an instructor may want to immediately keep configuring the
  * now-clean patient, same reasoning the old LimbSelect's Reset Patient had.
  *
+ * Also wipes the staged form immediately (same lines the now-removed-from-edit-mode Clear All
+ * button used to run, fnc_injuryAuthor_onClearAll.sqf) - on request, so this one button reliably
+ * clears everything including staged-but-never-applied Random Damage additions right away, rather
+ * than relying solely on the delayed loadFromUnit reload below to indirectly overwrite them once
+ * the server-side reset lands.
+ *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Reset Patient button <CONTROL>
  *
@@ -30,6 +36,13 @@ diag_log text format ["[AFCM-Simulator][UI] Injury Author Reset Patient clicked 
 if (isNull _targetUnit) exitWith {
     diag_log text "[AFCM-Simulator][UI] Reset Patient aborted - AFCM_SIM_UI_targetUnit is objNull.";
 };
+
+missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", []];
+missionNamespace setVariable ["AFCM_SIM_UI_stagedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]];
+
+profileNamespace setVariable ["AFCM_SIM_lastUsedInjuries", []];
+profileNamespace setVariable ["AFCM_SIM_lastUsedKatExtras", [[0, 0, 0, 0, 0, 0], 0, 0, 0]];
+saveProfileNamespace;
 
 [_targetUnit] remoteExec ["afcm_sim_scenario_fnc_serverReset", 2];
 
