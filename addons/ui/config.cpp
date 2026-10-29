@@ -1893,18 +1893,20 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             w = "0.05 * safeZoneW";
             h = "0.019 * safeZoneH";
         };
-        // Toggle consciousness, edit mode only - same corner, below Blood Volume/SpO2. Label/action
-        // flip based on the live state (fnc_injuryAuthor_refreshState.sqf sets the text each 0.5s
-        // tick; fnc_injuryAuthor_onToggleConsciousness.sqf reads the CURRENT text to decide which way
-        // to toggle, rather than tracking a separate bool the live-state refresh could drift out of
-        // sync with). Real, confirmed design note: waking a patient needs more than just this button
-        // - fnc_spawnPatient.sqf's own recurring 3s unconscious safeguard would otherwise silently
-        // re-knock them out again within seconds (AFCM_SIM_allowConscious,
+        // Consciousness checkbox, edit mode only - same corner, below Blood Volume/SpO2. Checkbox-
+        // style on request ("Unconscious [ ]", ticked for yes) rather than an action-verb button -
+        // still just an AFCM_SIM_RscButton reusing the same ButtonClick/text-sync wiring the old
+        // Wake/Knock Out version had (fnc_injuryAuthor_refreshState.sqf sets the text each 0.5s
+        // tick; fnc_injuryAuthor_onToggleConsciousness.sqf reads the CURRENT text to decide the new
+        // state, rather than tracking a separate bool the live-state refresh could drift out of
+        // sync with). Real, confirmed design note: waking a patient needs more than just this
+        // checkbox - fnc_spawnPatient.sqf's own recurring 3s unconscious safeguard would otherwise
+        // silently re-knock them out again within seconds (AFCM_SIM_allowConscious,
         // fnc_serverSetConsciousness.sqf, is the actual fix for that).
         class ConsciousnessToggle: AFCM_SIM_RscButton
         {
             idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE;
-            text = "Wake Patient";
+            text = "Unconscious [ ]";
             x = "0.665 * safeZoneW + safeZoneX";
             y = "0.562 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";

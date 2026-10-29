@@ -99,9 +99,9 @@ if (count _state > 0) then {
     private _incap = _state getOrDefault ["incapacitatedState", ""];
     if (_incap != "") then { _consciousness = _consciousness + format [" (%1)", _incap]; };
 
-    // Keeps the toggle button (idc 59, edit mode only) honest against the unit's REAL current
-    // state every tick, not just whatever the button itself last set optimistically.
-    (_display displayCtrl 59) ctrlSetText (["Knock Out Patient", "Wake Patient"] select _isUnconscious);
+    // Keeps the consciousness checkbox (idc 59, edit mode only) honest against the unit's REAL
+    // current state every tick, not just whatever it last set optimistically.
+    (_display displayCtrl 59) ctrlSetText (["Unconscious [ ]", "Unconscious [X]"] select _isUnconscious);
 
     _text = "VITALS" call _header;
 
