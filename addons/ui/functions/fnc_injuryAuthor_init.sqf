@@ -152,7 +152,7 @@ params ["_display"];
             (_display displayCtrl 58) ctrlSetText str (_state getOrDefault ["spO2", 97]);
             (_display displayCtrl 67) ctrlSetText str (_state getOrDefault ["pain", 0]);
             private _isUnconscious = (_state getOrDefault ["incapacitatedState", ""]) == "UNCONSCIOUS";
-            (_display displayCtrl 59) ctrlSetText (["Unconscious [ ]", "Unconscious [X]"] select _isUnconscious);
+            [_display displayCtrl 59, _isUnconscious] call afcm_sim_ui_fnc_injuryAuthor_setConsciousnessCheckbox;
         };
     };
 
