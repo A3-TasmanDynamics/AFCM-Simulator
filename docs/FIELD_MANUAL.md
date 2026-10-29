@@ -84,7 +84,7 @@ object (a laptop, a table) and it stops auto-spawning at mission start. Instead 
 repeatable `"AFCM: Spawn <Title>"` interaction (or `"AFCM: Spawn Patient"` with no Title set) that
 any player can use, on demand, as many times as the scenario needs.
 
-### 3.3 — Interactive Terminal
+### 3.3 — Medical Terminal
 
 Sync it (Eden) or drag it directly onto an object (Zeus) and every player gets two actions on that
 object: `"AFCM: Open MCI Creator"` and `"AFCM: Open Session Manager"` — a diegetic way to hand the
@@ -148,7 +148,7 @@ to hand to another mission maker.
 
 For when patients in the same incident need genuinely *different* injuries from each other — a
 module MCI Spawner (§3.1) gives everyone the same preset; this doesn't have to. Open it with
-`Ctrl`+`Shift`+`M`, or a synced Interactive Terminal's own action.
+`Ctrl`+`Shift`+`M`, or a synced Medical Terminal's own action.
 
 1. Set **Patient Count** (1–10).
 2. Assign a Preset to each patient individually — or leave any of them on **Random**.
@@ -199,7 +199,7 @@ interaction menu loaded — nobody is ever left with no way to trigger a spawn.
 | AFCM: Export Patient State | Any spawned patient |
 | Assign MCI Preset | Any patient in a Zeus MCI Spawner batch |
 | AFCM: Spawn `<Title>` | An object synced to an on-demand AFCM Patient module |
-| AFCM: Open MCI Creator / Open Session Manager | An Interactive Terminal object |
+| AFCM: Open MCI Creator / Open Session Manager | An Medical Terminal object |
 
 ---
 

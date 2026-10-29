@@ -215,7 +215,7 @@ by construction (§2.5). The internal split:
   (for the interface they register against), not `afcm_sim_scenario`.
 - **`afcm_sim_zeus`** / **`afcm_sim_eden`** own the editor-facing side of patient
   authoring/placement (§5) — Zeus's "Spawn Patient"/"MCI Spawner"/"Edit Injuries" and Eden's own
-  "AFCM Patient"/"Interactive Terminal". **Implemented** — all call real `afcm_sim_spawner`
+  "AFCM Patient"/"Medical Terminal". **Implemented** — all call real `afcm_sim_spawner`
   functions, not stubs; both spawn modules spawn clean and rely on the "Edit Injuries" selection
   flow (or, on AFCM Patient, an optional Injury Preset Import attribute) rather than randomizing.
   Eden previously also shipped AFCM MASCAL Zone/AFCM MCI Spawner/Medical Tent modules - removed on
@@ -592,7 +592,7 @@ is still the plan, not the state of the repo.
     *and* the placing operator's own saved presets are reachable this way, live.
   - **AFCM MCI Spawner (Eden)** and **AFCM MASCAL Zone** (the design-time, static-preset/randomized
     batch-spawn counterparts to the above) were both removed on request (§9), along with Medical
-    Tent — Eden's module list is now just AFCM Patient + Interactive Terminal. Zeus's MCI Spawner
+    Tent — Eden's module list is now just AFCM Patient + Medical Terminal. Zeus's MCI Spawner
     above and the MCI Creator below still cover live/ad-hoc batch spawning.
 - **MCI Creator** — the standalone tool for when patients need genuinely *different* injuries from
   each other in the same incident (module MCI Spawners above give every patient the same preset;
@@ -815,7 +815,7 @@ AFCM-Simulator/
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario}
     zeus/          # afcm_sim_zeus — "Spawn Patient" Zeus module (§5), implemented
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario, afcm_sim_spawner}
-    eden/          # afcm_sim_eden — "AFCM Patient"/"Interactive Terminal" Eden modules (§5), implemented
+    eden/          # afcm_sim_eden — "AFCM Patient"/"Medical Terminal" Eden modules (§5), implemented
                     # requiredAddons = {cba_main, afcm_sim_main, afcm_sim_scenario, afcm_sim_spawner}
     ace_compat/    # afcm_sim_ace_compat — implements the interface against vanilla ace_medical_engine
                     # requiredAddons = {cba_main, ace_medical_engine, afcm_sim_main} — only loads if ACE3 present

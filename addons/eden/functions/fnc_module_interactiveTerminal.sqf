@@ -1,10 +1,19 @@
 /*
  * Author: Tasman Dynamics
  * Module function for AFCM_SIM_ModuleInteractiveTerminal (Eden, also Zeus-placeable via
- * scopeCurator=2). Gives a training scenario a diegetic way into the tool kit - sync this module to
- * any placed object (a Laptop_01_F, a table, anything) and every player gets two real addActions on
- * it, "AFCM: Open MCI Creator" / "AFCM: Open Session Manager" (afcm_sim_ui_fnc_addTerminalAction),
- * instead of needing the CBA keybind or Zeus itself.
+ * scopeCurator=2) - displayName "Medical Terminal" now (renamed throughout the mod on request to
+ * better explain what it is; this class/function name kept for historical reasons, same "don't
+ * orphan an already-placed module" rule as AFCM_SIM_ModuleSpawnRandomPatient's own rename). Gives a
+ * training scenario a diegetic way into the tool kit - sync this module to any placed object (a
+ * Laptop_01_F, a table, anything) and every player gets two real addActions on it, "AFCM: Open MCI
+ * Creator" / "AFCM: Open Session Manager" (afcm_sim_ui_fnc_addTerminalAction), instead of needing
+ * the CBA keybind or Zeus itself.
+ *
+ * `owner _logic` is passed through to fnc_resolveTerminalTarget.sqf so it can remoteExec a real
+ * hint back to the actual placing curator's client once resolution succeeds or fully fails
+ * (on request - "gives a warning that it has to be placed on an object" / "add a hint if placed
+ * onto an object that the object is now set as a terminal") - this function itself only ever runs
+ * isServer-gated, which in dedicated MP is a different machine than the curator's own.
  *
  * Target resolution supports both real placement paths: `_units` (synced units) is Eden's own
  * mechanism (Ctrl+click sync line, module to object) - checked first since that's the primary
@@ -44,10 +53,10 @@
 
 params ["_logic", "_units", "_activated"];
 
-diag_log text format ["[AFCM-Simulator][Eden][diag] Interactive Terminal module fired - activated=%1, isServer=%2, units=%3.", _activated, isServer, _units];
+diag_log text format ["[AFCM-Simulator][Eden][diag] Medical Terminal module fired - activated=%1, isServer=%2, units=%3.", _activated, isServer, _units];
 
 if !(_activated) exitWith {};
 if !(isServer) exitWith {};
 if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
 
-[_logic, _units, 1] call afcm_sim_eden_fnc_resolveTerminalTarget;
+[_logic, _units, 1, owner _logic] call afcm_sim_eden_fnc_resolveTerminalTarget;

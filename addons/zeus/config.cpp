@@ -184,7 +184,8 @@ class CfgVehicles
     // the Creator's own working state (fnc_module_mciSpawner.sqf's own comment has the exact rules).
     // Used to have a design-time Eden counterpart (AFCM_SIM_ModuleMciSpawnerPlacement, limited to the
     // 5 built-in presets only) - removed on request along with AFCM MASCAL Zone/Medical Tent, keeping
-    // only AFCM Patient + Interactive Terminal in eden/config.cpp; this Zeus module is unaffected.
+    // only AFCM Patient + Medical Terminal (formerly "Interactive Terminal") in eden/config.cpp;
+    // this Zeus module is unaffected.
     class AFCM_SIM_ModuleMciSpawner: Module_F
     {
         scope = 1;

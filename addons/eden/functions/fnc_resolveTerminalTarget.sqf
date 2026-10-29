@@ -24,10 +24,17 @@
  * Zeus-only modules are - deleteVehicle issued by the server reliably removes any object regardless
  * of which client it's local to.
  *
+ * Also real-hints the placing curator both ways now, on request - success ("the object is now set
+ * as a Medical Terminal") and final failure ("must be placed on an object"), remoteExec'd to
+ * `_ownerId` since this whole chain runs server-side and the curator may be on a different machine
+ * entirely in dedicated MP.
+ *
  * Arguments:
  * 0: Logic <OBJECT> - the placed/attached module
  * 1: Units <ARRAY> - synced units; first entry (if any) is the target object
  * 2: Attempt <NUMBER> - 1-indexed, gives up after attempt 5
+ * 3: Owner id <NUMBER> - the real client id of whichever curator placed this (`owner _logic`),
+ *    passed through every retry so the final hint still reaches them
  *
  * Return Value:
  * None
@@ -35,24 +42,26 @@
  * Public: Yes
 */
 
-params ["_logic", "_units", "_attempt"];
+params ["_logic", "_units", "_attempt", "_ownerId"];
 
 if (isNull _logic) exitWith {};
 
 private _object = _units param [0, objNull];
 if (isNull _object) then { _object = attachedTo _logic; };
 
-diag_log text format ["[AFCM-Simulator][Eden][diag] Interactive Terminal resolve attempt %1/5 - object=%2.", _attempt, _object];
+diag_log text format ["[AFCM-Simulator][Eden][diag] Medical Terminal resolve attempt %1/5 - object=%2.", _attempt, _object];
 
 if !(isNull _object) exitWith {
     _logic setVariable ["AFCM_SIM_moduleFired", true];
     [_object] remoteExec ["afcm_sim_ui_fnc_addTerminalAction", 0, true];
+    ["AFCM Medical Terminal", "This object is now set as a Medical Terminal."] remoteExec ["afcm_sim_ui_fnc_showToast", _ownerId];
     deleteVehicle _logic;
 };
 
 if (_attempt < 5) then {
-    [afcm_sim_eden_fnc_resolveTerminalTarget, [_logic, _units, _attempt + 1], 1] call CBA_fnc_waitAndExecute;
+    [afcm_sim_eden_fnc_resolveTerminalTarget, [_logic, _units, _attempt + 1, _ownerId], 1] call CBA_fnc_waitAndExecute;
 } else {
-    diag_log text "[AFCM-Simulator][Eden] Interactive Terminal module gave up after 5s - still no synced/attached object, deleting (must be placed on an object).";
+    diag_log text "[AFCM-Simulator][Eden] Medical Terminal module gave up after 5s - still no synced/attached object, deleting (must be placed on an object).";
+    ["AFCM Medical Terminal", "Must be placed directly on an object - nothing was synced or attached."] remoteExec ["afcm_sim_ui_fnc_showToast", _ownerId];
     deleteVehicle _logic;
 };

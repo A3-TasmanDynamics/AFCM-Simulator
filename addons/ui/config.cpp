@@ -156,7 +156,8 @@ class CfgFunctions
             class confirmDialog_init { file = "\afcm_sim\addons\ui\functions\fnc_confirmDialog_init.sqf"; };
             class confirmDialog_onYes { file = "\afcm_sim\addons\ui\functions\fnc_confirmDialog_onYes.sqf"; };
         };
-        // Interactive Terminal - see eden/config.cpp's AFCM_SIM_ModuleInteractiveTerminal. Adds two
+        // Medical Terminal (formerly "Interactive Terminal") - see eden/config.cpp's
+        // AFCM_SIM_ModuleInteractiveTerminal. Adds two
         // vanilla addActions ("AFCM: Open MCI Creator" / "AFCM: Open Session Manager") to whatever
         // object the module is attached to, e.g. a placed Laptop_01_F, so a training scenario can
         // give players/curators a diegetic way in without needing a keybind or the Zeus interface.
@@ -183,6 +184,7 @@ class CfgFunctions
         {
             file = "\afcm_sim\addons\ui\functions";
             class showToast { file = "\afcm_sim\addons\ui\functions\fnc_showToast.sqf"; };
+            class showToastOverlay { file = "\afcm_sim\addons\ui\functions\fnc_showToastOverlay.sqf"; };
             class toast_init { file = "\afcm_sim\addons\ui\functions\fnc_toast_init.sqf"; };
             class notifySessionResolved { file = "\afcm_sim\addons\ui\functions\fnc_notifySessionResolved.sqf"; };
         };
@@ -1870,7 +1872,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         {
             idc = IDC_AFCM_SIM_IA_BLOODVOLUMELABEL;
             text = "Blood (L)";
-            tooltip = "Full blood level = 6L. Training guidance: treat falling blood volume as the primary marker of hemorrhagic shock severity.";
+            tooltip = "Full blood level = 6L.";
             x = "0.665 * safeZoneW + safeZoneX";
             y = "0.501 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
@@ -1880,7 +1882,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         {
             idc = IDC_AFCM_SIM_IA_BLOODVOLUME;
             text = "6.0";
-            tooltip = "Full blood level = 6L. Training guidance: treat falling blood volume as the primary marker of hemorrhagic shock severity.";
+            tooltip = "Full blood level = 6L.";
             x = "0.735 * safeZoneW + safeZoneX";
             y = "0.501 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
@@ -1890,7 +1892,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         {
             idc = IDC_AFCM_SIM_IA_SPO2LABEL;
             text = "SpO2 (%)";
-            tooltip = "Training guidance: 75% = unconscious, 50% = death.";
+            tooltip = "SpO2 Levels: 50% = death, 75% = unconscious.";
             x = "0.665 * safeZoneW + safeZoneX";
             y = "0.521 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
@@ -1900,7 +1902,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         {
             idc = IDC_AFCM_SIM_IA_SPO2;
             text = "97";
-            tooltip = "Training guidance: 75% = unconscious, 50% = death.";
+            tooltip = "SpO2 Levels: 50% = death, 75% = unconscious.";
             x = "0.735 * safeZoneW + safeZoneX";
             y = "0.521 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
@@ -1962,7 +1964,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         class ConsciousnessLabel: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSLABEL;
-            text = "Unconscious";
+            text = "Unconscious:";
             x = "0.689 * safeZoneW + safeZoneX";
             y = "0.5605 * safeZoneH + safeZoneY";
             w = "0.1 * safeZoneW";

@@ -35,7 +35,7 @@ drill.
 | 🏥 **MCI Spawner & MASCAL Zone** | Zeus/Eden modules — spawn a whole batch on the spot, one shared preset or randomized by Injury Level |
 | 🗂️ **Spawn Sessions** | Every batch is a named, independently-deletable session — two medics can each run their own MCI without clearing the other's |
 | 🖱️ **Zeus Edit Injuries** | Drag a module directly onto any unit to open the Injury Editor immediately, no scroll action needed |
-| 💻 **Interactive Terminal** | Sync a module to any placed object (a laptop, a table) for a diegetic way into the MCI Creator/Session Manager |
+| 💻 **Medical Terminal** | Sync a module to any placed object (a laptop, a table) for a diegetic way into the MCI Creator/Session Manager |
 | ⛺ **Medical Tent** | Session-scoped treatment detection against your own composition's stretchers — notifies when an incident's fully treated |
 
 *Every path above funnels through one application pipeline — manual, preset, or randomized — so
