@@ -154,7 +154,13 @@ class CfgVehicles
         scopeCurator = 2;
         side = 7;
         displayName = "Spawn Patient";
-        icon = "\afcm_sim\addons\zeus\data\module_patient.paa";
+        // Distinct per-module icons on request ("some sort of indication of what they are" - all
+        // three used the same placeholder module_patient.paa before). No new art shipped here -
+        // reuses ACE3's own real, bundled Zeus module icons instead (confirmed present at these
+        // exact paths in acemod/ACE3's own addons/zeus/ui/) - ACE3 is guaranteed loaded whenever
+        // either supported medical backend is active (KAT itself requires ACE3 3.16.1+, KAT_COMPAT.md
+        // §3), so this is safe in the mod's real supported configurations.
+        icon = "\z\ace\addons\zeus\ui\Icon_Module_Zeus_Unconscious_ca.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_zeus_fnc_module_spawnRandomPatient";
         functionPriority = 1;
@@ -185,7 +191,7 @@ class CfgVehicles
         scopeCurator = 2;
         side = 7;
         displayName = "MCI Spawner";
-        icon = "\afcm_sim\addons\zeus\data\module_patient.paa";
+        icon = "\z\ace\addons\zeus\ui\Icon_Module_Zeus_Heal_ca.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_zeus_fnc_module_mciSpawner";
         functionPriority = 1;
@@ -234,7 +240,7 @@ class CfgVehicles
         scopeCurator = 2;
         side = 7;
         displayName = "Edit Injuries";
-        icon = "\afcm_sim\addons\zeus\data\module_patient.paa";
+        icon = "\z\ace\addons\zeus\ui\Icon_Module_Zeus_Medic_ca.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_zeus_fnc_module_editInjuries";
         functionPriority = 1;

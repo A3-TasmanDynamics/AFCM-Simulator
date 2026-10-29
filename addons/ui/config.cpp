@@ -114,6 +114,7 @@ class CfgFunctions
             class mapPicker_onClick { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_onClick.sqf"; };
             class mapPicker_onConfirm { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_onConfirm.sqf"; };
             class mapPicker_cleanup { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_cleanup.sqf"; };
+            class mapPicker_setPickedPos { file = "\afcm_sim\addons\ui\functions\fnc_mapPicker_setPickedPos.sqf"; };
         };
         // MCI Preset library (INJURY_CODES.md §4/DESIGN.md § MCI Creator) - same shape as
         // PresetLibrary above, for whole incidents instead of single injuries. "Load" replaces the
@@ -856,6 +857,8 @@ class RscDisplayAFCM_SIM_MciCreator
 #define IDC_AFCM_SIM_MAP_MAP     10
 #define IDC_AFCM_SIM_MAP_CONFIRM 11
 #define IDC_AFCM_SIM_MAP_CANCEL  12
+#define IDC_AFCM_SIM_MAP_RADIUSLABEL 13
+#define IDC_AFCM_SIM_MAP_RADIUS 14
 
 // Real interactive map-click position picker - a genuine RscMapControl (the same base class the
 // vanilla in-mission map screen and countless custom marker-placement tools are built on), not a
@@ -887,13 +890,36 @@ class RscDisplayAFCM_SIM_MapPicker
             h = "0.03 * safeZoneH";
             sizeEx = "0.022 * safeZoneH";
         };
+        // MCI Creator only (fnc_mapPicker_init.sqf ctrlShows this off when opened from the Injury
+        // Author's single-point ChooseLocation instead - a radius doesn't mean anything there).
+        // Drives a live ELLIPSE marker preview centered on the picked point (fnc_mapPicker_onClick.sqf/
+        // a small PFH started by fnc_mapPicker_init.sqf), on request ("when you change the radius, it
+        // shows a circle of the selected radius").
+        class RadiusLabel: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_MAP_RADIUSLABEL;
+            text = "Spawn Radius (m)";
+            x = "0.05 * safeZoneW + safeZoneX";
+            y = "0.062 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.03 * safeZoneH";
+        };
+        class Radius: RscEdit
+        {
+            idc = IDC_AFCM_SIM_MAP_RADIUS;
+            text = "10";
+            x = "0.21 * safeZoneW + safeZoneX";
+            y = "0.062 * safeZoneH + safeZoneY";
+            w = "0.08 * safeZoneW";
+            h = "0.03 * safeZoneH";
+        };
         class Map: RscMapControl
         {
             idc = IDC_AFCM_SIM_MAP_MAP;
             x = "0.05 * safeZoneW + safeZoneX";
-            y = "0.06 * safeZoneH + safeZoneY";
+            y = "0.095 * safeZoneH + safeZoneY";
             w = "0.9 * safeZoneW";
-            h = "0.8 * safeZoneH";
+            h = "0.765 * safeZoneH";
             active = 1;
         };
         class Confirm: AFCM_SIM_RscButtonPrimary

@@ -28,10 +28,11 @@ if (_casualtyType == -1) then { _casualtyType = 0; };
 AFCM_SIM_UI_mciCasualtyType = _casualtyType;
 
 private _sessionLabel = ctrlText (_display displayCtrl 23);
+private _radius = missionNamespace getVariable ["AFCM_SIM_UI_mciRadius", 10];
 
-diag_log text format ["[AFCM-Simulator][UI] Spawning MCI - %1 patient(s) at %2 (casualtyType=%3).", count AFCM_SIM_UI_mciPatientSpecs, _pos, _casualtyType];
+diag_log text format ["[AFCM-Simulator][UI] Spawning MCI - %1 patient(s) at %2 (casualtyType=%3, radius=%4).", count AFCM_SIM_UI_mciPatientSpecs, _pos, _casualtyType, _radius];
 
-[_pos, AFCM_SIM_UI_mciPatientSpecs, _casualtyType, _sessionLabel] remoteExec ["afcm_sim_scenario_fnc_serverSpawnMci", 2];
+[_pos, AFCM_SIM_UI_mciPatientSpecs, _casualtyType, _sessionLabel, _radius] remoteExec ["afcm_sim_scenario_fnc_serverSpawnMci", 2];
 
 // Real, confirmed bug fixed here: AFCM_SIM_UI_mciPatientSpecs (fnc_mciCreator_init.sqf) is only
 // ever seeded once per session (isNil guard) and nothing else resets it - so reopening MCI Creator

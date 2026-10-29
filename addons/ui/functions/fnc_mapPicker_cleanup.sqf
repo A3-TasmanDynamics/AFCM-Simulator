@@ -13,6 +13,9 @@
  * position as the real MCI location - clearing it here means Confirm's own `_pos isEqualTo []`
  * guard actually catches that case instead.
  *
+ * Also deletes the radius ELLIPSE preview marker and stops its sync PFH (fnc_mapPicker_init.sqf),
+ * MCI context only - both no-ops (getVariable default "") when never created.
+ *
  * Arguments:
  * None
  *
@@ -27,6 +30,19 @@ private _markerName = missionNamespace getVariable ["AFCM_SIM_UI_mapPickerMarker
 if (_markerName isNotEqualTo "") then {
     deleteMarkerLocal _markerName;
     missionNamespace setVariable ["AFCM_SIM_UI_mapPickerMarker", nil];
+};
+
+private _ellipseName = missionNamespace getVariable ["AFCM_SIM_UI_mapPickerEllipse", ""];
+
+if (_ellipseName isNotEqualTo "") then {
+    deleteMarkerLocal _ellipseName;
+    missionNamespace setVariable ["AFCM_SIM_UI_mapPickerEllipse", nil];
+};
+
+private _pfhHandle = missionNamespace getVariable ["AFCM_SIM_UI_mapPickerRadiusPfh", -1];
+if (_pfhHandle != -1) then {
+    [_pfhHandle] call CBA_fnc_removePerFrameHandler;
+    missionNamespace setVariable ["AFCM_SIM_UI_mapPickerRadiusPfh", nil];
 };
 
 missionNamespace setVariable ["AFCM_SIM_UI_mapPickerPos", nil];

@@ -29,13 +29,27 @@ if (_pos isEqualTo []) exitWith {
     diag_log text "[AFCM-Simulator][UI] Map Picker Confirm clicked with no position chosen - ignored.";
 };
 
+// Read Radius (idc 14, MCI context only - ctrlShown false otherwise) off THIS dialog (the Map
+// Picker, ctrlParent _ctrlConfirm) before closeDialog destroys it below - reading it from
+// _mciDisplayCheck further down would be wrong (that's the MCI Creator underneath, a different
+// display with no idc 14 of its own), and reading it after closeDialog would be reading a
+// destroyed control.
+private _mapDisplay = ctrlParent _ctrlConfirm;
+private _radius = if (ctrlShown (_mapDisplay displayCtrl 14)) then {
+    0 max (parseNumber (ctrlText (_mapDisplay displayCtrl 14)))
+} else {
+    -1
+};
+
 missionNamespace setVariable ["AFCM_SIM_UI_mapPickerPos", nil];
 
 closeDialog 0;
 
 // 25605 = IDD_AFCM_SIM_MCICREATOR, 25611 = IDD_AFCM_SIM_INJURYAUTHOR (addons/ui/config.cpp) -
 // hardcoded since #defines aren't available in SQF; keep in sync if either IDD ever changes.
-if (isNull (findDisplay 25605)) then {
+private _mciDisplayCheck = findDisplay 25605;
+
+if (isNull _mciDisplayCheck) then {
     if !(isNull (findDisplay 25611)) then {
         missionNamespace setVariable ["AFCM_SIM_UI_authorSpawnPos", _pos];
         [{
@@ -47,6 +61,7 @@ if (isNull (findDisplay 25605)) then {
     };
 } else {
     AFCM_SIM_UI_mciLocation = _pos;
+    if (_radius != -1) then { AFCM_SIM_UI_mciRadius = _radius; };
     [{
         private _mciDisplay = findDisplay 25605;
         if !(isNull _mciDisplay) then {
