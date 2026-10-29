@@ -15,7 +15,8 @@ class CfgPatches
 // Eden (mission editor) modules — the design-time side of patient placement (DESIGN.md §5 "Map to
 // Spawn Patients"), now calling real afcm_sim_spawner logic. Trimmed to just these two on request -
 // AFCM MASCAL Zone, AFCM MCI Spawner (Eden), and Medical Tent were removed (their function files
-// deleted, not just hidden) since only AFCM Patient and Interactive Terminal were still wanted;
+// deleted, not just hidden) since only AFCM Patient and Medical Terminal (formerly "Interactive
+// Terminal") were still wanted;
 // Zeus keeps its own MASCAL/MCI Spawner equivalents (addons/zeus/config.cpp), the MCI Creator UI
 // still covers ad-hoc batch spawning, but Medical Tent has NO other entry point left anywhere in
 // the mod now that its one Eden module is gone (see fnc_registerMedicalTent.sqf/
@@ -300,7 +301,13 @@ class CfgVehicles
         scope = 2;
         scopeCurator = 2;
         side = 7;
-        displayName = "Interactive Terminal";
+        // Renamed "Interactive Terminal" -> "Medical Terminal" on request, throughout the mod - the
+        // real player-facing name, to better explain what it actually is. Class/function names
+        // (AFCM_SIM_ModuleInteractiveTerminal, fnc_module_interactiveTerminal.sqf,
+        // fnc_resolveTerminalTarget.sqf, afcm_sim_ui_fnc_addTerminalAction) deliberately kept as-is
+        // - renaming those would orphan any mission that's already placed one, same reasoning
+        // AFCM_SIM_ModuleSpawnRandomPatient's own "Spawn Patient" rename already documents.
+        displayName = "Medical Terminal";
         // Was module_mascal.paa, a leftover icon from the since-removed MASCAL Zone module
         // (DESIGN.md §9 "Eden module list trimmed") - also rendered solid black when placed, same
         // real root cause as AFCM_SIM_ModulePatientPlacement's own fix above. Switched to a real,

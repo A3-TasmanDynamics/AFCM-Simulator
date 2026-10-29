@@ -39,7 +39,7 @@ To update the live listing after editing this file: paste the new content into t
 [*] [b]MCI Spawner[/b] — Zeus module: spawn a whole batch on the spot with one shared preset or randomized injuries
 [*] [b]Spawn Sessions[/b] — every batch is a named, independently-deletable session, so two medics can each run their own incident without clearing the other's
 [*] [b]Zeus Edit Injuries[/b] — drag a module directly onto any unit to open the Injury Editor immediately, no scroll action needed
-[*] [b]Interactive Terminal[/b] — sync to any placed object (a laptop, a table) for a diegetic way into the MCI Creator / Session Manager
+[*] [b]Medical Terminal[/b] — sync to any placed object (a laptop, a table) for a diegetic way into the MCI Creator / Session Manager
 [/list]
 
 [h2]How It Relates to AFCM[/h2]

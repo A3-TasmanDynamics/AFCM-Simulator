@@ -25,7 +25,7 @@
  * same way.
  *
  * Arguments:
- * 0: Object <OBJECT> - whatever the Interactive Terminal module was attached to (a placed Laptop,
+ * 0: Object <OBJECT> - whatever the Medical Terminal module was attached to (a placed Laptop,
  *    a table, anything)
  *
  * Return Value:
@@ -66,7 +66,7 @@ _object addAction [
     "<t color='#c1272d'>AFCM: Authorize Injury Editing</t>",
     {
         player setVariable ["AFCM_SIM_canEditInjuries", true, true];
-        ["AFCM Terminal", "You're now authorized to edit patient injuries."] call afcm_sim_ui_fnc_showToast;
+        ["AFCM Medical Terminal", "You're now authorized to edit patient injuries."] call afcm_sim_ui_fnc_showToast;
     },
     [],
     1.3,
@@ -81,7 +81,7 @@ _object addAction [
     "<t color='#c1272d'>AFCM: Revoke Injury Editing</t>",
     {
         player setVariable ["AFCM_SIM_canEditInjuries", false, true];
-        ["AFCM Terminal", "Injury-editing authorization revoked."] call afcm_sim_ui_fnc_showToast;
+        ["AFCM Medical Terminal", "Injury-editing authorization revoked."] call afcm_sim_ui_fnc_showToast;
     },
     [],
     1.2,

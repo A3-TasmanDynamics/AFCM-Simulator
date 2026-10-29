@@ -4,7 +4,7 @@
  * feature, callable directly (`call afcm_sim_ui_fnc_mciCreator_open;`) and bound to a real CBA
  * keybind (afcm_sim_fnc_registerMciCreatorKeybind, default Ctrl+Shift+M). Doesn't require a Zeus/
  * Eden module to be placed first - the Zeus MCI Spawner module (fnc_module_mciSpawner.sqf) is one
- * caller among several (CBA keybind, Interactive Terminal's own "Open MCI Creator" action), not a
+ * caller among several (CBA keybind, Medical Terminal's own "Open MCI Creator" action), not a
  * prerequisite.
  *
  * Guards against the same real, confirmed class of bug fnc_injuryAuthor_open.sqf's own header
