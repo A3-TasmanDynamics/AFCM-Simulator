@@ -925,6 +925,29 @@ rather than one hard-required with the others bolted on.
   (§ Medical Tent above). AFCM Patient's own position resolution was also fixed in the same pass —
   syncing an object to it now just works, instead of silently requiring a since-removed "Spawn at
   Synced Object" checkbox to be ticked first.
+- **ACE Medical Menu body image (deferred, scoped 2026-10-29)** — replace the Injury Author's
+  text-button limb navbar with ACE3's own real clickable body diagram, reusing ACE's actual bundled
+  assets/mechanics rather than hand-rolling new hit-regions. Real, confirmed architecture
+  (`acemod/ACE3`, `addons/medical_gui/gui.hpp`/`fnc_updateBodyImage.sqf`), not guessed:
+  - `GVAR(BodyImage)` (`RscControlsGroupNoScrollbars`) layers 6 base `RscPicture`s
+    (`data\body_image\{background,head,torso,arm_left,arm_right,leg_left,leg_right}.paa`) plus
+    hidden per-part damage-state overlays - fracture (`_B`), tourniquet (`_T`), selection-highlight
+    (`_S`) - each its own `.paa`.
+  - Six transparent `RscButton`s (SelectHead/Torso/ArmLeft/ArmRight/LegLeft/LegRight) laid over the
+    image at fixed coordinates are the real click-to-limb mechanism - each just runs
+    `onButtonClick = "GVAR(selectedBodyPart) = N;"`, not hit-testing the image itself.
+  - `fnc_updateBodyImage.sqf` is also the real mechanism behind the separately-requested "preview
+    the injuries on the body" item - it reads live tourniquet/fracture/open-wound/damage state per
+    part and recolors/shows the overlays accordingly. Directly reusable for the Injury Author's own
+    STAGED (not-yet-applied) injury preview once driven from `AFCM_SIM_UI_stagedInjuries` instead
+    of a live unit's real ACE variables.
+  - Real integration cost: ACE's six button/image coordinates are expressed in its own
+    `POS_X/POS_Y/POS_W/POS_H` pixelGrid macros, not AFCM's `safeZoneW/H`-fraction convention - needs
+    a real, confirmed conversion (not guessed pixel values) before they can be dropped into
+    `addons/ui/config.cpp`. The six real `.paa` assets are confirmed present in ACE3's own repo and
+    reusable the same way the Zeus module icons now are (§ Phased Roadmap note above this one) -
+    ACE3 is a guaranteed dependency, so no new art needed, just the real asset paths and a real
+    `POS_*`→safeZone conversion. Not started - revisit when prioritized.
 - **Phase-2 spike (parallel, inside AFCM-Simulator)** — overlay-window proof of concept, evaluated
   independently; only promoted to "supported" if the hard problems in §2.3 are actually solved.
 
