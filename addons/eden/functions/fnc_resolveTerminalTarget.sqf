@@ -12,6 +12,18 @@
  * diag_log'd (not gated behind Debug Logging) - temporary, specifically so a retest pins down
  * exactly which stage fails if this still isn't enough.
  *
+ * Real, confirmed enforcement added on request ("must be placed on an object... icon disappears
+ * once placed"): the module logic itself is now deleted on success (its job - adding the real
+ * terminal actions to the target object - is done, same "nothing left for the module object to do"
+ * reasoning AFCM_SIM_ModuleMciSpawner/ModuleEditInjuries already self-delete for) AND on final
+ * failure (an operator who places/drops it with nothing synced or attached gets a module that
+ * quietly cleans itself up rather than lingering as a dead, non-functional icon - the real
+ * enforcement mechanism, since Arma's own placement UI has no way to outright refuse an
+ * unattached/unsynced placement). Deletion runs here (server-authoritative, same gate this whole
+ * resolve chain already runs under) rather than gated on `local _logic` the way the self-standing
+ * Zeus-only modules are - deleteVehicle issued by the server reliably removes any object regardless
+ * of which client it's local to.
+ *
  * Arguments:
  * 0: Logic <OBJECT> - the placed/attached module
  * 1: Units <ARRAY> - synced units; first entry (if any) is the target object
@@ -35,10 +47,12 @@ diag_log text format ["[AFCM-Simulator][Eden][diag] Interactive Terminal resolve
 if !(isNull _object) exitWith {
     _logic setVariable ["AFCM_SIM_moduleFired", true];
     [_object] remoteExec ["afcm_sim_ui_fnc_addTerminalAction", 0, true];
+    deleteVehicle _logic;
 };
 
 if (_attempt < 5) then {
     [afcm_sim_eden_fnc_resolveTerminalTarget, [_logic, _units, _attempt + 1], 1] call CBA_fnc_waitAndExecute;
 } else {
-    diag_log text "[AFCM-Simulator][Eden] Interactive Terminal module gave up after 5s - still no synced/attached object, nothing to add actions to.";
+    diag_log text "[AFCM-Simulator][Eden] Interactive Terminal module gave up after 5s - still no synced/attached object, deleting (must be placed on an object).";
+    deleteVehicle _logic;
 };

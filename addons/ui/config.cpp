@@ -1822,18 +1822,16 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             sizeEx = "0.012 * safeZoneH";
             colorText[] = AFCM_SIM_COLOR_ACCENT;
         };
-        // Tooltips are real, confirmed ACE3 thresholds (addons/medical_engine/script_macros_
-        // medical.hpp) - NOT the illustrative "50% = death" example from the request, which doesn't
-        // match ACE3's actual model: SpO2 (ace_medical_spo2/VAR_SPO2) has no hard unconsciousness/
-        // death cutoff of its own anywhere in ACE3's real medical_vitals source (confirmed by reading
-        // fnc_updateState.sqf, the function that actually decides CriticalVitals/FatalVitals) - it's
-        // a continuous hypoxia indicator (altitude/gear/exertion/heart rate), not a discrete
-        // knockout/death gate, so the tooltip says that honestly instead of inventing one.
+        // Tooltip wording is this scenario's own training rule-of-thumb (on request, restated a 2nd
+        // time after an earlier pass used ACE3's real engine thresholds instead - ACE3 itself has no
+        // hard SpO2 unconsciousness/death cutoff, confirmed against its own medical_vitals source,
+        // so this is presented as the training guidance to give trainees, not a literal claim about
+        // what ACE3's engine enforces).
         class BloodVolumeLabel: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IA_BLOODVOLUMELABEL;
             text = "Blood (L)";
-            tooltip = "Starting/max 6.0L (DEFAULT_BLOOD_VOLUME). Real ACE3 hemorrhage-class thresholds: 6.0-5.1L Class 1, 5.1-4.2L Class 2, 4.2-3.6L Class 3, 3.6-3.0L Class 4 (critical), below 3.0L is fatal (bleedout).";
+            tooltip = "Full blood level = 6L. Training guidance: treat falling blood volume as the primary marker of hemorrhagic shock severity.";
             x = "0.665 * safeZoneW + safeZoneX";
             y = "0.501 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
@@ -1843,7 +1841,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         {
             idc = IDC_AFCM_SIM_IA_BLOODVOLUME;
             text = "6.0";
-            tooltip = "Starting/max 6.0L (DEFAULT_BLOOD_VOLUME). Real ACE3 hemorrhage-class thresholds: 6.0-5.1L Class 1, 5.1-4.2L Class 2, 4.2-3.6L Class 3, 3.6-3.0L Class 4 (critical), below 3.0L is fatal (bleedout).";
+            tooltip = "Full blood level = 6L. Training guidance: treat falling blood volume as the primary marker of hemorrhagic shock severity.";
             x = "0.735 * safeZoneW + safeZoneX";
             y = "0.501 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
@@ -1853,7 +1851,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         {
             idc = IDC_AFCM_SIM_IA_SPO2LABEL;
             text = "SpO2 (%)";
-            tooltip = "Oxygen saturation, 0-100%, default 97% (ace_medical_spo2). ACE3's continuous Airway Management simulation - driven by altitude/gear/exertion/heart rate, not a discrete injury. No hard knockout/death cutoff of its own in ACE3; sustained very low values signal hypoxia and should prompt airway intervention.";
+            tooltip = "Training guidance: 75% = unconscious, 50% = death.";
             x = "0.665 * safeZoneW + safeZoneX";
             y = "0.521 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
@@ -1863,7 +1861,7 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         {
             idc = IDC_AFCM_SIM_IA_SPO2;
             text = "97";
-            tooltip = "Oxygen saturation, 0-100%, default 97% (ace_medical_spo2). ACE3's continuous Airway Management simulation - driven by altitude/gear/exertion/heart rate, not a discrete injury. No hard knockout/death cutoff of its own in ACE3; sustained very low values signal hypoxia and should prompt airway intervention.";
+            tooltip = "Training guidance: 75% = unconscious, 50% = death.";
             x = "0.735 * safeZoneW + safeZoneX";
             y = "0.521 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
@@ -1872,12 +1870,12 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // Pain Level - real ace_medical_pain variable, 0-1 (same as the WoundType/Severity/etc.
         // staging form's own underlying vitals, not a 0-100 scale like SpO2). Folded into the same
         // setVitals op as Blood Volume/SpO2 (afcm_sim_fnc_backend_setVitals), on request ("displayed
-        // with the blood and spO2... same as them").
+        // with the blood and spO2... same as them"). No tooltip, on request ("remove pain
+        // explanation - no popup").
         class PainLevelLabel: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IA_PAINLEVELLABEL;
             text = "Pain (0-1)";
-            tooltip = "Real ACE3 ace_medical_pain, 0-1. Higher pain increases heart rate and can suppress a unit's ability to move/fight; ACE's own pain-suppression medications (e.g. morphine) temporarily reduce the EFFECT of pain without changing this underlying value.";
             x = "0.665 * safeZoneW + safeZoneX";
             y = "0.541 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
@@ -1887,7 +1885,6 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         {
             idc = IDC_AFCM_SIM_IA_PAINLEVEL;
             text = "0";
-            tooltip = "Real ACE3 ace_medical_pain, 0-1. Higher pain increases heart rate and can suppress a unit's ability to move/fight; ACE's own pain-suppression medications (e.g. morphine) temporarily reduce the EFFECT of pain without changing this underlying value.";
             x = "0.735 * safeZoneW + safeZoneX";
             y = "0.541 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
@@ -2013,7 +2010,9 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         class RandomDamage: AFCM_SIM_RscButton
         {
             idc = IDC_AFCM_SIM_IA_RANDOMDAMAGE;
-            text = "Random Damage";
+            // Renamed on request to reflect its real behavior now (fnc_injuryAuthor_onRandomDamage.sqf) -
+            // it applies the roll and closes the dialog, not just stages it.
+            text = "Apply Random Damage";
             x = "0.405 * safeZoneW + safeZoneX";
             y = "0.779 * safeZoneH + safeZoneY";
             w = "0.175 * safeZoneW";

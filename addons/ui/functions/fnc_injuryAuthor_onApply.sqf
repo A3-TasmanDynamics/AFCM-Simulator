@@ -7,7 +7,10 @@
  *  - Edit mode: remoteExecs the whole staged set to the live AFCM_SIM_UI_targetUnit in one
  *    afcm_sim_scenario_fnc_serverApplyPreset call - never applies locally (DESIGN.md §6). Publishes
  *    "injury.applied" per staged entry (same UI event-bus contract the old InjuryEditor's Apply
- *    already had).
+ *    already had). Also sends Blood Volume/SpO2/Pain (afcm_sim_scenario_fnc_serverSetVitals) and the
+ *    Consciousness checkbox's current ticked state (afcm_sim_scenario_fnc_serverSetConsciousness) -
+ *    all four are staged-until-Apply fields now, on request, not applied the moment they're
+ *    touched.
  *  - Author-new-patient mode ("Apply & Spawn Patient"): guarded on AFCM_SIM_UI_authorSpawnPos
  *    actually being set (Apply stays disabled until then, fnc_injuryAuthor_refreshLocationStatus.sqf
  *    - defensive, matches the same guard MCI Creator's own Spawn button has). Builds real Injury
@@ -90,6 +93,13 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
     private _spo2 = 0 max (parseNumber (ctrlText (_display displayCtrl 58))) min 100;
     private _pain = 0 max (parseNumber (ctrlText (_display displayCtrl 67))) min 1;
     [_targetUnit, _bloodVolume, _spo2, _pain] remoteExec ["afcm_sim_scenario_fnc_serverSetVitals", 2];
+
+    // Consciousness checkbox (idc 59) - staged-until-Apply now, on request ("when apply is
+    // selected, it will force the patient awake or unconscious") - fnc_injuryAuthor_
+    // onToggleConsciousness.sqf itself no longer remoteExecs anything, this is the only place that
+    // actually forces the real state.
+    private _unconscious = (ctrlText (_display displayCtrl 59)) == "Unconscious [X]";
+    [_targetUnit, _unconscious] remoteExec ["afcm_sim_scenario_fnc_serverSetConsciousness", 2];
 
     ["Injury Author", "Injuries applied."] call afcm_sim_ui_fnc_showToast;
     closeDialog 0;

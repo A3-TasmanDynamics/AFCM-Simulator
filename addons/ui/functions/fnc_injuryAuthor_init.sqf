@@ -152,7 +152,7 @@ params ["_display"];
             (_display displayCtrl 58) ctrlSetText str (_state getOrDefault ["spO2", 97]);
             (_display displayCtrl 67) ctrlSetText str (_state getOrDefault ["pain", 0]);
             private _isUnconscious = (_state getOrDefault ["incapacitatedState", ""]) == "UNCONSCIOUS";
-            (_display displayCtrl 59) ctrlSetText (["Knock Out Patient", "Wake Patient"] select _isUnconscious);
+            (_display displayCtrl 59) ctrlSetText (["Unconscious [ ]", "Unconscious [X]"] select _isUnconscious);
         };
     };
 
@@ -209,7 +209,7 @@ params ["_display"];
         _ctrlHit setVariable ["AFCM_SIM_navLimbId", _limbId];
         _ctrlHit setVariable ["AFCM_SIM_navBgCtrl", _ctrlBg];
         _ctrlHit ctrlAddEventHandler ["MouseEnter", {
-0            params ["_ctrlHit"];
+            params ["_ctrlHit"];
             private _limbId = _ctrlHit getVariable ["AFCM_SIM_navLimbId", ""];
             if (_limbId != (missionNamespace getVariable ["AFCM_SIM_UI_activeLimb", ""])) then {
                 (_ctrlHit getVariable ["AFCM_SIM_navBgCtrl", controlNull]) ctrlSetBackgroundColor [0.757, 0.153, 0.176, 0.5];
