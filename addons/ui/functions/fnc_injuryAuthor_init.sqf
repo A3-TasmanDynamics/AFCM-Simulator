@@ -126,7 +126,7 @@ params ["_display"];
         (_display displayCtrl 35) ctrlSetText "No live patient yet - spawn one, or click View Live State if you already have.";
         // Settable Blood Volume/SpO2/Pain and the consciousness toggle - edit mode only (see their
         // own config.cpp comments); no not-yet-spawned patient to set them on or wake/knock out here.
-        { (_display displayCtrl _x) ctrlShow false; } forEach [55, 56, 57, 58, 59, 66, 67];
+        { (_display displayCtrl _x) ctrlShow false; } forEach [55, 56, 57, 58, 59, 66, 67, 68];
     } else {
         _ctrlApply ctrlSetText "Apply";
         _ctrlApply ctrlEnable (_backend in ["ace", "kat"]);
@@ -138,7 +138,7 @@ params ["_display"];
         // only way to wipe a staged-but-not-yet-spawned form.
         (_display displayCtrl 47) ctrlShow false;
         { (_display displayCtrl _x) ctrlShow false; } forEach [51, 52, 54];
-        { (_display displayCtrl _x) ctrlShow true; } forEach [55, 56, 57, 58, 59, 66, 67];
+        { (_display displayCtrl _x) ctrlShow true; } forEach [55, 56, 57, 58, 59, 66, 67, 68];
         // Pre-fill from the live unit's current values (afcm_sim_fnc_backend_getState) rather than
         // always showing the field defaults, so Apply doesn't silently reset an untouched field back
         // to 6.0L/97% - same "don't clobber what's already real" reasoning fnc_injuryAuthor_
@@ -152,7 +152,7 @@ params ["_display"];
             (_display displayCtrl 58) ctrlSetText str (_state getOrDefault ["spO2", 97]);
             (_display displayCtrl 67) ctrlSetText str (_state getOrDefault ["pain", 0]);
             private _isUnconscious = (_state getOrDefault ["incapacitatedState", ""]) == "UNCONSCIOUS";
-            [_display displayCtrl 59, _isUnconscious] call afcm_sim_ui_fnc_injuryAuthor_setConsciousnessCheckbox;
+            (_display displayCtrl 59) cbSetChecked _isUnconscious;
         };
     };
 
@@ -170,8 +170,9 @@ params ["_display"];
         [48, afcm_sim_ui_fnc_injuryAuthor_onRandomDamage],
         [50, afcm_sim_ui_fnc_injuryAuthor_onResetPatient],
         [51, afcm_sim_ui_fnc_injuryAuthor_onChooseLocation],
-        [54, afcm_sim_ui_fnc_injuryAuthor_onViewLiveState],
-        [59, afcm_sim_ui_fnc_injuryAuthor_onToggleConsciousness]
+        [54, afcm_sim_ui_fnc_injuryAuthor_onViewLiveState]
+        // idc 59 (consciousness) is a real RscCheckBox now - toggles itself natively on click, no
+        // ButtonClick handler needed (config.cpp's own comment on ConsciousnessToggle).
     ];
 
     // Navbar hover tint, scripted against the click-only Nav*Hit controls (idc 60-65,

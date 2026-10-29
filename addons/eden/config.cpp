@@ -82,7 +82,17 @@ class CfgVehicles
         scopeCurator = 0;
         side = 7;
         displayName = "AFCM Patient";
-        icon = "\afcm_sim\addons\eden\data\module_patient.paa";
+        // Real, confirmed fix for the custom module_patient.paa rendering solid black when the
+        // module is actually placed in the 3D editor (on request) - Module_F's real in-world
+        // representation paints the module's own `icon=` texture onto its inherited sphere model's
+        // material, which needs a correctly-formatted alpha channel to render instead of black;
+        // the custom .paa here was never verified against that requirement. Switched to a real,
+        // confirmed-working ACE3-bundled Zeus icon instead - same one this module's own Zeus
+        // counterpart (AFCM_SIM_ModuleSpawnRandomPatient, addons/zeus/config.cpp) already uses, so
+        // placement-in-Eden and placement-in-Zeus now share one consistent icon too. No new art
+        // needed - ACE3 is a guaranteed dependency whenever either supported medical backend is
+        // active.
+        icon = "\z\ace\addons\zeus\ui\Icon_Module_Zeus_Unconscious_ca.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_eden_fnc_module_patientPlacement";
         functionPriority = 1;
@@ -291,7 +301,12 @@ class CfgVehicles
         scopeCurator = 2;
         side = 7;
         displayName = "Interactive Terminal";
-        icon = "\afcm_sim\addons\eden\data\module_mascal.paa";
+        // Was module_mascal.paa, a leftover icon from the since-removed MASCAL Zone module
+        // (DESIGN.md §9 "Eden module list trimmed") - also rendered solid black when placed, same
+        // real root cause as AFCM_SIM_ModulePatientPlacement's own fix above. Switched to a real,
+        // confirmed-existing ACE3-bundled Zeus icon (a gear/settings glyph - fits "an interactive
+        // access point" reasonably) rather than reusing a mismatched leftover.
+        icon = "\z\ace\addons\zeus\ui\Icon_Module_Zeus_Settings_ca.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_eden_fnc_module_interactiveTerminal";
         functionPriority = 1;

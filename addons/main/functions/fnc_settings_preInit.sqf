@@ -3,6 +3,17 @@
  * Registers AFCM-Simulator's CBA Addon Options. Runs at preInit (CBA's own recommendation, so the
  * settings are available in the Eden Editor too, not just in-game).
  *
+ * Real, confirmed bug fixed here: every setting below used to omit CBA_fnc_addSetting's 6th
+ * argument (_isGlobal), which defaults to 0 - a CLIENT-scoped setting (each player's own
+ * profileNamespace value). Eden's own "Addon Options" panel (Settings > Addon Options, Ctrl+Alt+S)
+ * only shows its Mission and Server tabs - a client-scoped setting has neither, so it genuinely
+ * never appears there, even though the exact same setting shows fine in the in-game pause menu and
+ * main menu (both of which DO show client settings) - confirmed, not guessed (CBA's own real
+ * CBA_fnc_addSetting docs: "1 means all clients share the same setting"). Every setting here is a
+ * mission-design choice (default injury level, whether an action exists at all, etc.), not a
+ * personal client preference, so all but afcm_sim_rememberLastInjuries (a genuine per-instructor
+ * UI workflow preference, not something a mission author configures ahead of time) now pass `1`.
+ *
  * Arguments:
  * None
  *
@@ -15,19 +26,22 @@
 ["afcm_sim_debugLogging", "CHECKBOX",
     ["Debug Logging", "Verbose diag_log output for backend registration/selection and dispatch failures. Leave off unless troubleshooting."],
     "AFCM Medical Simulator",
-    false
+    false,
+    1
 ] call CBA_fnc_addSetting;
 
 ["afcm_sim_defaultInjuryLevel", "LIST",
     ["Default Injury Level", "Default randomization level pre-selected in the injury editor and Random Patient (DESIGN.md §4.4) — a gameplay-authoring difficulty, not a real triage category."],
     "AFCM Medical Simulator",
-    [[0, 1, 2, 3, 4], ["Easy", "Medium", "Hard", "Extreme", "F*CKED!"], 1]
+    [[0, 1, 2, 3, 4], ["Easy", "Medium", "Hard", "Extreme", "F*CKED!"], 1],
+    1
 ] call CBA_fnc_addSetting;
 
 ["afcm_sim_defaultCasualtyType", "LIST",
     ["Default Casualty Type", "Default clothing/appearance for spawned patients when a placed module doesn't override it via its own Casualty Type attribute. Purely visual — the unit is always stripped of weapons/gear regardless of type (DESIGN.md §5)."],
     "AFCM Medical Simulator",
-    [[0, 1, 2, 3], ["Civilian", "Military (BLUFOR)", "Military (OPFOR)", "Military (Independent)"], 0]
+    [[0, 1, 2, 3], ["Civilian", "Military (BLUFOR)", "Military (OPFOR)", "Military (Independent)"], 0],
+    1
 ] call CBA_fnc_addSetting;
 
 ["afcm_sim_rememberLastInjuries", "CHECKBOX",
@@ -45,7 +59,8 @@
 ["afcm_sim_terminalInteractionMethod", "LIST",
     ["Patient Terminal Interaction Method", "How a player triggers the ""Spawn Patient"" interaction on an object synced to an AFCM Patient module. ACE Interaction Menu requires ACE3's interaction menu addon - falls back to Scroll Wheel per-client if it's not actually loaded."],
     "AFCM Medical Simulator",
-    [[0, 1, 2], ["Scroll Wheel", "ACE Interaction Menu", "Both"], 0]
+    [[0, 1, 2], ["Scroll Wheel", "ACE Interaction Menu", "Both"], 0],
+    1
 ] call CBA_fnc_addSetting;
 
 // Opt-in, default off - every spawned patient's "Edit Injuries" action is unrestricted today
@@ -56,7 +71,8 @@
 ["afcm_sim_requireInjuryEditPermission", "CHECKBOX",
     ["Require Injury Edit Permission", "If enabled, a player can't use a patient's ""Edit Injuries"" action until they've used ""AFCM: Authorize Injury Editing"" on an Interactive Terminal's synced object at least once this mission. Off by default - every patient's Edit Injuries stays unrestricted unless this is turned on."],
     "AFCM Medical Simulator",
-    false
+    false,
+    1
 ] call CBA_fnc_addSetting;
 
 // Real, confirmed CBA array-category form (the wiki's own code example is string-only, verified
@@ -69,11 +85,13 @@
 ["afcm_sim_enableMarkAsTreated", "CHECKBOX",
     ["Enable ""Mark as Treated"" Action", "Adds the ""AFCM: Mark as Treated"" scroll-wheel action to every spawned patient - the manual half of Medical Tent's treated-detection (DESIGN.md § Medical Tent). Turn off to remove the action entirely."],
     ["AFCM Medical Simulator", "Training"],
-    true
+    true,
+    1
 ] call CBA_fnc_addSetting;
 
 ["afcm_sim_enableExportPatientState", "CHECKBOX",
     ["Enable ""Export Patient State"" Action", "Adds the ""AFCM: Export Patient State"" scroll-wheel action to every spawned patient, letting a controller copy their current injuries out as a reusable preset string (fnc_exportPatientState.sqf). Turn off to remove the action entirely."],
     ["AFCM Medical Simulator", "Scenario"],
-    true
+    true,
+    1
 ] call CBA_fnc_addSetting;

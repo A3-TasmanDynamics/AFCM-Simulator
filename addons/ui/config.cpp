@@ -49,8 +49,6 @@ class CfgFunctions
             class injuryAuthor_onApply { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onApply.sqf"; };
             class injuryAuthor_onResetLimb { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onResetLimb.sqf"; };
             class injuryAuthor_onResetPatient { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onResetPatient.sqf"; };
-            class injuryAuthor_onToggleConsciousness { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onToggleConsciousness.sqf"; };
-            class injuryAuthor_setConsciousnessCheckbox { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_setConsciousnessCheckbox.sqf"; };
             class injuryAuthor_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onSavePreset.sqf"; };
             class injuryAuthor_onLoadPreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onLoadPreset.sqf"; };
             class injuryAuthor_loadPresetArrays { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_loadPresetArrays.sqf"; };
@@ -218,6 +216,7 @@ class RscButton;
 class RscCombo;
 class RscListBox;
 class RscEdit;
+class RscCheckBox;
 class RscMapControl;
 
 // Shared component kit, built on the three real base classes above (already proven working in
@@ -254,6 +253,14 @@ class AFCM_SIM_RscLabel: RscText
     colorText[] = AFCM_SIM_COLOR_TEXT;
     shadow = 1;
 };
+// Real, confirmed vanilla base class (ACE3's own RscCheckBox usage, e.g. addons/markers/
+// InsertMarker.hpp's TimeStamp checkbox - `class TimeStamp: RscCheckBox { idc = ...; };`, no
+// texture overrides needed, the checked/unchecked glyph comes from the engine's own base config)
+// - a thin empty wrapper purely so every control on this dialog goes through an AFCM_SIM_-prefixed
+// class, same convention as AFCM_SIM_RscLabel/RscButton above. Real usage always pairs it with a
+// SEPARATE label control next to it (ACE3's own TimeStamp/TimeStampText pair) - RscCheckBox itself
+// has no visible text property.
+class AFCM_SIM_RscCheckBox: RscCheckBox {};
 // Base button: dark, translucent, brand-red highlight on hover/focus so it's obvious what you're
 // about to click — the stock RscButton hover state is a barely-visible shade of gray (see the
 // "Right Leg" button in the reported screenshot). `colorFocused` is deliberately set to the exact
@@ -1436,6 +1443,7 @@ class RscDisplayAFCM_SIM_ConfirmDialog
 // 60-65 already taken by NAV_*_HIT above - picking up again at 66.
 #define IDC_AFCM_SIM_IA_PAINLEVELLABEL  66
 #define IDC_AFCM_SIM_IA_PAINLEVEL       67
+#define IDC_AFCM_SIM_IA_CONSCIOUSNESSLABEL 68
 
 // Replaces RscDisplayAFCM_SIM_LimbSelect + RscDisplayAFCM_SIM_InjuryEditor (both retired, IDD
 // 25601/25602 not reused) with one dialog: a persistent left-side limb navbar next to a single
@@ -1921,30 +1929,44 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             w = "0.05 * safeZoneW";
             h = "0.019 * safeZoneH";
         };
-        // Consciousness checkbox, edit mode only - same corner, below Blood Volume/SpO2. Restyled
-        // on request ("make it follow the theme, the [ ]/[X] bracket text looks ugly") - checked
-        // state is now shown with this UI's own existing "filled danger-red = critical state"
-        // language (AFCM_SIM_COLOR_DANGER_BG, the same color Reset Patient already uses) via
-        // ctrlSetBackgroundColor, not literal bracket characters in the text - plain "Unconscious"
-        // label throughout. fnc_injuryAuthor_onToggleConsciousness.sqf/fnc_injuryAuthor_init.sqf
-        // track the real checked bool with `_ctrl setVariable ["AFCM_SIM_unconsciousChecked", ...]`
-        // rather than parsing text/color back out of the control.
+        // Consciousness checkbox, edit mode only - same corner, below Blood Volume/SpO2. A REAL
+        // native checkbox now, on request ("it is not a button, it is a check box. make the check
+        // box look nice") - a plain AFCM_SIM_RscButton styled to look like one (brackets, then a
+        // colored fill) was two earlier same-day passes at faking this; CT_CHECKBOX (RscCheckBox)
+        // is a genuine, confirmed-real vanilla control type (ACE3's own real usage, e.g.
+        // addons/markers/InsertMarker.hpp's `class TimeStamp: RscCheckBox { idc = ...; };`) that
+        // already renders its own proper checked/unchecked glyph from the engine's base config -
+        // no texture work needed, and it toggles ITSELF natively on click (`cbChecked`/
+        // `cbSetChecked`), so no ButtonClick handler is needed at all anymore (removed
+        // fnc_injuryAuthor_onToggleConsciousness.sqf/fnc_injuryAuthor_setConsciousnessCheckbox.sqf
+        // entirely - fnc_injuryAuthor_init.sqf now prefills with `cbSetChecked`,
+        // fnc_injuryAuthor_onApply.sqf reads with `cbChecked`). Real usage always pairs RscCheckBox
+        // with a SEPARATE label control next to it (ACE3's own TimeStamp/TimeStampText) - the
+        // ConsciousnessLabel below is that pairing, not a property on the checkbox itself.
         //
-        // Purely local/staged - clicking it does NOT change the live unit immediately
-        // (fnc_injuryAuthor_onToggleConsciousness.sqf), only fnc_injuryAuthor_onApply.sqf actually
-        // forces the real state, on request ("when apply is selected, it will force the patient
-        // awake or unconscious"). Real, confirmed design note: waking a patient needs more than
-        // just this checkbox - fnc_spawnPatient.sqf's own recurring 3s unconscious safeguard would
-        // otherwise silently re-knock them out again within seconds (AFCM_SIM_allowConscious,
-        // fnc_serverSetConsciousness.sqf, is the actual fix for that).
-        class ConsciousnessToggle: AFCM_SIM_RscButton
+        // Purely local/staged - ticking it does NOT change the live unit immediately, only
+        // fnc_injuryAuthor_onApply.sqf actually forces the real state, on request ("when apply is
+        // selected, it will force the patient awake or unconscious"). Real, confirmed design note:
+        // waking a patient needs more than just this checkbox - fnc_spawnPatient.sqf's own
+        // recurring 3s unconscious safeguard would otherwise silently re-knock them out again
+        // within seconds (AFCM_SIM_allowConscious, fnc_serverSetConsciousness.sqf, is the actual
+        // fix for that).
+        class ConsciousnessToggle: AFCM_SIM_RscCheckBox
         {
             idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE;
-            text = "Unconscious";
             x = "0.665 * safeZoneW + safeZoneX";
             y = "0.562 * safeZoneH + safeZoneY";
-            w = "0.12 * safeZoneW";
+            w = "0.019 * safeZoneH";
             h = "0.019 * safeZoneH";
+        };
+        class ConsciousnessLabel: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSLABEL;
+            text = "Unconscious";
+            x = "0.689 * safeZoneW + safeZoneX";
+            y = "0.5605 * safeZoneH + safeZoneY";
+            w = "0.1 * safeZoneW";
+            h = "0.022 * safeZoneH";
             sizeEx = "0.013 * safeZoneH";
         };
         // Text/mode set dynamically - "Apply" (edit mode, commits to AFCM_SIM_UI_targetUnit) or
