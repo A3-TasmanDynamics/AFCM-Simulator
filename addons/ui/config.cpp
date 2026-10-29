@@ -612,6 +612,8 @@ class RscDisplayAFCM_SIM_PresetSave
 #define IDC_AFCM_SIM_MC_CLOSE           21
 #define IDC_AFCM_SIM_MC_MANAGESESSIONS  22
 #define IDC_AFCM_SIM_MC_SESSIONNAME     23
+#define IDC_AFCM_SIM_MC_RADIUSLABEL     24
+#define IDC_AFCM_SIM_MC_RADIUS          25
 
 // Two side-by-side listboxes: PatientList shows "Patient N — <spec>" rows (fnc_mciCreator_init.sqf
 // populates it from AFCM_SIM_UI_mciPatientSpecs, a plain missionNamespace Array of spec strings,
@@ -780,17 +782,45 @@ class RscDisplayAFCM_SIM_MciCreator
             h = "0.035 * safeZoneH";
         };
         // Text set dynamically (fnc_mciCreator_init.sqf/onMapConfirm.sqf) - "Location: not set yet"
-        // until Choose Location on Map is used, then shows the picked position.
+        // until Choose Location on Map is used, then shows the picked position. Narrowed to make
+        // room for Spawn Radius on the same row (below).
         class LocationStatus: RscText
         {
             idc = IDC_AFCM_SIM_MC_LOCATIONSTATUS;
             text = "Location: not set yet";
             x = "0.22 * safeZoneW + safeZoneX";
             y = "0.6575 * safeZoneH + safeZoneY";
-            w = "0.56 * safeZoneW";
+            w = "0.34 * safeZoneW";
             h = "0.03 * safeZoneH";
             sizeEx = "0.018 * safeZoneH";
             colorText[] = AFCM_SIM_COLOR_TEXT_DIM;
+        };
+        // Settable directly here, on request, not just inside the Map Picker's own Radius field
+        // (RscDisplayAFCM_SIM_MapPicker) - same AFCM_SIM_UI_mciRadius variable either way
+        // (fnc_mciCreator_init.sqf prefills this from it; fnc_mciCreator_onSpawn.sqf reads it back
+        // same as before), so editing it here or inside the Map Picker both work and stay in sync -
+        // whichever was touched most recently wins, same "last edit wins" convention every other
+        // shared field in this tool already has (e.g. Casualty Type).
+        class RadiusLabel: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_MC_RADIUSLABEL;
+            text = "Spawn Radius (m)";
+            x = "0.57 * safeZoneW + safeZoneX";
+            y = "0.6575 * safeZoneH + safeZoneY";
+            w = "0.12 * safeZoneW";
+            h = "0.03 * safeZoneH";
+            sizeEx = "0.018 * safeZoneH";
+        };
+        class Radius: RscEdit
+        {
+            idc = IDC_AFCM_SIM_MC_RADIUS;
+            text = "10";
+            x = "0.70 * safeZoneW + safeZoneX";
+            y = "0.6575 * safeZoneH + safeZoneY";
+            w = "0.08 * safeZoneW";
+            h = "0.03 * safeZoneH";
+            colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
+            colorText[] = AFCM_SIM_COLOR_TEXT;
         };
         class ChooseLocation: AFCM_SIM_RscButton
         {

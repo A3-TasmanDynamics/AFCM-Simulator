@@ -28,7 +28,12 @@ if (_casualtyType == -1) then { _casualtyType = 0; };
 AFCM_SIM_UI_mciCasualtyType = _casualtyType;
 
 private _sessionLabel = ctrlText (_display displayCtrl 23);
-private _radius = missionNamespace getVariable ["AFCM_SIM_UI_mciRadius", 10];
+// Read directly off this dialog's own Radius field (idc 25) rather than the missionNamespace var -
+// the freshest value regardless of whether the operator last touched it here or in the Map Picker
+// (fnc_mciCreator_refreshLocationStatus.sqf/fnc_mciCreator_onChooseLocation.sqf keep both synced,
+// but reading the field directly avoids depending on that sync having already landed).
+private _radius = 0 max (parseNumber (ctrlText (_display displayCtrl 25)));
+AFCM_SIM_UI_mciRadius = _radius;
 
 diag_log text format ["[AFCM-Simulator][UI] Spawning MCI - %1 patient(s) at %2 (casualtyType=%3, radius=%4).", count AFCM_SIM_UI_mciPatientSpecs, _pos, _casualtyType, _radius];
 

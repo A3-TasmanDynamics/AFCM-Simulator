@@ -5,6 +5,10 @@
  * unset/objNull position would silently misplace the whole incident, so Spawn stays disabled until
  * a real location exists.
  *
+ * Also re-syncs the Radius field (idc 25) from AFCM_SIM_UI_mciRadius - this runs right after the
+ * Map Picker's own Confirm (fnc_mapPicker_onConfirm.sqf writes that var there), so editing the
+ * radius from the map reflects back onto this dialog's own field too, keeping both in sync.
+ *
  * Arguments:
  * 0: RscDisplayAFCM_SIM_MciCreator <DISPLAY>
  *
@@ -29,3 +33,4 @@ private _text = if (_hasPos) then {
 
 (_display displayCtrl 16) ctrlSetText _text;
 (_display displayCtrl 20) ctrlEnable _hasPos;
+(_display displayCtrl 25) ctrlSetText str (missionNamespace getVariable ["AFCM_SIM_UI_mciRadius", 10]);
