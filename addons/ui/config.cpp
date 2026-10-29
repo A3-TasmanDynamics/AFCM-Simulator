@@ -188,6 +188,16 @@ class CfgFunctions
             class toast_init { file = "\afcm_sim\addons\ui\functions\fnc_toast_init.sqf"; };
             class notifySessionResolved { file = "\afcm_sim\addons\ui\functions\fnc_notifySessionResolved.sqf"; };
         };
+        // Zeus Spawn Patient module's real picker window (RscDisplayAFCM_SIM_SpawnPatientPicker,
+        // below) - see that dialog class's own comment for the full real reasoning.
+        class SpawnPatientPicker
+        {
+            file = "\afcm_sim\addons\ui\functions";
+            class spawnPatientPicker_open { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_open.sqf"; };
+            class spawnPatientPicker_init { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_init.sqf"; };
+            class spawnPatientPicker_onSpawn { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_onSpawn.sqf"; };
+            class spawnPatientPicker_cleanup { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_cleanup.sqf"; };
+        };
     };
 };
 
@@ -2202,6 +2212,94 @@ class RscTitles
                 sizeEx = "0.018 * safeZoneH";
                 colorText[] = AFCM_SIM_COLOR_TEXT_DIM;
             };
+        };
+    };
+};
+
+#define IDD_AFCM_SIM_SPAWNPATIENTPICKER 25612
+
+#define IDC_AFCM_SIM_SPP_TITLE        1
+#define IDC_AFCM_SIM_SPP_CASUALTYTYPE 10
+#define IDC_AFCM_SIM_SPP_SPAWN        11
+#define IDC_AFCM_SIM_SPP_CANCEL       12
+
+// Zeus Spawn Patient module's real picker window (on request - "it must open a window to choose
+// the faction and unit type of the patient first"). Gear is stripped to bare clothing on every
+// spawn path regardless (fnc_spawnPatient.sqf's own real, confirmed comment), so "unit type" here
+// is the same real Casualty Type concept every other spawn path already uses (Civilian/BLUFOR/
+// OPFOR/Independent) rather than a second, separate dimension - inventing specific sub-classnames
+// per faction for visual variety would need real, confirmed-existing vanilla classnames beyond the
+// 4 already verified in fnc_spawnPatient.sqf's own _casualtyClasses, which aren't confirmed here.
+//
+// fnc_spawnPatientPicker_init.sqf prefills the combo from profileNamespace
+// (AFCM_SIM_lastSpawnPatientCasualtyType) - on request ("save across patient creation so I can
+// place the module again and it already has the selection I previously used") - and
+// fnc_spawnPatientPicker_onSpawn.sqf persists whatever's picked back to profileNamespace, so the
+// NEXT module placement's picker opens pre-selected to the same choice.
+class RscDisplayAFCM_SIM_SpawnPatientPicker
+{
+    idd = IDD_AFCM_SIM_SPAWNPATIENTPICKER;
+    movingEnable = 1;
+    onLoad = "call afcm_sim_ui_fnc_spawnPatientPicker_init;";
+    onUnload = "call afcm_sim_ui_fnc_spawnPatientPicker_cleanup;";
+
+    class controls
+    {
+        class Panel: AFCM_SIM_Panel
+        {
+            x = "0.32 * safeZoneW + safeZoneX";
+            y = "0.39 * safeZoneH + safeZoneY";
+            w = "0.36 * safeZoneW";
+            h = "0.22 * safeZoneH";
+        };
+        class Title: AFCM_SIM_RscTitle
+        {
+            idc = IDC_AFCM_SIM_SPP_TITLE;
+            text = "AFCM — Spawn Patient";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.41 * safeZoneH + safeZoneY";
+            w = "0.32 * safeZoneW";
+            h = "0.035 * safeZoneH";
+            sizeEx = "0.025 * safeZoneH";
+        };
+        class CasualtyTypeLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Casualty Type";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.465 * safeZoneH + safeZoneY";
+            w = "0.14 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class CasualtyType: RscCombo
+        {
+            idc = IDC_AFCM_SIM_SPP_CASUALTYTYPE;
+            x = "0.48 * safeZoneW + safeZoneX";
+            y = "0.465 * safeZoneH + safeZoneY";
+            w = "0.18 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class Spawn: AFCM_SIM_RscButtonPrimary
+        {
+            idc = IDC_AFCM_SIM_SPP_SPAWN;
+            text = "Spawn Patient";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.545 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.045 * safeZoneH";
+        };
+        // Plain closeDialog, same as every other Cancel-style button in this addon
+        // (RscDisplayAFCM_SIM_ConfirmDialog's own "No") - fnc_spawnPatientPicker_cleanup.sqf
+        // (onUnload) is what actually deletes the module logic regardless of how the dialog closed.
+        class Cancel: AFCM_SIM_RscButton
+        {
+            idc = IDC_AFCM_SIM_SPP_CANCEL;
+            text = "Cancel";
+            x = "0.51 * safeZoneW + safeZoneX";
+            y = "0.545 * safeZoneH + safeZoneY";
+            w = "0.15 * safeZoneW";
+            h = "0.045 * safeZoneH";
+            action = "closeDialog 0;";
         };
     };
 };

@@ -1,33 +1,35 @@
 /*
  * Author: Tasman Dynamics
- * Module function for AFCM_SIM_ModuleSpawnRandomPatient (Zeus). Spawns a clean, unconscious
- * patient at the module's placement position — no randomized injuries anymore. Injuries are
+ * Module function for AFCM_SIM_ModuleSpawnRandomPatient (Zeus). Opens a real picker window
+ * (RscDisplayAFCM_SIM_SpawnPatientPicker, ui/config.cpp) for the placing curator to choose Casualty
+ * Type before anything spawns, on request ("it must open a window to choose the faction and unit
+ * type of the patient first... should also save across patient creation") - the module's own
+ * pre-existing Casualty Type Attribute still seeds the picker's own initial default
+ * (afcm_sim_defaultCasualtyType) the very first time, but the picker itself is what actually
+ * remembers the operator's last real choice (profileNamespace,
+ * fnc_spawnPatientPicker_init.sqf/onSpawn.sqf) across separate module placements, which a static
+ * config `defaultValue` genuinely cannot do.
+ *
+ * Spawns a clean, unconscious patient once confirmed - no randomized injuries. Injuries are
  * selected afterward via the Injury Author, auto-opened on the placing curator's own screen right
- * after spawning (on request - "Starts with a window to select faction/type of patient [the
- * module's own pre-existing Casualty Type attribute, set via Zeus's own pre-placement attributes
- * panel] / Opens the edit injuries window"), rather than requiring a manual scroll-to-"Edit
- * Injuries" step on the newly spawned unit - the same real limb-select -> injury-editor flow
- * DESIGN.md §5 "Selectable Injuries" describes, just opened automatically instead of waited on.
+ * after spawning (fnc_spawnPatientPicker_onSpawn.sqf's own remoteExec callback - same real
+ * limb-select -> injury-editor flow DESIGN.md §5 "Selectable Injuries" describes), rather than
+ * requiring a manual scroll-to-"Edit Injuries" step on the newly spawned unit.
  *
  * Class/function names still say "RandomPatient" for historical reasons (renaming the Zeus module
  * class would orphan it in any mission that's already placed one) — the display name
  * ("Spawn Patient", zeus/config.cpp) no longer claims randomization.
  *
- * Split into two real gates, not one, same reasoning AFCM_SIM_ModuleMciSpawner's own function
- * documents for the same two-machine problem: `isServer` does the actual spawn (server-
- * authoritative, DESIGN.md §6) and remoteExecs the dialog-open to `owner _logic` - the real
- * client id of whichever machine is local to this module logic, i.e. the placing curator,
- * regardless of whether that's the same machine as the server. `local _logic` (true ONLY on that
- * same placing curator's own machine) is what then deletes the module logic itself so its icon
- * disappears once placed (on request, "the spawn patient module should disappear once placed") -
- * there's nothing left for the module object itself to do once the patient exists and its own
- * Edit Injuries dialog is open.
+ * `local _logic` (true ONLY on the placing curator's own machine) is what opens the picker -
+ * fnc_spawnPatientPicker_open.sqf/onSpawn.sqf/cleanup.sqf own the module logic's lifetime from here
+ * (spawning via remoteExec to the server, deleting `_logic` locally once the picker closes either
+ * way) - there's nothing left for THIS function to do once the picker is up.
  *
  * Guards against firing more than once per placed module (`AFCM_SIM_moduleFired`, a variable
  * stashed on `_logic` itself) - vanilla Module_F's function has no guaranteed single-fire
  * behaviour (confirmed independently by ACE3's own Modules Framework docs, which built their own
- * wrapper specifically because "there is no guarantee" here), and re-firing would otherwise spawn
- * a duplicate patient silently.
+ * wrapper specifically because "there is no guarantee" here), and re-firing would otherwise open a
+ * duplicate picker silently.
  *
  * Arguments:
  * 0: Logic <OBJECT> - the placed module
@@ -52,25 +54,6 @@ if !(_activated) exitWith {};
 if (_logic getVariable ["AFCM_SIM_moduleFired", false]) exitWith {};
 _logic setVariable ["AFCM_SIM_moduleFired", true];
 
-if (isServer) then {
-    private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
-    // Optional Session Name attribute (DESIGN.md § Spawn Sessions) - blank means
-    // afcm_sim_spawner_fnc_spawnPatient auto-generates one ("Spawn Patient") as before.
-    private _sessionLabel = _logic getVariable ["AFCM_SIM_sessionName", ""];
-    private _ownerId = owner _logic;
-
-    private _unit = [getPosASL _logic, [], _casualtyType, "", _sessionLabel] call afcm_sim_spawner_fnc_spawnPatient;
-
-    // Same 1-tick delay afcm_sim_spawner_fnc_spawnPatient's own internal CBA_fnc_waitAndExecute
-    // uses before wiring up the unit's scroll actions/applying injuries - opening the Injury
-    // Author any earlier would load from a unit that isn't fully set up yet.
-    [{
-        params ["_unit", "_ownerId"];
-        if (isNull _unit) exitWith {};
-        [_unit] remoteExec ["afcm_sim_ui_fnc_injuryAuthor_open", _ownerId];
-    }, [_unit, _ownerId], 1] call CBA_fnc_waitAndExecute;
-};
-
 if (local _logic) then {
-    deleteVehicle _logic;
+    [_logic] call afcm_sim_ui_fnc_spawnPatientPicker_open;
 };
