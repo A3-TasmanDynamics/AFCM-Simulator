@@ -72,6 +72,10 @@ private _bodyPartMap = createHashMapFromArray [
     ["leftLeg", "leftleg"],
     ["rightLeg", "rightleg"]
 ];
+// Legacy-only as of the wound-type taxonomy cleanup (on request, "remove gunshot, blast etc" from
+// the selectable list - ace_compat/kat_compat's own fnc_getWoundTypes.sqf no longer offers these 3
+// as choices) - kept here purely so any already-saved/exported preset still carrying one of these
+// 3 ids keeps applying correctly, not silently breaking old data.
 private _damageTypeMap = createHashMapFromArray [
     ["gunshot", "bullet"],
     ["shrapnel", "grenade"],
@@ -93,6 +97,10 @@ private _bleedWoundTypeMap = createHashMapFromArray [
 // that reliably picks e.g. "Laceration" over the other classes it also weights, and guessing one
 // would be exactly the kind of unverified mapping this codebase's own convention (REFERENCES.md)
 // avoids.
+// "puncture"/"velocity" added here (on request, "don't use anything outside of those wound
+// class's") - the exact same real PunctureWound/VelocityWound classes the probabilistic
+// gunshot/shrapnel/blast path below already uses internally for forced bleeding, now also directly
+// selectable in their own right via addWound, same as the other 7.
 private _directWoundClassMap = createHashMapFromArray [
     ["abrasion", "Abrasion"],
     ["avulsion", "Avulsion"],
@@ -100,7 +108,9 @@ private _directWoundClassMap = createHashMapFromArray [
     ["crush", "Crush"],
     ["cut", "Cut"],
     ["laceration", "Laceration"],
-    ["thermalburn", "ThermalBurn"]
+    ["thermalburn", "ThermalBurn"],
+    ["puncture", "PunctureWound"],
+    ["velocity", "VelocityWound"]
 ];
 // Real, confirmed constraint (ACE_Medical_Injuries.hpp, matches the user-supplied ACE injury
 // reference sheet): Contusion and Abrasion carry no bleed rate. Forced off here regardless of what

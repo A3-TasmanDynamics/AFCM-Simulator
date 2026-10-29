@@ -8,10 +8,14 @@
  * of truth the application logic itself uses, rather than two independently-maintained lists that
  * could drift out of sync.
  *
- * Every id/label pair here is a real, confirmed ACE3 class (docs/INJURY_CODES.md §2.1) - the three
- * probabilistic ones (gunshot/shrapnel/blast, via ace_medical_fnc_addDamageToUnit's damageTypes)
- * plus the seven deterministic CfgWounds classes (via ace_medical_fnc_addWound) - nothing outside
- * that real, already-wired set.
+ * Every id/label pair here is a real, confirmed ACE3 CfgWounds class (docs/INJURY_CODES.md §2.1),
+ * applied deterministically via ace_medical_fnc_addWound - nothing outside that real set. Gunshot/
+ * Shrapnel/Blast deliberately NOT included here (on request, "don't use anything outside of those
+ * wound class's") - those were ACE's probabilistic damageType labels, not real CfgWounds class
+ * names, and are no longer offered as choices; fnc_medical_applyAceStyleInjuryLocal.sqf keeps
+ * applying them correctly if an already-saved preset still references one, it's just not a new
+ * pick here. Puncture/Velocity added here instead - the exact real PunctureWound/VelocityWound
+ * classes that legacy path already used internally for forced bleeding, now directly selectable.
  *
  * Arguments:
  * None
@@ -23,14 +27,13 @@
 */
 
 [
-    ["gunshot", "Gunshot"],
-    ["shrapnel", "Shrapnel"],
-    ["blast", "Blast"],
     ["abrasion", "Abrasion"],
     ["avulsion", "Avulsion"],
     ["contusion", "Contusion"],
     ["crush", "Crush"],
     ["cut", "Cut"],
     ["laceration", "Laceration"],
-    ["thermalburn", "Thermal Burn"]
+    ["puncture", "Puncture Wound"],
+    ["thermalburn", "Thermal Burn"],
+    ["velocity", "Velocity Wound"]
 ]

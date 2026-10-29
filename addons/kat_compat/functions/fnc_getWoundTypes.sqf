@@ -5,9 +5,12 @@
  * §3's real, confirmed finding is that KAT extends ACE3's own wound pipeline rather than replacing
  * it, and kat_compat's own fnc_applyInjury.sqf dispatches to the exact same shared
  * afcm_sim_main_fnc_medical_applyAceStyleInjuryLocal.sqf ace_compat's does - there is no separate
- * KAT wound-class taxonomy underneath these ten woundType ids. KAT's own genuinely distinct
- * mechanics (Fracture severity/Pneumothorax/Airway/Cardiac Rhythm) are already separate,
- * backend-aware combos elsewhere in the Injury Author, not part of this list.
+ * KAT wound-class taxonomy underneath these woundType ids. KAT's own genuinely distinct mechanics
+ * (Fracture severity/Pneumothorax/Airway/Cardiac Rhythm) are already separate, backend-aware combos
+ * elsewhere in the Injury Author, not part of this list.
+ *
+ * Gunshot/Shrapnel/Blast deliberately NOT included here (on request, "don't use anything outside of
+ * those wound class's") - same reasoning as ace_compat's own fnc_getWoundTypes.sqf.
  *
  * Arguments:
  * None
@@ -19,14 +22,13 @@
 */
 
 [
-    ["gunshot", "Gunshot"],
-    ["shrapnel", "Shrapnel"],
-    ["blast", "Blast"],
     ["abrasion", "Abrasion"],
     ["avulsion", "Avulsion"],
     ["contusion", "Contusion"],
     ["crush", "Crush"],
     ["cut", "Cut"],
     ["laceration", "Laceration"],
-    ["thermalburn", "Thermal Burn"]
+    ["puncture", "Puncture Wound"],
+    ["thermalburn", "Thermal Burn"],
+    ["velocity", "Velocity Wound"]
 ]
