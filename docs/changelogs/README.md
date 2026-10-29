@@ -12,7 +12,7 @@ One file per version — real entries sourced from `git log`, not hand-summarize
 
 | Version | Status | Covers |
 |---|---|---|
-| [v0.1.0](v0.1.0.md) | Current — no tag/release cut yet | Everything since the initial commit (2026-08-19) through Zeus module self-cleanup/auto-open + consciousness checkbox + MCI Creator radius field (2026-10-29) |
+| [v0.1.0](v0.1.0.md) | Current — no tag/release cut yet | Everything since the initial commit (2026-08-19) through Eden Addon Options fix + Spawn Patient picker (2026-10-29) |
 
 When a version actually ships (a git tag, a real release), it gets its own `vX.Y.Z.md` here and
 v0.1.0.md's own "Unreleased" tail moves into the new file.
