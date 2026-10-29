@@ -426,13 +426,15 @@ class RscDisplayAFCM_SIM_PresetLibrary
             colorSelectBackground[] = AFCM_SIM_COLOR_ACCENT_HOVER;
             sizeEx = "0.019 * safeZoneH";
         };
+        // Position swapped with Import below, on request - takes Import's old slot (paired with
+        // Close) rather than a literal x/y/w/h swap, so both rows keep evenly-sized siblings.
         class Apply: AFCM_SIM_RscButtonPrimary
         {
             idc = IDC_AFCM_SIM_PL_APPLY;
             text = "Apply";
             x = "0.27 * safeZoneW + safeZoneX";
-            y = "0.6 * safeZoneH + safeZoneY";
-            w = "0.146 * safeZoneW";
+            y = "0.725 * safeZoneH + safeZoneY";
+            w = "0.22 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
         // Only meaningful for a selected user preset - disabled by fnc_presetLibrary_onSelect.sqf
@@ -476,13 +478,16 @@ class RscDisplayAFCM_SIM_PresetLibrary
             colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
             colorText[] = AFCM_SIM_COLOR_TEXT;
         };
+        // Position swapped with Apply above, on request - takes Apply's old slot (paired with
+        // Delete/Export) rather than a literal x/y/w/h swap, so both rows keep evenly-sized
+        // siblings.
         class Import: AFCM_SIM_RscButtonPrimary
         {
             idc = IDC_AFCM_SIM_PL_IMPORT;
             text = "Import ↑";
             x = "0.27 * safeZoneW + safeZoneX";
-            y = "0.725 * safeZoneH + safeZoneY";
-            w = "0.22 * safeZoneW";
+            y = "0.6 * safeZoneH + safeZoneY";
+            w = "0.146 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
         class Close: AFCM_SIM_RscButton
@@ -990,13 +995,15 @@ class RscDisplayAFCM_SIM_MciPresetLibrary
             colorSelectBackground[] = AFCM_SIM_COLOR_ACCENT_HOVER;
             sizeEx = "0.019 * safeZoneH";
         };
+        // Position swapped with Import below, on request - takes Import's old slot (paired with
+        // Close) rather than a literal x/y/w/h swap, so both rows keep evenly-sized siblings.
         class Load: AFCM_SIM_RscButtonPrimary
         {
             idc = IDC_AFCM_SIM_MPL_LOAD;
             text = "Load";
             x = "0.27 * safeZoneW + safeZoneX";
-            y = "0.6 * safeZoneH + safeZoneY";
-            w = "0.146 * safeZoneW";
+            y = "0.725 * safeZoneH + safeZoneY";
+            w = "0.22 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
         class Delete: AFCM_SIM_RscButtonDanger
@@ -1037,13 +1044,16 @@ class RscDisplayAFCM_SIM_MciPresetLibrary
             colorBackground[] = AFCM_SIM_COLOR_BTN_BG;
             colorText[] = AFCM_SIM_COLOR_TEXT;
         };
+        // Position swapped with Load above, on request - takes Load's old slot (paired with
+        // Delete/Export) rather than a literal x/y/w/h swap, so both rows keep evenly-sized
+        // siblings.
         class Import: AFCM_SIM_RscButtonPrimary
         {
             idc = IDC_AFCM_SIM_MPL_IMPORT;
             text = "Import ↑";
             x = "0.27 * safeZoneW + safeZoneX";
-            y = "0.725 * safeZoneH + safeZoneY";
-            w = "0.22 * safeZoneW";
+            y = "0.6 * safeZoneH + safeZoneY";
+            w = "0.146 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
         class Close: AFCM_SIM_RscButton
@@ -1366,6 +1376,9 @@ class RscDisplayAFCM_SIM_ConfirmDialog
 #define IDC_AFCM_SIM_IA_SPO2LABEL       57
 #define IDC_AFCM_SIM_IA_SPO2            58
 #define IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE 59
+// 60-65 already taken by NAV_*_HIT above - picking up again at 66.
+#define IDC_AFCM_SIM_IA_PAINLEVELLABEL  66
+#define IDC_AFCM_SIM_IA_PAINLEVEL       67
 
 // Replaces RscDisplayAFCM_SIM_LimbSelect + RscDisplayAFCM_SIM_InjuryEditor (both retired, IDD
 // 25601/25602 not reused) with one dialog: a persistent left-side limb navbar next to a single
@@ -1720,7 +1733,10 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             x = "0.215 * safeZoneW + safeZoneX";
             y = "0.485 * safeZoneH + safeZoneY";
             w = "0.575 * safeZoneW";
-            h = "0.09 * safeZoneH";
+            // Grown from 0.09 to 0.10 (on request, to fit a 3rd settable-vitals row - Pain Level,
+            // same corner as Blood/SpO2) - bottom edge now sits right at ResetLimb's own y=0.585, no
+            // overlap, zero spare margin.
+            h = "0.10 * safeZoneH";
             colorBackground[] = AFCM_SIM_COLOR_STATUS_BG;
         };
         // Live medical state (afcm_sim_fnc_backend_getState) - now genuinely keyed to whichever ONE
@@ -1761,49 +1777,95 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             h = "0.04 * safeZoneH";
             sizeEx = "0.016 * safeZoneH";
         };
-        // Settable Blood Volume/SpO2, edit mode only - occupies the same StatusBg-panel corner
+        // Settable Blood Volume/SpO2/Pain, edit mode only - occupies the same StatusBg-panel corner
         // ViewLiveState uses in author-new-patient mode (idc 54, hidden here since there's no "spawn
         // first" step in edit mode - fnc_injuryAuthor_init.sqf's existing mode branch toggles this
         // the same way). Applied on Apply (afcm_sim_fnc_backend_setVitals) alongside the staged
         // injuries - setting vitals on a not-yet-spawned patient doesn't make sense the way
         // injuries-to-apply-at-spawn do, so author-new-patient mode never shows these. Rows tightened
-        // from 0.032 to 0.027 tall (on request) to make room for ConsciousnessToggle below without
-        // growing past the panel's own bottom edge.
+        // from 0.032 to 0.019 tall (on request) to fit the AdvancedAdjustmentsLabel header plus a 3rd
+        // row (Pain Level) in the same corner, without growing past StatusBg's own bottom edge.
+        class AdvancedAdjustmentsLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Advanced Adjustments";
+            x = "0.665 * safeZoneW + safeZoneX";
+            y = "0.486 * safeZoneH + safeZoneY";
+            w = "0.12 * safeZoneW";
+            h = "0.014 * safeZoneH";
+            sizeEx = "0.012 * safeZoneH";
+            colorText[] = AFCM_SIM_COLOR_ACCENT;
+        };
+        // Tooltips are real, confirmed ACE3 thresholds (addons/medical_engine/script_macros_
+        // medical.hpp) - NOT the illustrative "50% = death" example from the request, which doesn't
+        // match ACE3's actual model: SpO2 (ace_medical_spo2/VAR_SPO2) has no hard unconsciousness/
+        // death cutoff of its own anywhere in ACE3's real medical_vitals source (confirmed by reading
+        // fnc_updateState.sqf, the function that actually decides CriticalVitals/FatalVitals) - it's
+        // a continuous hypoxia indicator (altitude/gear/exertion/heart rate), not a discrete
+        // knockout/death gate, so the tooltip says that honestly instead of inventing one.
         class BloodVolumeLabel: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IA_BLOODVOLUMELABEL;
             text = "Blood (L)";
+            tooltip = "Starting/max 6.0L (DEFAULT_BLOOD_VOLUME). Real ACE3 hemorrhage-class thresholds: 6.0-5.1L Class 1, 5.1-4.2L Class 2, 4.2-3.6L Class 3, 3.6-3.0L Class 4 (critical), below 3.0L is fatal (bleedout).";
             x = "0.665 * safeZoneW + safeZoneX";
-            y = "0.488 * safeZoneH + safeZoneY";
+            y = "0.501 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
-            h = "0.027 * safeZoneH";
+            h = "0.019 * safeZoneH";
         };
         class BloodVolume: RscEdit
         {
             idc = IDC_AFCM_SIM_IA_BLOODVOLUME;
             text = "6.0";
+            tooltip = "Starting/max 6.0L (DEFAULT_BLOOD_VOLUME). Real ACE3 hemorrhage-class thresholds: 6.0-5.1L Class 1, 5.1-4.2L Class 2, 4.2-3.6L Class 3, 3.6-3.0L Class 4 (critical), below 3.0L is fatal (bleedout).";
             x = "0.735 * safeZoneW + safeZoneX";
-            y = "0.488 * safeZoneH + safeZoneY";
+            y = "0.501 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
-            h = "0.027 * safeZoneH";
+            h = "0.019 * safeZoneH";
         };
         class SpO2Label: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IA_SPO2LABEL;
             text = "SpO2 (%)";
+            tooltip = "Oxygen saturation, 0-100%, default 97% (ace_medical_spo2). ACE3's continuous Airway Management simulation - driven by altitude/gear/exertion/heart rate, not a discrete injury. No hard knockout/death cutoff of its own in ACE3; sustained very low values signal hypoxia and should prompt airway intervention.";
             x = "0.665 * safeZoneW + safeZoneX";
-            y = "0.518 * safeZoneH + safeZoneY";
+            y = "0.521 * safeZoneH + safeZoneY";
             w = "0.065 * safeZoneW";
-            h = "0.027 * safeZoneH";
+            h = "0.019 * safeZoneH";
         };
         class SpO2: RscEdit
         {
             idc = IDC_AFCM_SIM_IA_SPO2;
             text = "97";
+            tooltip = "Oxygen saturation, 0-100%, default 97% (ace_medical_spo2). ACE3's continuous Airway Management simulation - driven by altitude/gear/exertion/heart rate, not a discrete injury. No hard knockout/death cutoff of its own in ACE3; sustained very low values signal hypoxia and should prompt airway intervention.";
             x = "0.735 * safeZoneW + safeZoneX";
-            y = "0.518 * safeZoneH + safeZoneY";
+            y = "0.521 * safeZoneH + safeZoneY";
             w = "0.05 * safeZoneW";
-            h = "0.027 * safeZoneH";
+            h = "0.019 * safeZoneH";
+        };
+        // Pain Level - real ace_medical_pain variable, 0-1 (same as the WoundType/Severity/etc.
+        // staging form's own underlying vitals, not a 0-100 scale like SpO2). Folded into the same
+        // setVitals op as Blood Volume/SpO2 (afcm_sim_fnc_backend_setVitals), on request ("displayed
+        // with the blood and spO2... same as them").
+        class PainLevelLabel: AFCM_SIM_RscLabel
+        {
+            idc = IDC_AFCM_SIM_IA_PAINLEVELLABEL;
+            text = "Pain (0-1)";
+            tooltip = "Real ACE3 ace_medical_pain, 0-1. Higher pain increases heart rate and can suppress a unit's ability to move/fight; ACE's own pain-suppression medications (e.g. morphine) temporarily reduce the EFFECT of pain without changing this underlying value.";
+            x = "0.665 * safeZoneW + safeZoneX";
+            y = "0.541 * safeZoneH + safeZoneY";
+            w = "0.065 * safeZoneW";
+            h = "0.019 * safeZoneH";
+        };
+        class PainLevel: RscEdit
+        {
+            idc = IDC_AFCM_SIM_IA_PAINLEVEL;
+            text = "0";
+            tooltip = "Real ACE3 ace_medical_pain, 0-1. Higher pain increases heart rate and can suppress a unit's ability to move/fight; ACE's own pain-suppression medications (e.g. morphine) temporarily reduce the EFFECT of pain without changing this underlying value.";
+            x = "0.735 * safeZoneW + safeZoneX";
+            y = "0.541 * safeZoneH + safeZoneY";
+            w = "0.05 * safeZoneW";
+            h = "0.019 * safeZoneH";
         };
         // Toggle consciousness, edit mode only - same corner, below Blood Volume/SpO2. Label/action
         // flip based on the live state (fnc_injuryAuthor_refreshState.sqf sets the text each 0.5s
@@ -1818,10 +1880,10 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE;
             text = "Wake Patient";
             x = "0.665 * safeZoneW + safeZoneX";
-            y = "0.548 * safeZoneH + safeZoneY";
+            y = "0.562 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";
-            h = "0.025 * safeZoneH";
-            sizeEx = "0.015 * safeZoneH";
+            h = "0.019 * safeZoneH";
+            sizeEx = "0.013 * safeZoneH";
         };
         // Text/mode set dynamically - "Apply" (edit mode, commits to AFCM_SIM_UI_targetUnit) or
         // "Apply & Spawn Patient" (author-new-patient mode, disabled until ChooseLocation below is

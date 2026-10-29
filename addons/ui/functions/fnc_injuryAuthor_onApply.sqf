@@ -22,13 +22,18 @@
  *    (AFCM_SIM_lastUsedInjuries/lastUsedKatExtras) so the next author-new-patient open auto-restores
  *    it (fnc_injuryAuthor_open.sqf).
  *
- * Deliberately does NOT closeDialog afterward, either branch - real feedback: applying/spawning was
+ * Author-new-patient mode deliberately does NOT closeDialog afterward - real feedback: spawning was
  * being treated as a one-shot action that always kicked you back out, so configuring several
- * patients (or tweaking one limb at a time on the same patient) meant reopening the whole dialog
- * every single time. The staged set is left exactly as it was just applied, so hitting Apply again
- * re-applies/spawns-another with no extra setup; fnc_injuryAuthor_cleanup.sqf now snapshots whatever
- * is staged whenever the dialog actually IS closed (Close button/Escape), so nothing is lost by
- * leaving Apply as a non-closing action.
+ * patients in a row meant reopening the whole dialog every single time. The staged set is left
+ * exactly as it was just applied, so hitting Apply again spawns another with no extra setup;
+ * fnc_injuryAuthor_cleanup.sqf snapshots whatever is staged whenever the dialog actually IS closed
+ * (Close button/Escape), so nothing is lost by leaving Apply as a non-closing action there.
+ *
+ * Edit mode DOES closeDialog after a successful Apply now, on request ("when you click apply, the
+ * author window should close") - the opposite tradeoff makes sense there: there's exactly one live
+ * target unit per edit-mode open, so there's no "configure several in a row" workflow this would
+ * interrupt, and leaving it open after committing to a specific patient was the part players found
+ * confusing, not helpful.
  *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Apply button <CONTROL>
@@ -78,12 +83,14 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
         ["injury.applied", [_targetUnit, _limb, _woundType, _severity, _bleeding]] call afcm_sim_ui_fnc_publish;
     } forEach _injuries;
 
-    // Settable Blood Volume/SpO2 - edit mode only (config.cpp's own comment on these controls).
+    // Settable Blood Volume/SpO2/Pain - edit mode only (config.cpp's own comment on these controls).
     // Clamped to each real ACE3 variable's sane range rather than trusting raw typed input.
     private _display = ctrlParent _ctrlApply;
     private _bloodVolume = 0 max (parseNumber (ctrlText (_display displayCtrl 56))) min 6.5;
     private _spo2 = 0 max (parseNumber (ctrlText (_display displayCtrl 58))) min 100;
-    [_targetUnit, _bloodVolume, _spo2] remoteExec ["afcm_sim_scenario_fnc_serverSetVitals", 2];
+    private _pain = 0 max (parseNumber (ctrlText (_display displayCtrl 67))) min 1;
+    [_targetUnit, _bloodVolume, _spo2, _pain] remoteExec ["afcm_sim_scenario_fnc_serverSetVitals", 2];
 
     ["Injury Author", "Injuries applied."] call afcm_sim_ui_fnc_showToast;
+    closeDialog 0;
 };

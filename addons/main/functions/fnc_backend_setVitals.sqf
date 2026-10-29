@@ -7,6 +7,7 @@
  * 0: Target unit <OBJECT>
  * 1: Blood volume <NUMBER> - litres
  * 2: SpO2 <NUMBER> - percent
+ * 3: Pain <NUMBER> - 0-1
  *
  * Return Value:
  * Bool - true if the active backend handled it, false if no backend is active/registered here or
@@ -15,7 +16,7 @@
  * Public: No
 */
 
-params ["_unit", "_bloodVolume", "_spo2"];
+params ["_unit", "_bloodVolume", "_spo2", "_pain"];
 
 private _backendId = missionNamespace getVariable ["AFCM_SIM_activeBackend", ""];
 
@@ -40,5 +41,5 @@ if (isNil "_fnc") exitWith {
     false
 };
 
-[_unit, _bloodVolume, _spo2] call _fnc;
+[_unit, _bloodVolume, _spo2, _pain] call _fnc;
 true

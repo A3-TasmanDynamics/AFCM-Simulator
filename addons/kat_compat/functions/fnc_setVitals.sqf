@@ -13,6 +13,7 @@
  * 0: Target unit <OBJECT>
  * 1: Blood volume <NUMBER> - litres
  * 2: SpO2 <NUMBER> - percent
+ * 3: Pain <NUMBER> - 0-1
  *
  * Return Value:
  * None
@@ -20,8 +21,8 @@
  * Public: No
 */
 
-params ["_unit", "_bloodVolume", "_spo2"];
+params ["_unit", "_bloodVolume", "_spo2", "_pain"];
 
 if (isNull _unit) exitWith {};
 
-["afcm_sim_setVitalsLocal", [_unit, _bloodVolume, _spo2, "KAT"], _unit] call CBA_fnc_targetEvent;
+["afcm_sim_setVitalsLocal", [_unit, _bloodVolume, _spo2, _pain, "KAT"], _unit] call CBA_fnc_targetEvent;
