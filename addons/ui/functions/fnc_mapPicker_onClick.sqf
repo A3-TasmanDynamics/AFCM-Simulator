@@ -11,7 +11,9 @@
  * Also drops a real local marker (`createMarkerLocal`/`setMarkerPosLocal` - client-side only,
  * never synced, exactly right for a pure UI preview aid) at the picked position so it's visible
  * directly on the map, not just as text - moves the same marker on every subsequent click rather
- * than creating a new one each time. Cleaned up on dialog close regardless of how
+ * than creating a new one each time, plus the radius ELLIPSE preview in MCI context. Shared with
+ * fnc_mapPicker_init.sqf's own pre-seed-from-AFCM_SIM_UI_mciLocation path -
+ * fnc_mapPicker_setPickedPos.sqf. Cleaned up on dialog close regardless of how
  * (fnc_mapPicker_cleanup.sqf, onUnload).
  *
  * Real MouseButtonDown signature: _this = [_control, _button, _x, _y, _shift, _ctrl, _alt].
@@ -33,18 +35,6 @@ params ["_ctrlMap", "_button", "_x", "_y"];
 if (_button != 0) exitWith {};
 
 private _worldPos = _ctrlMap ctrlMapScreenToWorld [_x, _y];
-missionNamespace setVariable ["AFCM_SIM_UI_mapPickerPos", _worldPos];
-
-private _markerName = missionNamespace getVariable ["AFCM_SIM_UI_mapPickerMarker", ""];
-if (_markerName isEqualTo "") then {
-    _markerName = createMarkerLocal ["AFCM_SIM_mapPickerMarker", _worldPos];
-    _markerName setMarkerTypeLocal "hd_dot";
-    _markerName setMarkerColorLocal "ColorRed";
-    _markerName setMarkerTextLocal "MCI Location";
-    missionNamespace setVariable ["AFCM_SIM_UI_mapPickerMarker", _markerName];
-} else {
-    _markerName setMarkerPosLocal _worldPos;
-};
-
 private _display = ctrlParent _ctrlMap;
-(_display displayCtrl 1) ctrlSetText format ["Selected: %1 — click Confirm, or click elsewhere to change.", mapGridPosition _worldPos];
+
+[_display, _worldPos] call afcm_sim_ui_fnc_mapPicker_setPickedPos;
