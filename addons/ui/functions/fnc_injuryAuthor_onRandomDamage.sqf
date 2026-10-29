@@ -11,6 +11,15 @@
  * InjuryLevel is a 4-option Easy/Medium/Hard/Insane scale (fnc_injuryAuthor_init.sqf), mapped
  * directly (lbCurSel IS the level) to randomizeInjuries' own numeric levels 0-3.
  *
+ * Now also applies and closes the dialog, on request ("when applying random damage, auto close the
+ * menu once it's applied") - rolls+stages exactly as before, then calls
+ * fnc_injuryAuthor_onApply.sqf directly (passing this button's own control - that function only
+ * ever uses it via ctrlParent to find the display, so reusing it here needs no changes there)
+ * instead of leaving the roll staged for a separate manual Apply click. Reusing Apply's own logic
+ * means this naturally respects its existing guards too (no target unit in edit mode, no location
+ * chosen yet in author-new-patient mode) rather than duplicating that logic here. Button renamed
+ * "Apply Random Damage" to match (addons/ui/config.cpp).
+ *
  * Arguments (from the ButtonClick event, not called directly):
  * 0: Random Damage button <CONTROL>
  *
@@ -41,4 +50,4 @@ missionNamespace setVariable ["AFCM_SIM_UI_stagedInjuries", _staged];
 call afcm_sim_ui_fnc_injuryAuthor_refreshActiveLimbForm;
 call afcm_sim_ui_fnc_injuryAuthor_refreshNavbar;
 
-["Injury Author", format ["Rolled %1 random injuries.", count _staged]] call afcm_sim_ui_fnc_showToast;
+[_ctrlRandom] call afcm_sim_ui_fnc_injuryAuthor_onApply;

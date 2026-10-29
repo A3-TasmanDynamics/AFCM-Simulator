@@ -220,6 +220,31 @@ class CfgVehicles
                     class Ten { name = "10"; value = 10; };
                 };
             };
+            // Same Spawn Radius concept as the MCI Creator's own Map Picker field
+            // (addons/ui/config.cpp's RscDisplayAFCM_SIM_MapPicker), on request - lets the curator
+            // set it right here on the module before even opening the Creator/map, same as Patient
+            // Count/Casualty Type already work. fnc_module_mciSpawner.sqf seeds
+            // AFCM_SIM_UI_mciRadius from this the same way it already seeds mciCasualtyType -
+            // freely overridable afterward from the Map Picker's own field either way.
+            class AFCM_SIM_Radius
+            {
+                displayName = "Spawn Radius (m)";
+                property = "AFCM_SIM_radius";
+                control = "combo";
+                defaultValue = "10";
+                // Same dual-type (string on edit, number on scenario-start reapply) issue as
+                // AFCM_SIM_CasualtyType above - same guard.
+                expression = "_this setVariable ['AFCM_SIM_radius', if (_value isEqualType '') then {parseNumber _value} else {_value}];";
+                class Values
+                {
+                    class Five { name = "5"; value = 5; };
+                    class Ten { name = "10"; value = 10; default = 1; };
+                    class Fifteen { name = "15"; value = 15; };
+                    class Twenty { name = "20"; value = 20; };
+                    class Thirty { name = "30"; value = 30; };
+                    class Fifty { name = "50"; value = 50; };
+                };
+            };
         };
     };
 

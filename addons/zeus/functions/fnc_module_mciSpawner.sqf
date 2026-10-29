@@ -63,9 +63,14 @@ _logic setVariable ["AFCM_SIM_moduleFired", true];
 
 private _patientCount = _logic getVariable ["AFCM_SIM_patientCount", 4];
 private _casualtyType = _logic getVariable ["AFCM_SIM_casualtyType", afcm_sim_defaultCasualtyType];
+private _radius = _logic getVariable ["AFCM_SIM_radius", 10];
 
 missionNamespace setVariable ["AFCM_SIM_UI_mciLocation", getPosASL _logic];
 missionNamespace setVariable ["AFCM_SIM_UI_mciCasualtyType", _casualtyType];
+// Same "always seeds fresh" reasoning as Casualty Type above (low-stakes, visible, freely
+// correctable right there in the Map Picker's own Radius field) - not gated behind an isNil guard
+// the way Patient Count's mciPatientSpecs is.
+missionNamespace setVariable ["AFCM_SIM_UI_mciRadius", _radius];
 if (isNil "AFCM_SIM_UI_mciPatientSpecs") then {
     private _specs = [];
     for "_i" from 1 to _patientCount do { _specs pushBack "random"; };

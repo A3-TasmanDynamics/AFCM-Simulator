@@ -23,10 +23,11 @@
  * never the line that gets clipped if a rare worst-case combination still overflows) while KAT's
  * advanced extras stay last/smallest (least critical, lowest priority if space runs out).
  *
- * Also keeps the ConsciousnessToggle button (idc 59) label synced to the unit's REAL current
- * incapacitatedState every tick, not just this function's own text - fixes the toggle drifting out
- * of sync with reality if the patient wakes/passes out from something other than the button itself
- * (e.g. ACE's own natural recovery, or another controller's action).
+ * Does NOT touch the ConsciousnessToggle checkbox (idc 59) - unlike this readout, that control is a
+ * staged-until-Apply choice now (on request, "when apply is selected, it will force the patient
+ * awake or unconscious"), prefilled once at dialog open (fnc_injuryAuthor_init.sqf) the same way
+ * Blood Volume/SpO2/Pain Level already are, not continuously overwritten from live state every
+ * tick - doing so would silently revert whatever the player just ticked before they got to Apply.
  *
  * "Stable" is ACE3's own real ace_medical_fnc_isInStableCondition (both backends' own getState -
  * REFERENCES.md has the full traced call chain/thresholds) - alive, conscious, zero active wound
@@ -98,10 +99,6 @@ if (count _state > 0) then {
     private _consciousness = _state getOrDefault ["lifeState", "?"];
     private _incap = _state getOrDefault ["incapacitatedState", ""];
     if (_incap != "") then { _consciousness = _consciousness + format [" (%1)", _incap]; };
-
-    // Keeps the toggle button (idc 59, edit mode only) honest against the unit's REAL current
-    // state every tick, not just whatever the button itself last set optimistically.
-    (_display displayCtrl 59) ctrlSetText (["Knock Out Patient", "Wake Patient"] select _isUnconscious);
 
     _text = "VITALS" call _header;
 
