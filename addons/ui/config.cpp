@@ -50,6 +50,7 @@ class CfgFunctions
             class injuryAuthor_onResetLimb { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onResetLimb.sqf"; };
             class injuryAuthor_onResetPatient { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onResetPatient.sqf"; };
             class injuryAuthor_onToggleConsciousness { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onToggleConsciousness.sqf"; };
+            class injuryAuthor_setConsciousnessCheckbox { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_setConsciousnessCheckbox.sqf"; };
             class injuryAuthor_onSavePreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onSavePreset.sqf"; };
             class injuryAuthor_onLoadPreset { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_onLoadPreset.sqf"; };
             class injuryAuthor_loadPresetArrays { file = "\afcm_sim\addons\ui\functions\fnc_injuryAuthor_loadPresetArrays.sqf"; };
@@ -1890,18 +1891,26 @@ class RscDisplayAFCM_SIM_InjuryAuthor
             w = "0.05 * safeZoneW";
             h = "0.019 * safeZoneH";
         };
-        // Toggle consciousness, edit mode only - same corner, below Blood Volume/SpO2. Label/action
-        // flip based on the live state (fnc_injuryAuthor_refreshState.sqf sets the text each 0.5s
-        // tick; fnc_injuryAuthor_onToggleConsciousness.sqf reads the CURRENT text to decide which way
-        // to toggle, rather than tracking a separate bool the live-state refresh could drift out of
-        // sync with). Real, confirmed design note: waking a patient needs more than just this button
-        // - fnc_spawnPatient.sqf's own recurring 3s unconscious safeguard would otherwise silently
-        // re-knock them out again within seconds (AFCM_SIM_allowConscious,
+        // Consciousness checkbox, edit mode only - same corner, below Blood Volume/SpO2. Restyled
+        // on request ("make it follow the theme, the [ ]/[X] bracket text looks ugly") - checked
+        // state is now shown with this UI's own existing "filled danger-red = critical state"
+        // language (AFCM_SIM_COLOR_DANGER_BG, the same color Reset Patient already uses) via
+        // ctrlSetBackgroundColor, not literal bracket characters in the text - plain "Unconscious"
+        // label throughout. fnc_injuryAuthor_onToggleConsciousness.sqf/fnc_injuryAuthor_init.sqf
+        // track the real checked bool with `_ctrl setVariable ["AFCM_SIM_unconsciousChecked", ...]`
+        // rather than parsing text/color back out of the control.
+        //
+        // Purely local/staged - clicking it does NOT change the live unit immediately
+        // (fnc_injuryAuthor_onToggleConsciousness.sqf), only fnc_injuryAuthor_onApply.sqf actually
+        // forces the real state, on request ("when apply is selected, it will force the patient
+        // awake or unconscious"). Real, confirmed design note: waking a patient needs more than
+        // just this checkbox - fnc_spawnPatient.sqf's own recurring 3s unconscious safeguard would
+        // otherwise silently re-knock them out again within seconds (AFCM_SIM_allowConscious,
         // fnc_serverSetConsciousness.sqf, is the actual fix for that).
         class ConsciousnessToggle: AFCM_SIM_RscButton
         {
             idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE;
-            text = "Wake Patient";
+            text = "Unconscious";
             x = "0.665 * safeZoneW + safeZoneX";
             y = "0.562 * safeZoneH + safeZoneY";
             w = "0.12 * safeZoneW";

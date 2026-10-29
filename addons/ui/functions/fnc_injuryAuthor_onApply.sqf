@@ -98,7 +98,7 @@ if (missionNamespace getVariable ["AFCM_SIM_UI_authorNewPatient", true]) then {
     // selected, it will force the patient awake or unconscious") - fnc_injuryAuthor_
     // onToggleConsciousness.sqf itself no longer remoteExecs anything, this is the only place that
     // actually forces the real state.
-    private _unconscious = (ctrlText (_display displayCtrl 59)) == "Unconscious [X]";
+    private _unconscious = (_display displayCtrl 59) getVariable ["AFCM_SIM_unconsciousChecked", false];
     [_targetUnit, _unconscious] remoteExec ["afcm_sim_scenario_fnc_serverSetConsciousness", 2];
 
     ["Injury Author", "Injuries applied."] call afcm_sim_ui_fnc_showToast;
