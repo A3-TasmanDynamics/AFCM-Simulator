@@ -184,6 +184,7 @@ class CfgFunctions
         {
             file = "\afcm_sim\addons\ui\functions";
             class showToast { file = "\afcm_sim\addons\ui\functions\fnc_showToast.sqf"; };
+            class showHint { file = "\afcm_sim\addons\ui\functions\fnc_showHint.sqf"; };
             class showToastOverlay { file = "\afcm_sim\addons\ui\functions\fnc_showToastOverlay.sqf"; };
             class toast_init { file = "\afcm_sim\addons\ui\functions\fnc_toast_init.sqf"; };
             class notifySessionResolved { file = "\afcm_sim\addons\ui\functions\fnc_notifySessionResolved.sqf"; };
@@ -195,8 +196,10 @@ class CfgFunctions
             file = "\afcm_sim\addons\ui\functions";
             class spawnPatientPicker_open { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_open.sqf"; };
             class spawnPatientPicker_init { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_init.sqf"; };
+            class spawnPatientPicker_onFactionChanged { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_onFactionChanged.sqf"; };
             class spawnPatientPicker_onSpawn { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_onSpawn.sqf"; };
             class spawnPatientPicker_cleanup { file = "\afcm_sim\addons\ui\functions\fnc_spawnPatientPicker_cleanup.sqf"; };
+            class getSpawnPatientUnitRoster { file = "\afcm_sim\addons\ui\functions\fnc_getSpawnPatientUnitRoster.sqf"; };
         };
     };
 };
@@ -1963,23 +1966,26 @@ class RscDisplayAFCM_SIM_InjuryAuthor
         // recurring 3s unconscious safeguard would otherwise silently re-knock them out again
         // within seconds (AFCM_SIM_allowConscious, fnc_serverSetConsciousness.sqf, is the actual
         // fix for that).
-        class ConsciousnessToggle: AFCM_SIM_RscCheckBox
-        {
-            idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE;
-            x = "0.665 * safeZoneW + safeZoneX";
-            y = "0.562 * safeZoneH + safeZoneY";
-            w = "0.019 * safeZoneH";
-            h = "0.019 * safeZoneH";
-        };
+        // Label-then-checkbox order (checkbox to the RIGHT of "Unconscious:", on request) and the
+        // label uses the same default text size/style Blood/SpO2's own labels do now (no sizeEx
+        // override - AFCM_SIM_RscLabel's own base styling), instead of the smaller custom size it
+        // had before.
         class ConsciousnessLabel: AFCM_SIM_RscLabel
         {
             idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSLABEL;
             text = "Unconscious:";
-            x = "0.689 * safeZoneW + safeZoneX";
-            y = "0.5605 * safeZoneH + safeZoneY";
-            w = "0.1 * safeZoneW";
-            h = "0.022 * safeZoneH";
-            sizeEx = "0.013 * safeZoneH";
+            x = "0.665 * safeZoneW + safeZoneX";
+            y = "0.562 * safeZoneH + safeZoneY";
+            w = "0.075 * safeZoneW";
+            h = "0.019 * safeZoneH";
+        };
+        class ConsciousnessToggle: AFCM_SIM_RscCheckBox
+        {
+            idc = IDC_AFCM_SIM_IA_CONSCIOUSNESSTOGGLE;
+            x = "0.745 * safeZoneW + safeZoneX";
+            y = "0.562 * safeZoneH + safeZoneY";
+            w = "0.019 * safeZoneH";
+            h = "0.019 * safeZoneH";
         };
         // Text/mode set dynamically - "Apply" (edit mode, commits to AFCM_SIM_UI_targetUnit) or
         // "Apply & Spawn Patient" (author-new-patient mode, disabled until ChooseLocation below is
@@ -2222,18 +2228,21 @@ class RscTitles
 #define IDC_AFCM_SIM_SPP_CASUALTYTYPE 10
 #define IDC_AFCM_SIM_SPP_SPAWN        11
 #define IDC_AFCM_SIM_SPP_CANCEL       12
+#define IDC_AFCM_SIM_SPP_UNITTYPE     13
 
 // Zeus Spawn Patient module's real picker window (on request - "it must open a window to choose
-// the faction and unit type of the patient first"). Gear is stripped to bare clothing on every
-// spawn path regardless (fnc_spawnPatient.sqf's own real, confirmed comment), so "unit type" here
-// is the same real Casualty Type concept every other spawn path already uses (Civilian/BLUFOR/
-// OPFOR/Independent) rather than a second, separate dimension - inventing specific sub-classnames
-// per faction for visual variety would need real, confirmed-existing vanilla classnames beyond the
-// 4 already verified in fnc_spawnPatient.sqf's own _casualtyClasses, which aren't confirmed here.
+// the faction and unit type of the patient first"). Faction (Casualty Type combo, idc 10) now
+// drives a 2nd Unit Type combo (idc 13) listing that faction's real units, same 2-step UX as the
+// vanilla Zeus Reinforcements module - on request ("Similar to the reinforcements module, select a
+// faction, that then shows the available units in the faction, select the unit, then apply").
+// Real, confirmed fix: an earlier pass here declined to add this ("would need real, confirmed-
+// existing vanilla classnames... which aren't confirmed here") - fnc_getSpawnPatientUnitRoster.sqf's
+// own docstring covers how those classnames were actually verified since (extracted directly from
+// this machine's installed vanilla characters_f.pbo, not guessed).
 //
-// fnc_spawnPatientPicker_init.sqf prefills the combo from profileNamespace
-// (AFCM_SIM_lastSpawnPatientCasualtyType) - on request ("save across patient creation so I can
-// place the module again and it already has the selection I previously used") - and
+// fnc_spawnPatientPicker_init.sqf prefills both combos from profileNamespace
+// (AFCM_SIM_lastSpawnPatientCasualtyType/UnitClass) - on request ("save across patient creation so
+// I can place the module again and it already has the selection I previously used") - and
 // fnc_spawnPatientPicker_onSpawn.sqf persists whatever's picked back to profileNamespace, so the
 // NEXT module placement's picker opens pre-selected to the same choice.
 class RscDisplayAFCM_SIM_SpawnPatientPicker
@@ -2250,7 +2259,7 @@ class RscDisplayAFCM_SIM_SpawnPatientPicker
             x = "0.32 * safeZoneW + safeZoneX";
             y = "0.39 * safeZoneH + safeZoneY";
             w = "0.36 * safeZoneW";
-            h = "0.22 * safeZoneH";
+            h = "0.27 * safeZoneH";
         };
         class Title: AFCM_SIM_RscTitle
         {
@@ -2265,7 +2274,7 @@ class RscDisplayAFCM_SIM_SpawnPatientPicker
         class CasualtyTypeLabel: AFCM_SIM_RscLabel
         {
             idc = -1;
-            text = "Casualty Type";
+            text = "Faction";
             x = "0.34 * safeZoneW + safeZoneX";
             y = "0.465 * safeZoneH + safeZoneY";
             w = "0.14 * safeZoneW";
@@ -2279,12 +2288,29 @@ class RscDisplayAFCM_SIM_SpawnPatientPicker
             w = "0.18 * safeZoneW";
             h = "0.04 * safeZoneH";
         };
+        class UnitTypeLabel: AFCM_SIM_RscLabel
+        {
+            idc = -1;
+            text = "Unit Type";
+            x = "0.34 * safeZoneW + safeZoneX";
+            y = "0.515 * safeZoneH + safeZoneY";
+            w = "0.14 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
+        class UnitType: RscCombo
+        {
+            idc = IDC_AFCM_SIM_SPP_UNITTYPE;
+            x = "0.48 * safeZoneW + safeZoneX";
+            y = "0.515 * safeZoneH + safeZoneY";
+            w = "0.18 * safeZoneW";
+            h = "0.04 * safeZoneH";
+        };
         class Spawn: AFCM_SIM_RscButtonPrimary
         {
             idc = IDC_AFCM_SIM_SPP_SPAWN;
             text = "Spawn Patient";
             x = "0.34 * safeZoneW + safeZoneX";
-            y = "0.545 * safeZoneH + safeZoneY";
+            y = "0.595 * safeZoneH + safeZoneY";
             w = "0.15 * safeZoneW";
             h = "0.045 * safeZoneH";
         };
@@ -2296,7 +2322,7 @@ class RscDisplayAFCM_SIM_SpawnPatientPicker
             idc = IDC_AFCM_SIM_SPP_CANCEL;
             text = "Cancel";
             x = "0.51 * safeZoneW + safeZoneX";
-            y = "0.545 * safeZoneH + safeZoneY";
+            y = "0.595 * safeZoneH + safeZoneY";
             w = "0.15 * safeZoneW";
             h = "0.045 * safeZoneH";
             action = "closeDialog 0;";

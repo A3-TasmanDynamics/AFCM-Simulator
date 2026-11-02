@@ -186,6 +186,16 @@ class CfgVehicles
                 displayName = "Casualty Type";
                 property = "AFCM_SIM_casualtyType";
                 control = "combo";
+                // Real, confirmed fix for a 2nd real bug report ("true default text/values...
+                // still showing") - typeName was never set on this combo attribute at all. BI's
+                // own wiki confirms typeName (STRING/NUMBER/BOOL) is used for Combo/Edit controls
+                // specifically; left unset, Eden can't be trusted to infer NUMBER from this
+                // combo's own numeric Values below, and may coerce the raw attribute value to BOOL
+                // instead - which, combined with this expression's own "else" branch (assumed
+                // already-numeric) blindly trusting whatever type Eden actually hands it, could
+                // literally write the boolean `true`/`false` into AFCM_SIM_casualtyType instead of
+                // a real 0-3 index. Explicit typeName = "NUMBER" removes that ambiguity.
+                typeName = "NUMBER";
                 defaultValue = "0";
                 // Real, confirmed root-cause bug fixed here (this class and every other one in this
                 // Attributes block): a custom Eden attribute is NOT automatically written onto the
@@ -241,6 +251,8 @@ class CfgVehicles
                 tooltip = "Quick-pick a built-in training scenario instead of hand-pasting an export string below. Wins over Injury Preset Import when set to anything but None.";
                 property = "AFCM_SIM_trainingPreset";
                 control = "combo";
+                // Same missing-typeName issue as AFCM_SIM_CasualtyType above - same fix.
+                typeName = "NUMBER";
                 defaultValue = "0";
                 // Same dual-type (string on edit, number on scenario-start reapply) issue as
                 // AFCM_SIM_CasualtyType above - same guard.
