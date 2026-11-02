@@ -113,6 +113,11 @@ class CfgVehicles
             displayName = "Casualty Type";
             property = "AFCM_SIM_casualtyType";
             control = "combo";
+            // Real, confirmed fix (same as Eden's own copy, addons/eden/config.cpp) - typeName was
+            // never set on this combo attribute, and BI's own wiki confirms typeName is used for
+            // Combo/Edit controls specifically; left unset, Zeus can't be trusted to infer NUMBER
+            // from this combo's own numeric Values below.
+            typeName = "NUMBER";
             defaultValue = "0";
             // Real, confirmed bug (and its own follow-up bug, found on Eden's own copy of this same
             // attribute, addons/eden/config.cpp): a combo's _value arrives at this expression as a
@@ -208,6 +213,8 @@ class CfgVehicles
                 displayName = "Patient Count";
                 property = "AFCM_SIM_patientCount";
                 control = "combo";
+                // Same missing-typeName issue as AFCM_SIM_CasualtyType above - same fix.
+                typeName = "NUMBER";
                 defaultValue = "4";
                 // Same dual-type (string on edit, number on scenario-start reapply) issue as
                 // AFCM_SIM_CasualtyType above - same guard.
@@ -232,6 +239,8 @@ class CfgVehicles
                 displayName = "Spawn Radius (m)";
                 property = "AFCM_SIM_radius";
                 control = "combo";
+                // Same missing-typeName issue as AFCM_SIM_CasualtyType above - same fix.
+                typeName = "NUMBER";
                 defaultValue = "10";
                 // Same dual-type (string on edit, number on scenario-start reapply) issue as
                 // AFCM_SIM_CasualtyType above - same guard.

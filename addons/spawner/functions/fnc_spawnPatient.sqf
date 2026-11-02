@@ -45,6 +45,11 @@
  *    mission builder's deliberately-placed exact position, not a shared spot several random patients
  *    need to be nudged apart from - jitter there just moved patients off the mark they were placed
  *    at.
+ * 8: Unit Class <STRING> (default "" - falls back to Casualty Type's own generic class) - a
+ *    specific real vanilla classname to spawn instead of the generic per-faction default, on
+ *    request (Zeus Spawn Patient module's "unit type" dropdown,
+ *    fnc_spawnPatientPicker_onFactionChanged.sqf/afcm_sim_ui_fnc_getSpawnPatientUnitRoster -
+ *    real, verified vanilla role classnames, not guessed - see that function's own docstring).
  *
  * Return Value:
  * Spawned unit <OBJECT>, or objNull if not run on the server
@@ -55,14 +60,16 @@
  * Public: Yes
 */
 
-params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1], ["_exactPos", false]];
+params ["_pos", ["_injuries", []], ["_casualtyType", 0], ["_sessionId", ""], ["_sessionLabel", ""], ["_katExtras", []], ["_callbackOwner", -1], ["_exactPos", false], ["_unitClass", ""]];
 
 // Purely cosmetic - all four are real, base-game (no DLC/faction mod) Arma 3 classnames, so this
 // works with nothing but vanilla + CBA installed. Whatever's picked, gear is stripped down to bare
 // clothing below regardless - a military classname's default rifle/vest/backpack loadout doesn't
-// survive spawning here, per the "just clothing" requirement.
+// survive spawning here, per the "just clothing" requirement. `_unitClass`, when given, overrides
+// this generic per-faction default with a specific real vanilla role classname instead (see this
+// function's own Unit Class argument doc above).
 private _casualtyClasses = ["C_man_1", "B_Soldier_F", "O_Soldier_F", "I_Soldier_F"];
-private _class = _casualtyClasses param [_casualtyType, "C_man_1"];
+private _class = if (_unitClass != "") then { _unitClass } else { _casualtyClasses param [_casualtyType, "C_man_1"] };
 
 if !(isServer) exitWith { objNull };
 

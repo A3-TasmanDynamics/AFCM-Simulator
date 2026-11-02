@@ -1,3 +1,13 @@
+// Real, confirmed fix for Addon Options still not showing in Eden Editor despite the earlier
+// isGlobal=1 pass (that fix is still correct/kept - Mission-scoped settings are the right semantic
+// for this mod's own settings - it just wasn't the actual blocker). Found a real, documented CBA
+// forum report matching this exact symptom (settings menu works everywhere except Eden, empty with
+// no error there) whose fix was requiring `cba_settings` explicitly, not just `cba_main` -
+// `cba_settings` is CBA's own real, separate addon (its own CfgPatches entry, confirmed from
+// CBA_A3's own source) that owns the actual Eden/3DEN-specific settings-menu wiring
+// (fnc_initDisplay3DEN.sqf's add3DENEventHandler calls, Cfg3DEN.hpp's own scenario-attribute
+// plumbing) - without it explicitly required, that machinery isn't guaranteed active when Eden
+// loads this mod's own addons.
 class CfgPatches
 {
     class afcm_sim_main
@@ -5,7 +15,7 @@ class CfgPatches
         units[] = {};
         weapons[] = {};
         requiredVersion = 2.14;
-        requiredAddons[] = {"cba_main"};
+        requiredAddons[] = {"cba_main", "cba_settings"};
         author = "Tasman Dynamics";
         authors[] = {"Tasman Dynamics"};
         version = "0.1.0";
