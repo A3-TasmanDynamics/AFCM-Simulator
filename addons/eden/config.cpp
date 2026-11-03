@@ -323,9 +323,19 @@ class CfgVehicles
         // Was module_mascal.paa, a leftover icon from the since-removed MASCAL Zone module
         // (DESIGN.md §9 "Eden module list trimmed") - also rendered solid black when placed, same
         // real root cause as AFCM_SIM_ModulePatientPlacement's own fix above. Switched to a real,
-        // confirmed-existing ACE3-bundled Zeus icon (a gear/settings glyph - fits "an interactive
-        // access point" reasonably) rather than reusing a mismatched leftover.
-        icon = "\z\ace\addons\zeus\ui\Icon_Module_Zeus_Settings_ca.paa";
+        // confirmed-existing ACE3-bundled Zeus icon (a gear/settings glyph) as an interim fix.
+        //
+        // Now a real custom icon (on request - a terminal/console glyph with a medical cross badge,
+        // same flat solid-white/alpha-cutout style as every ACE3 Zeus module icon, confirmed by
+        // extracting and inspecting ACE3's own icon_module_zeus_unconscious_ca.paa/
+        // icon_module_zeus_settings_ca.paa directly - both real 64x64 DXT5 textures with an alpha
+        // channel). Built as a 64x64 RGBA PNG (white RGB, alpha = glyph coverage - transparent
+        // everywhere else) and converted with Arma 3 Tools' own ImageToPAA, producing a real DXT5
+        // .paa with the same TAGG/mip structure as ACE's reference icons (confirmed byte-for-byte
+        // structurally identical) - the same correctly-formatted-alpha requirement that made the
+        // earlier custom .paa attempts render solid black (see AFCM_SIM_ModulePatientPlacement's own
+        // comment above) is satisfied here.
+        icon = "\afcm_sim\addons\eden\data\icon_module_medterm_ca.paa";
         category = "AFCM_SIM_Category";
         function = "afcm_sim_eden_fnc_module_interactiveTerminal";
         functionPriority = 1;
