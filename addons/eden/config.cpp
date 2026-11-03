@@ -226,6 +226,40 @@ class CfgVehicles
                     class MilitaryIndependent { name = "Military (Independent)"; value = 3; };
                 };
             };
+            // Real, confirmed 3rd bug fixed here, on a 3rd real report with screenshot evidence this
+            // time: Eden's own Attributes dialog showed literal "true" text in EVERY Edit-type field
+            // below (Session Name/Title/Injury Preset Import/Spawn Marker Name) on an ALREADY-PLACED
+            // module instance - but NOT in either Combo field (Casualty Type/Training Preset), which
+            // showed their real selected label correctly on that exact same instance. That rules out
+            // the earlier typeName fix as the cause here (typeName only applies to Combo/Edit type
+            // INFERENCE, and it was already only the Combos that needed it) and points somewhere
+            // specific to these 4 Edit fields.
+            // Real mechanism (confirmed against this file's own earlier, already-documented Eden
+            // gotcha above - "a custom Eden attribute is NOT automatically written onto the placed
+            // object via setVariable... the actual write only happens through expression=", found via
+            // "a real RPT test where all 6 attributes read back as unset DESPITE SEVERAL BEING
+            // VISIBLY NON-DEFAULT IN EDEN'S OWN DIALOG"): Eden's Attributes dialog displays whatever
+            // is saved in ITS OWN per-instance attribute storage (serialized directly into the .sqm
+            // for that specific placed object), which is NOT the same thing as this module's runtime
+            // `AFCM_SIM_sessionName`/etc. object variable - `expression=` only writes the runtime
+            // variable, it doesn't touch what Eden itself displays on reopen. That per-instance
+            // storage is independent of this config - a value written into it, however it got there
+            // (including from an earlier, already-fixed version of this config), stays stuck on that
+            // SPECIFIC placed instance until something overwrites it again, regardless of what
+            // `defaultValue` now says.
+            // Two real, separate things needed, not one:
+            //  1. A defensive type guard on every expression below (previously only the 2 Combo
+            //     fields had one) - matches the dual-type-guard reasoning already used for
+            //     Casualty Type/Training Preset: never blindly trust `_value`'s type, only setVariable
+            //     a real string, falling back to "" for anything else. This can't un-stick an
+            //     instance that already has "true" saved, but it closes off whatever path let a
+            //     non-string value reach these fields' runtime variable in the first place, so it
+            //     can't happen again going forward.
+            //  2. For the 3 instances already visibly affected (this exact screenshot): this is a
+            //     per-INSTANCE saved value, not a config bug a rebuild can retroactively fix - open
+            //     each one's Attributes dialog, clear the 4 "true" fields back to blank, click OK
+            //     once. A freshly-placed AFCM Patient module should already show these blank with
+            //     this fix in place.
             class AFCM_SIM_SessionName
             {
                 displayName = "Session Name (optional)";
@@ -233,7 +267,7 @@ class CfgVehicles
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
-                expression = "_this setVariable ['AFCM_SIM_sessionName', _value];";
+                expression = "_this setVariable ['AFCM_SIM_sessionName', if (_value isEqualType '') then {_value} else {''}];";
             };
             class AFCM_SIM_Title
             {
@@ -243,7 +277,7 @@ class CfgVehicles
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
-                expression = "_this setVariable ['AFCM_SIM_title', _value];";
+                expression = "_this setVariable ['AFCM_SIM_title', if (_value isEqualType '') then {_value} else {''}];";
             };
             class AFCM_SIM_TrainingPreset
             {
@@ -283,7 +317,7 @@ class CfgVehicles
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
-                expression = "_this setVariable ['AFCM_SIM_injuryPresetImport', _value];";
+                expression = "_this setVariable ['AFCM_SIM_injuryPresetImport', if (_value isEqualType '') then {_value} else {''}];";
             };
             class AFCM_SIM_SpawnMarkerName
             {
@@ -293,7 +327,7 @@ class CfgVehicles
                 control = "Edit";
                 defaultValue = "";
                 typeName = "STRING";
-                expression = "_this setVariable ['AFCM_SIM_spawnMarkerName', _value];";
+                expression = "_this setVariable ['AFCM_SIM_spawnMarkerName', if (_value isEqualType '') then {_value} else {''}];";
             };
         };
     };
